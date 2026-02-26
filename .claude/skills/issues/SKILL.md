@@ -20,6 +20,10 @@ Always start by fetching the latest state:
 git fetch origin claude/issues
 ```
 
+**If the fetch fails** because the branch does not exist, run the
+**Initialization** procedure (see below) before continuing with the requested
+operation.
+
 If this is your first time working with issues in this session, read the guide:
 
 ```bash
@@ -32,6 +36,259 @@ is `claude/some-task-aBc12`, the suffix is `aBc12`. You will push to
 `claude/zzsysissuesskill-<suffix>` instead of directly to `claude/issues`. This is required
 because the web proxy only allows pushing to session-scoped branches. A GitHub
 Action will automatically sync session branches back to `claude/issues`.
+
+#### Initialization (first-time setup)
+
+This procedure runs **once per repository** when `claude/issues` does not exist
+yet. It creates the orphan branch structure and ensures the GitHub Action that
+syncs session branches is in place.
+
+##### 1. Ensure the sync workflow exists on the current branch
+
+Check whether `.github/workflows/sync-issues-branch.yml` already exists in the
+working tree:
+
+```bash
+test -f .github/workflows/sync-issues-branch.yml && echo "exists" || echo "missing"
+```
+
+If it is **missing**, create it. The workflow file must eventually reach the
+repository's default branch (e.g., `main`) for the sync action to trigger on
+future `claude/zzsysissuesskill-*` pushes.
+
+Write the following file to `.github/workflows/sync-issues-branch.yml`:
+
+```yaml
+name: Sync Issues Branch
+
+# Merges session-scoped issue branches (claude/zzsysissuesskill-*) back into the
+# canonical claude/issues orphan branch. Claude Code web sessions push to
+# claude/zzsysissuesskill-<suffix> because the proxy restricts pushes to session-scoped
+# branches. This workflow bridges that gap automatically.
+
+on:
+  push:
+    branches:
+      - 'claude/zzsysissuesskill-*'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Sync session branch to claude/issues
+        run: |
+          SESSION_BRANCH="${GITHUB_REF#refs/heads/}"
+          SESSION_SHA=$(git rev-parse HEAD)
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Check if the canonical claude/issues branch exists
+          if git ls-remote --heads origin claude/issues | grep -q claude/issues; then
+            git fetch origin claude/issues
+            BASE_SHA=$(git rev-parse origin/claude/issues)
+
+            if [ "$SESSION_SHA" = "$BASE_SHA" ]; then
+              echo "Session branch is identical to claude/issues — nothing to sync."
+            elif git merge-base --is-ancestor "$BASE_SHA" "$SESSION_SHA"; then
+              echo "Fast-forwarding claude/issues to $SESSION_SHA"
+              git push origin "$SESSION_SHA:refs/heads/claude/issues"
+            else
+              echo "Session branch has diverged — performing merge"
+              git checkout -B claude/issues origin/claude/issues
+              git merge "$SESSION_SHA" --no-edit -m "Merge $SESSION_BRANCH into claude/issues"
+              git push origin claude/issues
+            fi
+          else
+            echo "claude/issues does not exist yet — creating from session branch"
+            git push origin "$SESSION_SHA:refs/heads/claude/issues"
+          fi
+
+          # Clean up the session branch
+          echo "Deleting $SESSION_BRANCH"
+          git push origin --delete "$SESSION_BRANCH"
+```
+
+Stage and commit this file on the **current development branch** so it will
+reach the default branch when the development branch is merged:
+
+```bash
+git add .github/workflows/sync-issues-branch.yml
+git commit -m "Add sync-issues-branch workflow for claude/issues"
+```
+
+Push the development branch so the workflow file is available on the remote:
+
+```bash
+git push -u origin <development-branch>
+```
+
+**Note:** The sync action will only trigger once this workflow file is present on
+the repository's default branch. Until then, session branch pushes will not
+auto-sync.
+
+##### 2. Create the orphan branch with initialization files
+
+Set up an orphan worktree and populate it with the required structure:
+
+```bash
+git worktree remove /tmp/claude-issues 2>/dev/null || true
+git worktree prune
+git worktree add --orphan /tmp/claude-issues
+```
+
+Create the directory structure:
+
+```bash
+mkdir -p /tmp/claude-issues/issues /tmp/claude-issues/docs
+touch /tmp/claude-issues/docs/.gitkeep
+```
+
+Write the following files (use the Write tool for each):
+
+**`/tmp/claude-issues/state.json`**:
+```json
+{
+  "next_id": 1,
+  "labels": ["bug", "feature", "enhancement", "documentation", "question", "planning"]
+}
+```
+
+**`/tmp/claude-issues/GUIDE.md`**:
+```markdown
+# Issues Branch Guide
+
+This branch tracks project issues using markdown files.
+
+## Structure
+
+- `state.json` — Tracks the next issue ID and valid labels
+- `INDEX.md` — Table of all issues with summary info
+- `issues/` — Individual issue files named `<id>-<slug>.md`
+- `docs/` — Project documentation files
+- `SCHEMA.md` — Format specification for issue files
+
+## Conventions
+
+- Issue IDs are zero-padded to 4 digits (e.g., `0001`)
+- Slugs are lowercase, hyphen-separated versions of the title
+- All issue files use YAML frontmatter
+- Comments are appended under the `## Comments` section
+```
+
+**`/tmp/claude-issues/SCHEMA.md`**:
+```markdown
+# Issue File Schema
+
+Issue files are stored in `issues/` and named `<id>-<slug>.md`.
+
+## Frontmatter
+
+\```yaml
+---
+id: 1
+title: "Issue title"
+status: open          # open | in-progress | closed
+created: 2026-02-26
+author: claude
+labels: [feature, planning]  # optional
+priority: medium              # optional: low | medium | high | critical
+closed: 2026-02-26           # optional: only when status is closed
+---
+\```
+
+## Body
+
+\```markdown
+## Description
+
+Description of the issue.
+
+## Comments
+
+### author — YYYY-MM-DD
+
+Comment text.
+\```
+```
+
+**`/tmp/claude-issues/INDEX.md`**:
+```markdown
+# Issues
+
+| ID | Title | Status | Priority | Labels |
+|----|-------|--------|----------|--------|
+| *No issues yet.* | | | | |
+```
+
+##### 3. Commit and push the initialization
+
+```bash
+cd /tmp/claude-issues
+git add -A
+git -c commit.gpgsign=false commit -m "Initialize claude/issues branch"
+git push origin HEAD:refs/heads/claude/zzsysissuesskill-<suffix>
+```
+
+##### 4. Clean up the worktree
+
+```bash
+cd -
+git worktree remove /tmp/claude-issues
+```
+
+##### 5. Ask the user to rename the branch
+
+Because the sync workflow is not yet active on the default branch (it was just
+committed to the development branch), the GitHub Action will **not**
+automatically merge the session branch into `claude/issues`. The user must
+manually rename the branch.
+
+Use `AskUserQuestion` to inform the user:
+
+> **The `claude/issues` branch has been initialized.** The branch content has
+> been pushed to `claude/zzsysissuesskill-<suffix>`, but the sync GitHub Action
+> is not active yet (it needs to be on the default branch first).
+>
+> Please rename the branch on GitHub:
+> **`claude/zzsysissuesskill-<suffix>`** → **`claude/issues`**
+>
+> You can do this in the GitHub UI under **Branches**, or by running locally:
+> ```
+> git fetch origin claude/zzsysissuesskill-<suffix>
+> git push origin origin/claude/zzsysissuesskill-<suffix>:refs/heads/claude/issues
+> git push origin --delete claude/zzsysissuesskill-<suffix>
+> ```
+>
+> Once your development branch is merged to the default branch, future issue
+> operations will sync automatically.
+
+Wait for the user to confirm before continuing. Then re-fetch `claude/issues`:
+
+```bash
+git fetch origin claude/issues
+```
+
+If the original operation was `create`, `update`, or any other write command,
+continue with that operation now that the branch is initialized. The worktree
+for the actual operation should be set up fresh from the newly available
+`origin/claude/issues`.
+
+##### When the sync workflow already exists
+
+If `.github/workflows/sync-issues-branch.yml` already exists on the default
+branch (e.g., from a previous repository setup) but `claude/issues` does not
+exist yet, skip the workflow creation step. In this case the sync action **will**
+automatically create `claude/issues` from the session branch push, so you can
+also skip asking the user to rename — just proceed with the normal push-and-verify
+flow (Step 4: Verify sync).
 
 ### Step 2: Determine the operation
 
@@ -435,7 +692,7 @@ push may overwrite or conflict with the first.
 ### Error Handling
 
 - If `git fetch origin claude/issues` fails, the branch may not exist yet.
-  Inform the user that the issue tracking branch needs to be initialized.
+  Run the **Initialization** procedure in Step 1 to set up the branch.
 - If a worktree already exists at `/tmp/claude-issues`, remove it before
   creating a new one.
 - If a push fails, retry up to 4 times with exponential backoff (2s, 4s, 8s,
