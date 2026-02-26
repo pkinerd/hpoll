@@ -14,6 +14,13 @@ the conventions defined in `GUIDE.md` and `SCHEMA.md` on that branch.
 
 ### Step 1: Fetch the branch and determine session suffix
 
+**Determine the session suffix** from your assigned development branch name.
+Extract the part after the last hyphen. For example, if your development branch
+is `claude/some-task-aBc12`, the suffix is `aBc12`. You will push to
+`claude/zzsysissuesskill-<suffix>` instead of directly to `claude/issues`. This is required
+because the web proxy only allows pushing to session-scoped branches. A GitHub
+Action will automatically sync session branches back to `claude/issues`.
+
 Always start by fetching the latest state:
 
 ```bash
@@ -30,23 +37,11 @@ If this is your first time working with issues in this session, read the guide:
 git show origin/claude/issues:GUIDE.md
 ```
 
-**Determine the session suffix** from your assigned development branch name.
-Extract the part after the last hyphen. For example, if your development branch
-is `claude/some-task-aBc12`, the suffix is `aBc12`. You will push to
-`claude/zzsysissuesskill-<suffix>` instead of directly to `claude/issues`. This is required
-because the web proxy only allows pushing to session-scoped branches. A GitHub
-Action will automatically sync session branches back to `claude/issues`.
-
 #### Initialization (first-time setup)
 
 This procedure runs **once per repository** when `claude/issues` does not exist
-yet. It creates the orphan branch structure with the required files.
-
-**Prerequisites:** The sync workflow (`sync-issues-branch.yml`) must already
-exist on the repository's default branch (e.g., `main`). GitHub Actions reads
-workflow definitions from the **default branch** for `push` events, so the
-workflow file on `main` is what triggers the sync — it does not need to be on the
-`claude/issues` branch itself.
+yet. It creates the orphan branch structure with the required files and a copy
+of the sync workflow.
 
 ##### 1. Create the orphan branch with initialization files
 
@@ -61,9 +56,23 @@ git worktree add --orphan /tmp/claude-issues
 Create the directory structure:
 
 ```bash
-mkdir -p /tmp/claude-issues/issues /tmp/claude-issues/docs
+mkdir -p /tmp/claude-issues/issues /tmp/claude-issues/docs /tmp/claude-issues/.github/workflows
 touch /tmp/claude-issues/docs/.gitkeep
 ```
+
+##### 2. Copy the sync workflow from the main branch
+
+This is **required** — the workflow must exist on the `claude/issues` branch so
+that session branches (which are derived from it via worktree) inherit the file.
+GitHub Actions reads the workflow from the pushed branch, so without it on
+`claude/issues`, session branch pushes will not trigger the sync action.
+
+```bash
+git show origin/main:.github/workflows/sync-issues-branch.yml \
+  > /tmp/claude-issues/.github/workflows/sync-issues-branch.yml
+```
+
+##### 3. Create the scaffolding files
 
 Write the following files (use the Write tool for each):
 
@@ -142,7 +151,7 @@ Comment text.
 | *No issues yet.* | | | | |
 ```
 
-##### 2. Commit and push the initialization
+##### 4. Commit and push the initialization
 
 ```bash
 cd /tmp/claude-issues
@@ -151,20 +160,19 @@ git -c commit.gpgsign=false commit -m "Initialize claude/issues branch"
 git push origin HEAD:refs/heads/claude/zzsysissuesskill-<suffix>
 ```
 
-##### 3. Clean up the worktree
+##### 5. Clean up the worktree
 
 ```bash
 cd -
 git worktree remove /tmp/claude-issues
 ```
 
-##### 4. Ask the user to rename the branch
+##### 6. Ask the user to rename the branch
 
 The session branch was pushed as `claude/zzsysissuesskill-<suffix>` because the
 web proxy only allows session-scoped branch names. For the very first setup,
-the sync workflow on `main` cannot merge into `claude/issues` because that
-branch doesn't exist yet — the workflow's logic expects an existing target
-branch. The user must manually rename the session branch to create the
+the sync workflow cannot merge into `claude/issues` because that branch doesn't
+exist yet. The user must manually rename the session branch to create the
 canonical `claude/issues` branch.
 
 Use `AskUserQuestion` to inform the user:
@@ -183,7 +191,7 @@ Use `AskUserQuestion` to inform the user:
 > ```
 >
 > After this one-time rename, all future issue operations will sync
-> automatically via the GitHub Action on `main`.
+> automatically via the GitHub Action.
 
 Wait for the user to confirm before continuing. Then re-fetch `claude/issues`:
 
