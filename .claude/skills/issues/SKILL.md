@@ -20,6 +20,10 @@ Always start by fetching the latest state:
 git fetch origin claude/issues
 ```
 
+**If the fetch fails** because the branch does not exist, run the
+**Initialization** procedure (see below) before continuing with the requested
+operation.
+
 If this is your first time working with issues in this session, read the guide:
 
 ```bash
@@ -32,6 +36,165 @@ is `claude/some-task-aBc12`, the suffix is `aBc12`. You will push to
 `claude/zzsysissuesskill-<suffix>` instead of directly to `claude/issues`. This is required
 because the web proxy only allows pushing to session-scoped branches. A GitHub
 Action will automatically sync session branches back to `claude/issues`.
+
+#### Initialization (first-time setup)
+
+This procedure runs **once per repository** when `claude/issues` does not exist
+yet. It creates the orphan branch structure with the required files.
+
+**Prerequisites:** The sync workflow (`sync-issues-branch.yml`) must already
+exist on the repository's default branch (e.g., `main`). GitHub Actions reads
+workflow definitions from the **default branch** for `push` events, so the
+workflow file on `main` is what triggers the sync — it does not need to be on the
+`claude/issues` branch itself.
+
+##### 1. Create the orphan branch with initialization files
+
+Set up an orphan worktree and populate it with the required structure:
+
+```bash
+git worktree remove /tmp/claude-issues 2>/dev/null || true
+git worktree prune
+git worktree add --orphan /tmp/claude-issues
+```
+
+Create the directory structure:
+
+```bash
+mkdir -p /tmp/claude-issues/issues /tmp/claude-issues/docs
+touch /tmp/claude-issues/docs/.gitkeep
+```
+
+Write the following files (use the Write tool for each):
+
+**`/tmp/claude-issues/state.json`**:
+```json
+{
+  "next_id": 1,
+  "labels": ["bug", "feature", "enhancement", "documentation", "question", "planning"]
+}
+```
+
+**`/tmp/claude-issues/GUIDE.md`**:
+```markdown
+# Issues Branch Guide
+
+This branch tracks project issues using markdown files.
+
+## Structure
+
+- `state.json` — Tracks the next issue ID and valid labels
+- `INDEX.md` — Table of all issues with summary info
+- `issues/` — Individual issue files named `<id>-<slug>.md`
+- `docs/` — Project documentation files
+- `SCHEMA.md` — Format specification for issue files
+
+## Conventions
+
+- Issue IDs are zero-padded to 4 digits (e.g., `0001`)
+- Slugs are lowercase, hyphen-separated versions of the title
+- All issue files use YAML frontmatter
+- Comments are appended under the `## Comments` section
+```
+
+**`/tmp/claude-issues/SCHEMA.md`**:
+```markdown
+# Issue File Schema
+
+Issue files are stored in `issues/` and named `<id>-<slug>.md`.
+
+## Frontmatter
+
+\```yaml
+---
+id: 1
+title: "Issue title"
+status: open          # open | in-progress | closed
+created: 2026-02-26
+author: claude
+labels: [feature, planning]  # optional
+priority: medium              # optional: low | medium | high | critical
+closed: 2026-02-26           # optional: only when status is closed
+---
+\```
+
+## Body
+
+\```markdown
+## Description
+
+Description of the issue.
+
+## Comments
+
+### author — YYYY-MM-DD
+
+Comment text.
+\```
+```
+
+**`/tmp/claude-issues/INDEX.md`**:
+```markdown
+# Issues
+
+| ID | Title | Status | Priority | Labels |
+|----|-------|--------|----------|--------|
+| *No issues yet.* | | | | |
+```
+
+##### 2. Commit and push the initialization
+
+```bash
+cd /tmp/claude-issues
+git add -A
+git -c commit.gpgsign=false commit -m "Initialize claude/issues branch"
+git push origin HEAD:refs/heads/claude/zzsysissuesskill-<suffix>
+```
+
+##### 3. Clean up the worktree
+
+```bash
+cd -
+git worktree remove /tmp/claude-issues
+```
+
+##### 4. Ask the user to rename the branch
+
+The session branch was pushed as `claude/zzsysissuesskill-<suffix>` because the
+web proxy only allows session-scoped branch names. For the very first setup,
+the sync workflow on `main` cannot merge into `claude/issues` because that
+branch doesn't exist yet — the workflow's logic expects an existing target
+branch. The user must manually rename the session branch to create the
+canonical `claude/issues` branch.
+
+Use `AskUserQuestion` to inform the user:
+
+> **The `claude/issues` branch has been initialized.** The branch content has
+> been pushed to `claude/zzsysissuesskill-<suffix>`.
+>
+> Because this is the first-time setup, please rename the branch on GitHub:
+> **`claude/zzsysissuesskill-<suffix>`** → **`claude/issues`**
+>
+> You can do this in the GitHub UI under **Branches**, or by running locally:
+> ```
+> git fetch origin claude/zzsysissuesskill-<suffix>
+> git push origin origin/claude/zzsysissuesskill-<suffix>:refs/heads/claude/issues
+> git push origin --delete claude/zzsysissuesskill-<suffix>
+> ```
+>
+> After this one-time rename, all future issue operations will sync
+> automatically via the GitHub Action on `main`.
+
+Wait for the user to confirm before continuing. Then re-fetch `claude/issues`:
+
+```bash
+git fetch origin claude/issues
+```
+
+If the original operation was `create`, `update`, or any other write command,
+continue with that operation now that the branch is initialized. The worktree
+for the actual operation should be set up fresh from the newly available
+`origin/claude/issues`.
 
 ### Step 2: Determine the operation
 
@@ -435,7 +598,7 @@ push may overwrite or conflict with the first.
 ### Error Handling
 
 - If `git fetch origin claude/issues` fails, the branch may not exist yet.
-  Inform the user that the issue tracking branch needs to be initialized.
+  Run the **Initialization** procedure in Step 1 to set up the branch.
 - If a worktree already exists at `/tmp/claude-issues`, remove it before
   creating a new one.
 - If a push fails, retry up to 4 times with exponential backoff (2s, 4s, 8s,
