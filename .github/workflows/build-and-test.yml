@@ -1,0 +1,177 @@
+name: Build & Test
+
+on:
+  push:
+    branches:
+      - "main"
+      - "dev"
+    paths-ignore:
+      - .claude/**
+  pull_request:
+    types: [opened, synchronize]
+    paths-ignore:
+      - .claude/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.2.2
+
+      # TODO: Add your build steps here
+      - name: Build
+        run: |
+          echo "Add your build commands here"
+
+      # TODO: Add your test steps here
+      - name: Test
+        run: |
+          echo "Add your test commands here"
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            # TODO: Add paths to your test report artifacts
+            test-results/
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Push Build Logs
+  #
+  # Captures build/test results on an orphan branch (build-logs/<run>-<status>)
+  # so the poll-build-logs Claude skill can monitor CI outcomes.
+  # Imported from pkinerd/bitwarden.ios.
+  # ──────────────────────────────────────────────────────────────────────────
+  push-build-logs:
+    name: Push Build Logs
+    needs: build-and-test
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Determine build status
+        id: status
+        run: |
+          if [ "${{ needs.build-and-test.result }}" = "success" ]; then
+            echo "result=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=fail" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set branch name
+        id: branch
+        run: |
+          TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
+          BRANCH="build-logs/${{ github.run_number }}-${{ github.run_id }}-${TIMESTAMP}-${{ steps.status.outputs.result }}"
+          echo "name=${BRANCH}" >> "$GITHUB_OUTPUT"
+
+      - name: Download test artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: test-reports
+          path: test-reports
+        continue-on-error: true
+
+      - name: Generate log summary
+        env:
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref }}
+          EVENT_NAME: ${{ github.event_name }}
+          ACTOR: ${{ github.triggering_actor }}
+          RESULT: ${{ steps.status.outputs.result }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          mkdir -p logs
+          {
+            echo "# Build Log"
+            echo ""
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| **Run** | #${RUN_NUMBER} (attempt ${RUN_ATTEMPT}) |"
+            echo "| **Run ID** | ${RUN_ID} |"
+            echo "| **Result** | ${RESULT} |"
+            echo "| **Commit** | ${SHA} |"
+            echo "| **Ref** | ${REF} |"
+            echo "| **Event** | ${EVENT_NAME} |"
+            echo "| **Actor** | ${ACTOR} |"
+            if [ -n "$PR_NUMBER" ]; then
+              echo "| **PR** | #${PR_NUMBER}: ${PR_TITLE} |"
+              echo "| **Branch** | ${HEAD_REF} |"
+            fi
+            echo ""
+            if [ -d "test-reports" ]; then
+              echo "## Artifacts"
+              echo '```'
+              find test-reports -type f | sort
+              echo '```'
+            fi
+          } > logs/build-summary.md
+
+      - name: Fetch build and test logs via API
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Fetch job details
+          gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" \
+            > logs/jobs.json 2>/dev/null || true
+
+          # Download logs for completed jobs only (in-progress jobs return 404)
+          if [ -f logs/jobs.json ]; then
+            jq -r '.jobs[] | select(.status == "completed") | "\(.id) \(.name)"' logs/jobs.json 2>/dev/null \
+              | while read -r job_id job_name; do
+                  safe_name=$(echo "$job_name" | tr ' /' '-_' | tr '[:upper:]' '[:lower:]')
+                  gh api "repos/${{ github.repository }}/actions/jobs/${job_id}/logs" \
+                    > "logs/${safe_name}.log" 2>/dev/null || true
+                done
+          fi
+
+      - name: Push logs to branch
+        run: |
+          git init -b logs
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${{ steps.branch.outputs.name }}"
+          cp -r logs/* .
+          rm -rf logs test-reports
+          git add -A
+          git commit -m "Build logs for run #${{ github.run_number }} (${{ steps.status.outputs.result }})"
+          git push -u "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+            "${{ steps.branch.outputs.name }}"
+
+      - name: Clean up old log branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # List all build-logs/ branches, extract run number for sorting,
+          # keep the 10 most recent, delete the rest.
+          gh api "repos/${{ github.repository }}/git/matching-refs/heads/build-logs/" \
+            --jq '.[].ref' \
+            | sed 's|refs/heads/||' \
+            | while read -r branch; do
+                # Extract run number (first segment after "build-logs/")
+                num=$(echo "$branch" | sed 's|build-logs/||' | cut -d'-' -f1)
+                echo "${num} ${branch}"
+              done \
+            | sort -k1 -rn \
+            | tail -n +11 \
+            | while read -r _num branch; do
+                echo "Deleting old log branch: $branch"
+                gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${branch}" || true
+              done
