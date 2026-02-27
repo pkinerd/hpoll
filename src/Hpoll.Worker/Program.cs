@@ -26,7 +26,10 @@ builder.Services.AddDbContext<HpollDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
 
 // HTTP client for Hue API
-builder.Services.AddHttpClient("HueApi");
+builder.Services.AddHttpClient("HueApi", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 builder.Services.AddScoped<IHueApiClient, HueApiClient>();
 
 // AWS SES client (singleton — thread-safe, reuses connections)

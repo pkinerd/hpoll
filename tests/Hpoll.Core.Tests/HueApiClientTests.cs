@@ -35,18 +35,15 @@ public class HueApiClientTests
         var mockFactory = new Mock<IHttpClientFactory>();
         mockFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var settings = Options.Create(new HpollSettings
+        var hueAppSettings = Options.Create(new HueAppSettings
         {
-            HueApp = new HueAppSettings
-            {
-                ClientId = TestClientId,
-                ClientSecret = TestClientSecret
-            }
+            ClientId = TestClientId,
+            ClientSecret = TestClientSecret
         });
 
         var logger = new Mock<ILogger<HueApiClient>>();
 
-        _client = new HueApiClient(mockFactory.Object, settings, logger.Object);
+        _client = new HueApiClient(mockFactory.Object, hueAppSettings, logger.Object);
     }
 
     [Fact]

@@ -21,16 +21,16 @@ public class HueApiClient : IHueApiClient
     };
 
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly HpollSettings _settings;
+    private readonly HueAppSettings _hueAppSettings;
     private readonly ILogger<HueApiClient> _logger;
 
     public HueApiClient(
         IHttpClientFactory httpClientFactory,
-        IOptions<HpollSettings> settings,
+        IOptions<HueAppSettings> hueAppSettings,
         ILogger<HueApiClient> logger)
     {
         _httpClientFactory = httpClientFactory;
-        _settings = settings.Value;
+        _hueAppSettings = hueAppSettings.Value;
         _logger = logger;
     }
 
@@ -57,7 +57,7 @@ public class HueApiClient : IHueApiClient
         var client = _httpClientFactory.CreateClient(HttpClientName);
 
         var credentials = Convert.ToBase64String(
-            Encoding.UTF8.GetBytes($"{_settings.HueApp.ClientId}:{_settings.HueApp.ClientSecret}"));
+            Encoding.UTF8.GetBytes($"{_hueAppSettings.ClientId}:{_hueAppSettings.ClientSecret}"));
 
         using var request = new HttpRequestMessage(HttpMethod.Post, TokenUrl);
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
