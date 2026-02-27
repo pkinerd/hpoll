@@ -292,6 +292,7 @@ This is sufficient for 5-10 customers and avoids building OAuth flow, CLI tools,
 - SPF, DKIM, DMARC for email sending domain
 #### 2.9 — CI/CD & Testing
 - Fill in `.github/workflows/build-and-test.yml` TODOs: `dotnet build`, `dotnet test`
+- Add Docker image build step to the build workflow — `docker build` runs after tests pass, verifying the Dockerfile produces a valid image on every push/PR. No registry push at this stage (build-only to catch Dockerfile regressions early)
 - Automated tests: unit tests for rules engine and health evaluation, integration tests for Hue client
 - Deploy pipeline aligned with existing Issues #0003, #0005, #0006
 ### What to skip at MVP
@@ -334,7 +335,7 @@ MVP (build after POC validated):
   5. Rules & alerting engine
   6. Per-customer email scheduling
   7. Security hardening
-  8. CI/CD pipeline + automated tests
+  8. CI/CD pipeline + automated tests + Docker image build in CI
   9. Operational tooling (logging, metrics, rate tracking)
 ```
 ---
@@ -350,7 +351,7 @@ MVP (build after POC validated):
 ## Existing Files to Modify
 | File | When | Change |
 |---|---|---|
-| `.github/workflows/build-and-test.yml` | MVP (Phase 2.9) | Fill in TODO build/test steps with `dotnet build`, `dotnet test` |
+| `.github/workflows/build-and-test.yml` | MVP (Phase 2.9) | Fill in TODO build/test steps with `dotnet build`, `dotnet test`. Add a Docker image build step (`docker build`) after tests pass to verify the Dockerfile on every push/PR |
 | `README.md` | POC (Phase 1.2) | Update with project description, setup instructions |
 ## Verification
 ### POC verification
@@ -368,4 +369,5 @@ MVP (build after POC validated):
 5. Emails send at individual customer-preferred times across timezones
 6. Rate limit tracking: verify daily API call counter is accurate
 7. Load test: simulate 500+ customers, verify polling completes within hourly window
-8. CI pipeline runs end-to-end on push
+8. CI pipeline runs end-to-end on push (build, test, Docker image build)
+9. Docker image builds successfully in CI — `docker build` completes without errors
