@@ -89,22 +89,22 @@ public class EmailSchedulerService : BackgroundService
             .Where(c => c.Status == "active")
             .ToListAsync(ct);
 
-        var now = DateTime.UtcNow;
-
-        _logger.LogInformation("Sending daily summary emails for {Count} customers, last 24h ending {EndUtc}", customers.Count, now);
+        _logger.LogInformation("Sending daily summary emails for {Count} customers", customers.Count);
 
         foreach (var customer in customers)
         {
             try
             {
-                var html = await renderer.RenderDailySummaryAsync(customer.Id, now, ct);
+                var html = await renderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId, ct: ct);
                 if (html == null)
                 {
                     _logger.LogInformation("No data for {Email} in last 24h, skipping email", customer.Email);
                     continue;
                 }
 
-                var subject = $"hpoll Daily Summary - {now:d MMM yyyy}";
+                var tz = TimeZoneInfo.FindSystemTimeZoneById(customer.TimeZoneId);
+                var localNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+                var subject = $"hpoll Daily Summary - {localNow:d MMM yyyy}";
                 await sender.SendEmailAsync(customer.Email, subject, html, ct);
 
                 _logger.LogInformation("Email sent to {Email}", customer.Email);

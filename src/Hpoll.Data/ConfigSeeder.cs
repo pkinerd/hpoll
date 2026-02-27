@@ -30,6 +30,7 @@ public class ConfigSeeder
                 {
                     Name = config.Name,
                     Email = config.Email,
+                    TimeZoneId = config.TimeZoneId,
                 };
                 _db.Customers.Add(customer);
                 await _db.SaveChangesAsync(ct);
@@ -38,6 +39,7 @@ public class ConfigSeeder
             else
             {
                 customer.Name = config.Name;
+                customer.TimeZoneId = config.TimeZoneId;
                 customer.UpdatedAt = DateTime.UtcNow;
             }
 

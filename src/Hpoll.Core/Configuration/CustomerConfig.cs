@@ -12,6 +12,7 @@ public class CustomerConfig
 {
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string TimeZoneId { get; set; } = "Australia/Sydney";
     public List<HubConfig> Hubs { get; set; } = new();
 }
 
