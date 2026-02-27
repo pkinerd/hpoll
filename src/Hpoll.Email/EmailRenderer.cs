@@ -25,16 +25,16 @@ public class EmailRenderer : IEmailRenderer
         var effectiveNowUtc = nowUtc ?? DateTime.UtcNow;
         var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(effectiveNowUtc, tz);
 
+        // Query window is simply now minus 32 hours in absolute UTC time —
+        // no timezone handling needed for the data query itself
+        var startUtc = effectiveNowUtc.AddHours(-32);
+        var endUtc = effectiveNowUtc;
+
         // Snap to the end of the current 4-hour window so it's always included
         var bucketEndLocal = nowLocal.Date.AddHours(nowLocal.Hour / 4 * 4 + 4);
 
         // 7 windows of 4 hours each, covering the 28 hours ending at bucketEndLocal
         var bucketStartLocal = bucketEndLocal.AddHours(-28);
-
-        // Query 32 hours of data (4h extra overlap on each side) so readings
-        // near the boundary aren't missed when send time doesn't align with buckets
-        var startUtc = TimeZoneInfo.ConvertTimeToUtc(bucketStartLocal.AddHours(-4), tz);
-        var endUtc = TimeZoneInfo.ConvertTimeToUtc(bucketEndLocal.AddHours(4), tz);
 
         // Get all devices for this customer's hubs
         var hubIds = await _db.Hubs
@@ -55,8 +55,8 @@ public class EmailRenderer : IEmailRenderer
         if (readings.Count == 0)
         {
             _logger.LogInformation(
-                "No readings found for customer {CustomerId} in 24h window {Start} to {End} ({TZ}), skipping email",
-                customerId, startUtc, endUtc, timeZoneId);
+                "No readings found for customer {CustomerId} in 32h window {Start} to {End} (UTC), skipping email",
+                customerId, startUtc, endUtc);
             return null;
         }
 
@@ -65,7 +65,7 @@ public class EmailRenderer : IEmailRenderer
             .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == "motion_sensor")
             .CountAsync(ct);
 
-        // Build 6 x 4-hour window summaries using fixed local-time boundaries
+        // Build 7 x 4-hour window summaries using fixed local-time boundaries
         var windows = new List<WindowSummary>();
         for (int i = 0; i < 7; i++)
         {
