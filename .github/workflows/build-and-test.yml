@@ -40,6 +40,7 @@ jobs:
       - name: Test with coverage
         run: |
           dotnet test --no-build -c Release \
+            --settings coverlet.runsettings \
             --collect:"XPlat Code Coverage" \
             --logger "junit;LogFilePath=TestResults/results.xml" \
             --results-directory TestResults
