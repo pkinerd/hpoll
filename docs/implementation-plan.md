@@ -51,10 +51,13 @@ The 50k/day limit is **per app (client_id), shared across all customers**. Howev
 | 1 | 24 | 24 | ~2,083 |
 | 3 | 24 | 72 | ~694 |
 | 5 | 24 | 120 | ~416 |
+
 Most customers have 1 hub and a handful of devices. At 1-3 calls per hub, the rate limit supports **700-2,000 customers** — well within MVP target. Rate budgeting becomes relevant only beyond this scale.
+
 **Remaining research items (verify during POC):**
 1. Refresh token lifetime and failure modes
 2. Exact Remote API data coverage (which device types/properties are available remotely)
+
 ### Future option: local gateway
 If rate limits or ToS become constraints at scale, a **local gateway device** (e.g. Raspberry Pi shipped with each hub) could:
 - Poll the bridge locally via SSE (real-time events, no rate limits, no Remote API dependency)
