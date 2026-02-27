@@ -248,7 +248,7 @@ hpoll/
 ## Phase 1: POC
 **Goal:** Prove the core flow end-to-end for 5-10 customers.
 **Initial scope:** Motion sensor last-seen date/time and temperature readings only. These are the primary monitoring data points — motion detection (as demonstrated by the exploration scripts, particularly `8_combo_jq.sh`) and ambient temperature from the same multi-sensor devices. This exercises the full data pipeline: OAuth → cloud proxy → device/motion/temperature cross-join → storage → email, without the complexity of lights, scenes, or rules.
-**Success criteria:** Data flows from Hue hub → storage → summary email showing last motion timestamps and current temperatures per sensor device.
+**Success criteria:** Data flows from Hue hub → storage → summary email showing aggregated motion activity and temperature ranges (no individual device/sensor identifiers exposed).
 ### Customer & hub setup at POC stage
 Customers and hubs are configured directly in `appsettings.json`:
 ```json
@@ -335,10 +335,16 @@ This is sufficient for 5-10 customers and avoids building OAuth flow, CLI tools,
 - Handle 429 (rate limited) with exponential backoff (100ms initial, double each retry, cap 10s, max 5 retries)
 #### 1.6 — Email Generation & Sending
 - 1-2 email templates (MJML compiled to HTML, or Razor-based with inline CSS)
-- **POC email content (motion + temperature scope):**
-  - Per-sensor summary: device name, room (if available), last motion detected timestamp (with "X hours ago" relative time), current temperature reading
-  - Simple table or card layout — one row/card per sensor device
-  - Basic alerts: "no motion detected in 24h" (possible sensor issue), temperature outside normal range
+- **Privacy-first design:** Email contains only **summary/aggregate data** — no individual device names, sensor identifiers, or specific room/location names are exposed. This protects customer privacy in the email channel.
+- **POC email content — summarised into 4-hour windows across the day:**
+  - **Visual section (top of email):** As visual as practical given broad email client compatibility constraints (no JavaScript, limited CSS — use HTML tables, inline styles, background colours, and simple bar/block graphics). Aim for a quick-glance overview rather than raw numbers.
+    - **Motion location diversity per 4-hour window:** A visual indicator showing how many distinct sensor locations detected motion in each window (e.g. "activity in 3 of 5 areas" rendered as filled/empty blocks). Conveys spread of activity without naming specific rooms or sensors.
+    - **Total motion activity per 4-hour window:** A visual indicator of overall motion volume across all sensors (e.g. a simple bar or block chart showing relative activity level per window — low/medium/high).
+    - **Temperature range per 4-hour window:** Visual representation of the temperature spread — low, median, and high across all temperature sensors (not per-device). Could be rendered as a simple range bar or min/med/max markers per window.
+  - **Summary data section (bottom of email, below visuals):** Plain-text/tabular summary of the same data for accessibility and clients that don't render visual elements well:
+    - Per 4-hour window: location diversity count, total motion event count, temperature low/median/high
+    - Day-level totals/averages where useful
+  - **No individual device data** in the email — device-level detail is internal to the system only
 - `BackgroundService` that sends emails on a fixed schedule (e.g. 8 AM daily)
 - Send via AWS SES (credentials via env vars)
 #### 1.7 — Deploy
@@ -367,8 +373,8 @@ This is sufficient for 5-10 customers and avoids building OAuth flow, CLI tools,
 2. Config-driven customer/hub setup with manually-obtained tokens and application key (via `docs/scripts/`)
 3. Hourly polling of motion sensor status and temperature readings, stored in SQLite
 4. Daily token refresh keeping OAuth access tokens valid (application key is permanent)
-5. Daily summary email showing per-sensor: device name, last motion timestamp, current temperature
-6. Email renders correctly on a phone and in Gmail
+5. Daily summary email showing aggregated 4-hour window summaries: motion location diversity, total motion activity, and temperature range (low/median/high) — no individual device/sensor/location names exposed
+6. Email renders correctly on a phone and in Gmail — visual section at top, summary data table at bottom
 ---
 ## Phase 2: MVP
 **Goal:** Serve tens to hundreds of customers reliably.
@@ -468,7 +474,8 @@ POC (build order — config-driven, no UI — motion + temperature scope):
      with dual-header auth (Bearer + hue-application-key). Cross-resource join for names.
   4. Token refresh BackgroundService (daily) — POST /v2/oauth2/token with Basic auth
   5. Polling BackgroundService (hourly) — 3 calls/hub: motion, temperature, device
-  6. Email templates: per-sensor last motion timestamp + temperature reading
+  6. Email templates: privacy-first summary — 4-hour window aggregates (motion diversity,
+     total activity, temperature range), visual section + data table, no device/sensor names
   7. CI builds + pushes Docker image to Docker Hub; deploy to VPS via docker pull + docker run
 MVP (build after POC validated):
   1. Migrate to PostgreSQL + Docker Compose
@@ -506,8 +513,8 @@ MVP (build after POC validated):
 2. `docker pull` + `docker run` on VPS starts container: initialises SQLite DB if missing, seeds from config (incl. HueApplicationKey), starts all three services
 3. Token refresh keeps OAuth access tokens valid (verify by checking DB/logs after a refresh cycle). Application key remains unchanged (permanent).
 4. Hourly polling stores motion sensor timestamps and temperature readings in SQLite (3 API calls per hub: motion, temperature, device)
-5. Daily summary email generated showing per-sensor: device name, last motion time, current temperature
-6. Email renders correctly on phone and in Gmail/Outlook
+5. Daily summary email generated showing 4-hour window aggregates: motion location diversity, total activity, temperature low/median/high — no individual device/sensor names
+6. Email renders correctly on phone and in Gmail/Outlook — visual section readable at a glance, summary data table below
 7. Simulate bridge offline (unplug hub) → verify 503 detection and consecutive failure tracking
 8. Verify cross-resource join: motion/temperature sensor readings are correctly associated with device names
 ### MVP verification
