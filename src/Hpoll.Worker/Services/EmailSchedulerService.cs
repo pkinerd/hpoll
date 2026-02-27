@@ -27,21 +27,16 @@ public class EmailSchedulerService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Email scheduler started. Send time: {Time} UTC", _settings.SendTimeUtc);
+        _logger.LogInformation("Email scheduler started. Send times: {Times} UTC",
+            string.Join(", ", _settings.SendTimesUtc));
 
         while (!stoppingToken.IsCancellationRequested)
         {
             var now = DateTime.UtcNow;
-            var sendTime = ParseSendTime(now);
+            var nextSendTime = GetNextSendTime(now);
 
-            // If send time has already passed today, schedule for tomorrow
-            if (sendTime <= now)
-            {
-                sendTime = sendTime.AddDays(1);
-            }
-
-            var delay = sendTime - now;
-            _logger.LogInformation("Next email batch scheduled for {Time} (in {Delay})", sendTime, delay);
+            var delay = nextSendTime - now;
+            _logger.LogInformation("Next email batch scheduled for {Time} (in {Delay})", nextSendTime, delay);
 
             try
             {
@@ -68,14 +63,35 @@ public class EmailSchedulerService : BackgroundService
         }
     }
 
-    private DateTime ParseSendTime(DateTime today)
+    internal DateTime GetNextSendTime(DateTime now)
     {
-        if (TimeSpan.TryParse(_settings.SendTimeUtc, out var time))
+        var times = new List<TimeSpan>();
+        foreach (var entry in _settings.SendTimesUtc)
         {
-            return today.Date.Add(time);
+            if (TimeSpan.TryParse(entry, out var ts))
+                times.Add(ts);
+            else
+                _logger.LogWarning("Failed to parse send time '{Value}', ignoring", entry);
         }
-        _logger.LogWarning("Failed to parse SendTimeUtc '{Value}', defaulting to 08:00 UTC", _settings.SendTimeUtc);
-        return today.Date.AddHours(8);
+
+        if (times.Count == 0)
+        {
+            _logger.LogWarning("No valid send times configured, defaulting to 08:00 UTC");
+            times.Add(new TimeSpan(8, 0, 0));
+        }
+
+        times.Sort();
+
+        // Find the next send time today that is still in the future
+        foreach (var ts in times)
+        {
+            var candidate = now.Date.Add(ts);
+            if (candidate > now)
+                return candidate;
+        }
+
+        // All times today have passed — use the first time tomorrow
+        return now.Date.AddDays(1).Add(times[0]);
     }
 
     private async Task SendAllEmailsAsync(CancellationToken ct)

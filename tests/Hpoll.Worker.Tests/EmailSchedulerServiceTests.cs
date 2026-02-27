@@ -53,6 +53,14 @@ public class EmailSchedulerServiceTests : IDisposable
         await db.SaveChangesAsync();
     }
 
+    private EmailSchedulerService CreateService(EmailSettings settings)
+    {
+        return new EmailSchedulerService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<EmailSchedulerService>.Instance,
+            Options.Create(settings));
+    }
+
     [Fact]
     public async Task SendAllEmails_SendsToActiveCustomers()
     {
@@ -64,20 +72,14 @@ public class EmailSchedulerServiceTests : IDisposable
         _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        // Use a send time that is about to fire (1 second from now)
         var now = DateTime.UtcNow;
         var sendTime = now.AddSeconds(1).TimeOfDay;
-        var settings = Options.Create(new EmailSettings
+        var service = CreateService(new EmailSettings
         {
-            SendTimeUtc = $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}",
+            SendTimesUtc = new() { $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}" },
             FromAddress = "noreply@hpoll.com",
             AwsRegion = "us-east-1"
         });
-
-        var service = new EmailSchedulerService(
-            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<EmailSchedulerService>.Instance,
-            settings);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         try { await service.StartAsync(cts.Token); await Task.Delay(3000, cts.Token); }
@@ -101,17 +103,12 @@ public class EmailSchedulerServiceTests : IDisposable
 
         var now = DateTime.UtcNow;
         var sendTime = now.AddSeconds(1).TimeOfDay;
-        var settings = Options.Create(new EmailSettings
+        var service = CreateService(new EmailSettings
         {
-            SendTimeUtc = $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}",
+            SendTimesUtc = new() { $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}" },
             FromAddress = "noreply@hpoll.com",
             AwsRegion = "us-east-1"
         });
-
-        var service = new EmailSchedulerService(
-            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<EmailSchedulerService>.Instance,
-            settings);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         try { await service.StartAsync(cts.Token); await Task.Delay(3000, cts.Token); }
@@ -143,17 +140,12 @@ public class EmailSchedulerServiceTests : IDisposable
 
         var now = DateTime.UtcNow;
         var sendTime = now.AddSeconds(1).TimeOfDay;
-        var settings = Options.Create(new EmailSettings
+        var service = CreateService(new EmailSettings
         {
-            SendTimeUtc = $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}",
+            SendTimesUtc = new() { $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}" },
             FromAddress = "noreply@hpoll.com",
             AwsRegion = "us-east-1"
         });
-
-        var service = new EmailSchedulerService(
-            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<EmailSchedulerService>.Instance,
-            settings);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         try { await service.StartAsync(cts.Token); await Task.Delay(3000, cts.Token); }
@@ -167,17 +159,12 @@ public class EmailSchedulerServiceTests : IDisposable
     [Fact]
     public async Task GracefulShutdown_StopsWithoutException()
     {
-        var settings = Options.Create(new EmailSettings
+        var service = CreateService(new EmailSettings
         {
-            SendTimeUtc = "23:59",
+            SendTimesUtc = new() { "23:59" },
             FromAddress = "noreply@hpoll.com",
             AwsRegion = "us-east-1"
         });
-
-        var service = new EmailSchedulerService(
-            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<EmailSchedulerService>.Instance,
-            settings);
 
         await service.StartAsync(CancellationToken.None);
         // Stop immediately — should not throw
@@ -196,17 +183,12 @@ public class EmailSchedulerServiceTests : IDisposable
 
         var now = DateTime.UtcNow;
         var sendTime = now.AddSeconds(1).TimeOfDay;
-        var settings = Options.Create(new EmailSettings
+        var service = CreateService(new EmailSettings
         {
-            SendTimeUtc = $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}",
+            SendTimesUtc = new() { $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}" },
             FromAddress = "noreply@hpoll.com",
             AwsRegion = "us-east-1"
         });
-
-        var service = new EmailSchedulerService(
-            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<EmailSchedulerService>.Instance,
-            settings);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         try { await service.StartAsync(cts.Token); await Task.Delay(3000, cts.Token); }
@@ -218,30 +200,65 @@ public class EmailSchedulerServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task ParseSendTime_DefaultsTo8AM_OnInvalidFormat()
+    public async Task InvalidSendTimes_DefaultsTo8AM()
     {
-        await SeedCustomerAsync();
-
-        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("<html>Summary</html>");
-        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        // "invalid" is not a valid TimeSpan format — should default to 8:00 AM
-        var settings = Options.Create(new EmailSettings
+        var service = CreateService(new EmailSettings
         {
-            SendTimeUtc = "invalid",
+            SendTimesUtc = new() { "invalid" },
             FromAddress = "noreply@hpoll.com",
             AwsRegion = "us-east-1"
         });
 
-        var service = new EmailSchedulerService(
-            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<EmailSchedulerService>.Instance,
-            settings);
-
-        // Just verify it starts without throwing (the invalid format defaults to 8 AM)
+        // Just verify it starts without throwing
         await service.StartAsync(CancellationToken.None);
         await service.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public void GetNextSendTime_PicksNextFutureTime()
+    {
+        var service = CreateService(new EmailSettings
+        {
+            SendTimesUtc = new() { "06:00", "12:00", "18:00" },
+            FromAddress = "noreply@hpoll.com",
+            AwsRegion = "us-east-1"
+        });
+
+        // At 10:00, the next send time should be 12:00 today
+        var now = new DateTime(2026, 2, 28, 10, 0, 0, DateTimeKind.Utc);
+        var next = service.GetNextSendTime(now);
+        Assert.Equal(new DateTime(2026, 2, 28, 12, 0, 0), next);
+    }
+
+    [Fact]
+    public void GetNextSendTime_WrapsToTomorrow_WhenAllTimesHavePassed()
+    {
+        var service = CreateService(new EmailSettings
+        {
+            SendTimesUtc = new() { "06:00", "12:00", "18:00" },
+            FromAddress = "noreply@hpoll.com",
+            AwsRegion = "us-east-1"
+        });
+
+        // At 20:00, all times today have passed — should wrap to 06:00 tomorrow
+        var now = new DateTime(2026, 2, 28, 20, 0, 0, DateTimeKind.Utc);
+        var next = service.GetNextSendTime(now);
+        Assert.Equal(new DateTime(2026, 3, 1, 6, 0, 0), next);
+    }
+
+    [Fact]
+    public void GetNextSendTime_PicksEarliestTime_WhenBeforeAll()
+    {
+        var service = CreateService(new EmailSettings
+        {
+            SendTimesUtc = new() { "18:00", "06:00", "12:00" },
+            FromAddress = "noreply@hpoll.com",
+            AwsRegion = "us-east-1"
+        });
+
+        // At 03:00, the next send time should be 06:00 today (list is unsorted)
+        var now = new DateTime(2026, 2, 28, 3, 0, 0, DateTimeKind.Utc);
+        var next = service.GetNextSendTime(now);
+        Assert.Equal(new DateTime(2026, 2, 28, 6, 0, 0), next);
     }
 }
