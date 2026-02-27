@@ -76,6 +76,7 @@ This is noted as a scaling escape hatch, not a POC/MVP requirement.
 | **Database** | **SQLite** | **PostgreSQL** | SQLite: zero-ops for POC (single file, no container). PostgreSQL: production-grade for MVP with concurrent access, JSON, managed backups |
 | **Email templating** | MJML or Razor-based with inline CSS | Same, refined | MJML for max client compatibility; Razor as alternative |
 | **Email sending** | SendGrid free tier or SMTP | AWS SES or SendGrid | Cost-effective, reliable |
+| **Container registry** | Docker Hub | Same | CI builds and pushes image on every merge to main/dev. VPS pulls from registry to deploy |
 | **Containerisation** | Docker + SQLite (single container) | Docker Compose (app + PostgreSQL) | POC: single container, SQLite file inside. MVP: separate app + DB containers |
 | **Hosting** | Docker on VPS | VPS with managed PostgreSQL | Single container for POC; managed DB for MVP backups |
 | **Job scheduling** | Timer-based in `BackgroundService` | Hangfire or Quartz.NET (PostgreSQL persistence) | Simple timers for POC; reliable scheduling with retry for MVP |
@@ -173,7 +174,8 @@ This is sufficient for 5-10 customers and avoids building OAuth flow, CLI tools,
 - Legal review of ToS interpretation for commercial monitoring model
 - **Gate:** Do not proceed to full build until API viability is confirmed
 #### 1.2 — Project Scaffolding
-- .NET solution structure with Dockerfile
+- .NET solution structure with Dockerfile (multi-stage build: SDK image for build/publish, runtime image for final layer)
+- Update `.github/workflows/build-and-test.yml` to build and push Docker image to Docker Hub after successful build — triggers on push to main/dev. Image tagged with `latest` and short commit SHA (e.g. `hpoll:abc1234`). Requires `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets
 - EF Core DbContext with SQLite provider + initial migration
 - Config binding: `IOptions<List<CustomerConfig>>` to read customers/hubs from `appsettings.json`
 - On startup: seed/sync DB from config (create/update customer and hub records)
@@ -208,9 +210,11 @@ This is sufficient for 5-10 customers and avoids building OAuth flow, CLI tools,
 - `BackgroundService` that sends emails on a fixed schedule (e.g. 8 AM daily)
 - Send via SendGrid free tier or similar SMTP
 #### 1.7 — Deploy
-- `docker build` + `docker run` on a VPS
+- `docker pull` from Docker Hub + `docker run` on a VPS — image is built and pushed by CI (see Phase 1.2), no local build needed on the server
 - SQLite database file persisted via Docker volume
-- `appsettings.json` or environment variables for secrets and customer config
+- Runtime configuration via environment variables passed to `docker run` (e.g. `-e ConnectionStrings__Default=... -e SendGrid__ApiKey=...`). `appsettings.json` baked into the image contains non-secret defaults; secrets always via env vars
+- Volume mounts: `-v /data/hpoll:/app/data` for SQLite DB persistence
+- Example deployment: `docker pull <dockerhub-user>/hpoll:latest && docker run -d --restart unless-stopped -v /data/hpoll:/app/data -e "Customers__0__Name=..." <dockerhub-user>/hpoll:latest`
 - **DB backup/recovery:** admin can download the SQLite `.db` file from the host at any time. On redeployment, mount the existing DB file and the service resumes with all accumulated readings and refreshed tokens — no need to re-register hubs. Config tokens are only used for initial seeding; after that, the DB holds the latest refreshed tokens.
 ### What to skip at POC
 - OAuth flow in code (manual token setup via Postman)
@@ -220,7 +224,7 @@ This is sufficient for 5-10 customers and avoids building OAuth flow, CLI tools,
 - Sophisticated rules engine (just basic "hub offline" / "battery low" detection)
 - Rate limit budgeting (irrelevant at 5-10 customers)
 - Automated tests (manual verification)
-- CI/CD automation (deploy manually)
+- Full CD automation (deploy manually via `docker pull` + `docker run` — but image build+push is automated in CI)
 - Disconnection recovery / backfill logic
 ### POC deliverables
 1. Docker container running three background services (poll, refresh, email)
@@ -291,8 +295,7 @@ This is sufficient for 5-10 customers and avoids building OAuth flow, CLI tools,
 - Audit log for admin actions
 - SPF, DKIM, DMARC for email sending domain
 #### 2.9 — CI/CD & Testing
-- Fill in `.github/workflows/build-and-test.yml` TODOs: `dotnet build`, `dotnet test`
-- Add Docker image build step to the build workflow — `docker build` runs after tests pass, verifying the Dockerfile produces a valid image on every push/PR. No registry push at this stage (build-only to catch Dockerfile regressions early)
+- Fill in `.github/workflows/build-and-test.yml` TODOs: `dotnet build`, `dotnet test` (Docker build+push already wired up from POC Phase 1.2)
 - Automated tests: unit tests for rules engine and health evaluation, integration tests for Hue client
 - Deploy pipeline aligned with existing Issues #0003, #0005, #0006
 ### What to skip at MVP
@@ -326,7 +329,7 @@ POC (build order — config-driven, no UI):
   4. Token refresh BackgroundService (daily)
   5. Polling BackgroundService (hourly)
   6. Email templates + scheduled sending (daily)
-  7. Docker build, deploy to VPS, test with real hub + manually-obtained tokens
+  7. CI builds + pushes Docker image to Docker Hub; deploy to VPS via docker pull + docker run
 MVP (build after POC validated):
   1. Migrate to PostgreSQL + Docker Compose
   2. OAuth flow in code + admin web portal (Razor Pages)
@@ -335,7 +338,7 @@ MVP (build after POC validated):
   5. Rules & alerting engine
   6. Per-customer email scheduling
   7. Security hardening
-  8. CI/CD pipeline + automated tests + Docker image build in CI
+  8. CI/CD pipeline + automated tests (Docker build+push already from POC)
   9. Operational tooling (logging, metrics, rate tracking)
 ```
 ---
@@ -351,16 +354,17 @@ MVP (build after POC validated):
 ## Existing Files to Modify
 | File | When | Change |
 |---|---|---|
-| `.github/workflows/build-and-test.yml` | MVP (Phase 2.9) | Fill in TODO build/test steps with `dotnet build`, `dotnet test`. Add a Docker image build step (`docker build`) after tests pass to verify the Dockerfile on every push/PR |
+| `.github/workflows/build-and-test.yml` | POC (Phase 1.2) | Fill in TODO build steps with `dotnet build`. Add Docker build+push to Docker Hub job (login, build, tag with `latest` + commit SHA, push). Requires `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets. Test steps filled in at MVP (Phase 2.9) with `dotnet test` |
 | `README.md` | POC (Phase 1.2) | Update with project description, setup instructions |
 ## Verification
 ### POC verification
-1. `docker run` starts container: initialises SQLite DB if missing, seeds from config, starts all three services
-2. Token refresh keeps access tokens valid (verify by checking DB/logs after a refresh cycle)
-3. Hourly polling stores device state snapshots in SQLite
-4. Daily summary email generated and sent to a test customer
-5. Email renders correctly on phone and in Gmail/Outlook
-6. Simulate bridge offline (unplug hub) → verify 503 detection and consecutive failure tracking
+1. Push to main/dev triggers CI workflow: `dotnet build` succeeds, Docker image built and pushed to Docker Hub
+2. `docker pull` + `docker run` on VPS starts container: initialises SQLite DB if missing, seeds from config, starts all three services
+3. Token refresh keeps access tokens valid (verify by checking DB/logs after a refresh cycle)
+4. Hourly polling stores device state snapshots in SQLite
+5. Daily summary email generated and sent to a test customer
+6. Email renders correctly on phone and in Gmail/Outlook
+7. Simulate bridge offline (unplug hub) → verify 503 detection and consecutive failure tracking
 ### MVP verification
 1. `docker compose up` runs app + PostgreSQL containers
 2. `dotnet test` passes (unit + integration)
@@ -369,5 +373,4 @@ MVP (build after POC validated):
 5. Emails send at individual customer-preferred times across timezones
 6. Rate limit tracking: verify daily API call counter is accurate
 7. Load test: simulate 500+ customers, verify polling completes within hourly window
-8. CI pipeline runs end-to-end on push (build, test, Docker image build)
-9. Docker image builds successfully in CI — `docker build` completes without errors
+8. CI pipeline runs end-to-end on push (build, test, Docker image push — image push already working from POC)
