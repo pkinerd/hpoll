@@ -29,7 +29,8 @@ RUN mkdir -p /app/data && chown -R hpoll:hpoll /app/data
 
 COPY --from=build /app/publish .
 COPY entrypoint.sh /app/entrypoint.sh
-RUN chown -R hpoll:hpoll /app && chmod +x /app/entrypoint.sh
+RUN sed -i 's/\r$//' /app/entrypoint.sh \
+    && chown -R hpoll:hpoll /app && chmod +x /app/entrypoint.sh
 
 ENV DataPath=/app/data
 ENV DOTNET_ENVIRONMENT=Production
