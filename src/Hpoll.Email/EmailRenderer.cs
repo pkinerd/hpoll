@@ -29,13 +29,13 @@ public class EmailRenderer : IEmailRenderer
         var bucketEndLocal = nowLocal.Date.AddHours(nowLocal.Hour / 4 * 4);
         if (bucketEndLocal > nowLocal) bucketEndLocal = bucketEndLocal.AddHours(-4);
 
-        // 6 windows of 4 hours each, covering the 24 hours ending at bucketEndLocal
-        var bucketStartLocal = bucketEndLocal.AddHours(-24);
+        // 7 windows of 4 hours each, covering the 28 hours ending at bucketEndLocal
+        var bucketStartLocal = bucketEndLocal.AddHours(-28);
 
-        // Query 28 hours of data (4h extra overlap) so readings near the
-        // boundary aren't missed when send time doesn't align with buckets
+        // Query 32 hours of data (4h extra overlap on each side) so readings
+        // near the boundary aren't missed when send time doesn't align with buckets
         var startUtc = TimeZoneInfo.ConvertTimeToUtc(bucketStartLocal.AddHours(-4), tz);
-        var endUtc = TimeZoneInfo.ConvertTimeToUtc(bucketEndLocal, tz);
+        var endUtc = TimeZoneInfo.ConvertTimeToUtc(bucketEndLocal.AddHours(4), tz);
 
         // Get all devices for this customer's hubs
         var hubIds = await _db.Hubs
@@ -68,7 +68,7 @@ public class EmailRenderer : IEmailRenderer
 
         // Build 6 x 4-hour window summaries using fixed local-time boundaries
         var windows = new List<WindowSummary>();
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 7; i++)
         {
             var windowStartLocal = bucketStartLocal.AddHours(i * 4);
             var windowEndLocal = windowStartLocal.AddHours(4);
