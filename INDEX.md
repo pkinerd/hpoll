@@ -9,3 +9,4 @@
 | 0005 | Setup CI pipeline for dev/ci | open | medium | planning |
 | 0006 | Setup CD pipeline to test and prod | open | medium | planning |
 | 0007 | Research API docs for Hue APIs and make available to Claude | open | medium | documentation, planning |
+| 0008 | Implementation plan | open | medium | planning, documentation |
