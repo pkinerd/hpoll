@@ -119,15 +119,13 @@ public class EmailRenderer : IEmailRenderer
         // Format the timezone name for display
         var tzAbbrev = tz.IsDaylightSavingTime(nowLocal) ? tz.DaylightName : tz.StandardName;
 
-        return BuildHtml(bucketStartLocal, bucketEndLocal, tzAbbrev, windows);
+        windows.Reverse(); // newest window first for readability
+        var displayEndLocal = bucketEndLocal > nowLocal ? nowLocal : bucketEndLocal;
+        return BuildHtml(bucketStartLocal, displayEndLocal, tzAbbrev, windows);
     }
 
     private static string BuildHtml(DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows)
     {
-        // Determine max motion events for relative bar sizing
-        var maxMotion = windows.Max(w => w.TotalMotionEvents);
-        if (maxMotion == 0) maxMotion = 1;
-
         var sb = new StringBuilder();
         sb.AppendLine("<!DOCTYPE html>");
         sb.AppendLine("<html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"></head>");
@@ -144,36 +142,49 @@ public class EmailRenderer : IEmailRenderer
         sb.AppendLine("<tr><td style=\"padding:20px;\">");
         sb.AppendLine("<h2 style=\"margin:0 0 15px;font-size:16px;color:#2c3e50;\">Activity Overview</h2>");
 
-        // Motion activity bars
+        // Motion activity bars — capped at 5 events
         sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-bottom:20px;\">");
-        sb.AppendLine("<tr><td colspan=\"2\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Motion Activity</td></tr>");
+        sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Motion Activity</td></tr>");
         foreach (var w in windows)
         {
-            var pct = maxMotion > 0 ? (int)(100.0 * w.TotalMotionEvents / maxMotion) : 0;
-            var color = pct > 66 ? "#e74c3c" : pct > 33 ? "#f39c12" : "#27ae60";
+            var cappedEvents = Math.Min(w.TotalMotionEvents, 5);
+            var pct = cappedEvents * 20;
+            var color = w.TotalMotionEvents == 0 ? "#e74c3c"
+                      : w.TotalMotionEvents == 1 ? "#f39c12"
+                      : "#27ae60";
+            var barWidth = Math.Max(pct, 10);
+            var label = w.TotalMotionEvents >= 5 ? "5+" : w.TotalMotionEvents.ToString();
+
             sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;white-space:nowrap;\">{w.Label}</td>");
             sb.AppendLine($"<td><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"><tr>");
-            sb.AppendLine($"<td style=\"background-color:{color};width:{Math.Max(pct, 2)}%;height:16px;border-radius:3px;\"></td>");
-            sb.AppendLine($"<td style=\"width:{100 - Math.Max(pct, 2)}%;\"></td>");
-            sb.AppendLine("</tr></table></td></tr>");
+            sb.AppendLine($"<td style=\"background-color:{color};width:{barWidth}%;height:16px;border-radius:3px;\"></td>");
+            sb.AppendLine($"<td style=\"width:{100 - barWidth}%;\"></td>");
+            sb.AppendLine("</tr></table></td>");
+            sb.AppendLine($"<td style=\"font-size:11px;color:#777;width:24px;text-align:right;\">{label}</td>");
+            sb.AppendLine("</tr>");
         }
         sb.AppendLine("</table>");
 
-        // Location diversity blocks
+        // Location diversity bars — active/total as percentage
         sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-bottom:20px;\">");
-        sb.AppendLine("<tr><td colspan=\"2\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Location Diversity</td></tr>");
+        sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Location Diversity</td></tr>");
         foreach (var w in windows)
         {
             var total = Math.Max(w.TotalMotionSensors, 1);
             var active = Math.Min(w.DevicesWithMotion, total);
+            var pct = (int)(100.0 * active / total);
+            var color = active == 0 ? "#e74c3c"
+                      : active == 1 ? "#f39c12"
+                      : "#27ae60";
+            var barWidth = Math.Max(pct, 10);
+
             sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;white-space:nowrap;\">{w.Label}</td>");
-            sb.Append("<td>");
-            for (int i = 0; i < total && i < 10; i++)
-            {
-                var blockColor = i < active ? "#3498db" : "#ecf0f1";
-                sb.Append($"<span style=\"display:inline-block;width:16px;height:16px;background-color:{blockColor};border-radius:3px;margin-right:3px;\"></span>");
-            }
-            sb.AppendLine($" <span style=\"font-size:11px;color:#999;\">{active}/{total}</span></td></tr>");
+            sb.AppendLine($"<td><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"><tr>");
+            sb.AppendLine($"<td style=\"background-color:{color};width:{barWidth}%;height:16px;border-radius:3px;\"></td>");
+            sb.AppendLine($"<td style=\"width:{100 - barWidth}%;\"></td>");
+            sb.AppendLine("</tr></table></td>");
+            sb.AppendLine($"<td style=\"font-size:11px;color:#777;width:36px;text-align:right;\">{active}/{total}</td>");
+            sb.AppendLine("</tr>");
         }
         sb.AppendLine("</table>");
 
@@ -192,30 +203,12 @@ public class EmailRenderer : IEmailRenderer
             }
             else
             {
-                sb.AppendLine("<td colspan=\"3\" style=\"text-align:center;font-size:12px;color:#ccc;\">No data</td>");
+                sb.AppendLine("<td></td><td></td><td></td>");
             }
             sb.AppendLine("</tr>");
         }
         sb.AppendLine("</table>");
 
-        sb.AppendLine("</td></tr>");
-
-        // Summary data table
-        sb.AppendLine("<tr><td style=\"padding:20px;border-top:1px solid #eee;\">");
-        sb.AppendLine("<h2 style=\"margin:0 0 15px;font-size:16px;color:#2c3e50;\">Summary Data</h2>");
-        sb.AppendLine("<table width=\"100%\" cellpadding=\"6\" cellspacing=\"0\" style=\"font-size:12px;border-collapse:collapse;\">");
-        sb.AppendLine("<tr style=\"background-color:#f8f9fa;\"><th style=\"text-align:left;border-bottom:2px solid #dee2e6;\">Window</th><th style=\"text-align:center;border-bottom:2px solid #dee2e6;\">Areas Active</th><th style=\"text-align:center;border-bottom:2px solid #dee2e6;\">Motion Events</th><th style=\"text-align:center;border-bottom:2px solid #dee2e6;\">Temp Low</th><th style=\"text-align:center;border-bottom:2px solid #dee2e6;\">Temp Med</th><th style=\"text-align:center;border-bottom:2px solid #dee2e6;\">Temp High</th></tr>");
-        foreach (var w in windows)
-        {
-            sb.AppendLine($"<tr><td style=\"border-bottom:1px solid #eee;\">{w.Label}</td>");
-            sb.AppendLine($"<td style=\"text-align:center;border-bottom:1px solid #eee;\">{w.DevicesWithMotion}/{w.TotalMotionSensors}</td>");
-            sb.AppendLine($"<td style=\"text-align:center;border-bottom:1px solid #eee;\">{w.TotalMotionEvents}</td>");
-            sb.AppendLine($"<td style=\"text-align:center;border-bottom:1px solid #eee;\">{(w.TemperatureMin.HasValue ? $"{w.TemperatureMin:F1}" : "\u2014")}</td>");
-            sb.AppendLine($"<td style=\"text-align:center;border-bottom:1px solid #eee;\">{(w.TemperatureMedian.HasValue ? $"{w.TemperatureMedian:F1}" : "\u2014")}</td>");
-            sb.AppendLine($"<td style=\"text-align:center;border-bottom:1px solid #eee;\">{(w.TemperatureMax.HasValue ? $"{w.TemperatureMax:F1}" : "\u2014")}</td>");
-            sb.AppendLine("</tr>");
-        }
-        sb.AppendLine("</table>");
         sb.AppendLine("</td></tr>");
 
         // Footer
