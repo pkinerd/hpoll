@@ -85,13 +85,15 @@ public class PollingService : BackgroundService
             var deviceResponse = await hueClient.GetDevicesAsync(hub.AccessToken, hub.HueApplicationKey, ct);
             apiCalls++;
 
-            // Build device lookup map: serviceId -> device
-            var deviceMap = new Dictionary<string, Hpoll.Core.Models.HueDeviceResource>();
+            // Build device lookup: device ID -> device (for owner.rid lookups)
+            // Also build service ID -> device (for cross-referencing by sensor ID)
+            var deviceById = deviceResponse.Data.ToDictionary(d => d.Id, d => d);
+            var deviceByServiceId = new Dictionary<string, Hpoll.Core.Models.HueDeviceResource>();
             foreach (var device in deviceResponse.Data)
             {
                 foreach (var service in device.Services)
                 {
-                    deviceMap[service.Rid] = device;
+                    deviceByServiceId[service.Rid] = device;
                 }
             }
 
@@ -100,7 +102,8 @@ public class PollingService : BackgroundService
             {
                 if (motion.Motion.MotionReport == null) continue;
 
-                var deviceName = deviceMap.TryGetValue(motion.Owner.Rid, out var ownerDevice)
+                // owner.rid is the parent device ID
+                var deviceName = deviceById.TryGetValue(motion.Owner.Rid, out var ownerDevice)
                     ? ownerDevice.Metadata.Name
                     : "Unknown";
 
@@ -124,7 +127,8 @@ public class PollingService : BackgroundService
             {
                 if (temp.Temperature.TemperatureReport == null) continue;
 
-                var deviceName = deviceMap.TryGetValue(temp.Owner.Rid, out var ownerDevice)
+                // owner.rid is the parent device ID
+                var deviceName = deviceById.TryGetValue(temp.Owner.Rid, out var ownerDevice)
                     ? ownerDevice.Metadata.Name
                     : "Unknown";
 

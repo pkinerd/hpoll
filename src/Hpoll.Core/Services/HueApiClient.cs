@@ -58,7 +58,7 @@ public class HueApiClient : IHueApiClient
         var credentials = Convert.ToBase64String(
             Encoding.UTF8.GetBytes($"{_settings.HueApp.ClientId}:{_settings.HueApp.ClientSecret}"));
 
-        var request = new HttpRequestMessage(HttpMethod.Post, TokenUrl);
+        using var request = new HttpRequestMessage(HttpMethod.Post, TokenUrl);
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
         request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
@@ -70,9 +70,9 @@ public class HueApiClient : IHueApiClient
 
         if (!response.IsSuccessStatusCode)
         {
-            var body = await response.Content.ReadAsStringAsync(ct);
+            _logger.LogWarning("Token refresh failed with status {StatusCode}", (int)response.StatusCode);
             throw new HttpRequestException(
-                $"Token refresh failed with status {(int)response.StatusCode}: {body}",
+                $"Token refresh failed with status {(int)response.StatusCode}",
                 null,
                 response.StatusCode);
         }
@@ -88,7 +88,7 @@ public class HueApiClient : IHueApiClient
     {
         var client = _httpClientFactory.CreateClient();
 
-        var request = new HttpRequestMessage(HttpMethod.Get, $"{ClipV2BaseUrl}{path}");
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{ClipV2BaseUrl}{path}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         request.Headers.Add("hue-application-key", applicationKey);
 
@@ -98,19 +98,11 @@ public class HueApiClient : IHueApiClient
 
         if (!response.IsSuccessStatusCode)
         {
-            var body = await response.Content.ReadAsStringAsync(ct);
             var statusCode = (int)response.StatusCode;
-
-            if (statusCode is 429 or 503)
-            {
-                throw new HttpRequestException(
-                    $"Hue API returned {statusCode} for {path}: {body}",
-                    null,
-                    response.StatusCode);
-            }
+            _logger.LogWarning("Hue API request failed for {Path} with status {StatusCode}", path, statusCode);
 
             throw new HttpRequestException(
-                $"Hue API request failed for {path} with status {statusCode}: {body}",
+                $"Hue API request failed for {path} with status {statusCode}",
                 null,
                 response.StatusCode);
         }
