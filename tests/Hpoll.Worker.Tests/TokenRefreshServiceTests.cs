@@ -65,9 +65,9 @@ public class TokenRefreshServiceTests : IDisposable
         return hub;
     }
 
-    private async Task InvokeRefreshAllTokensAsync(TokenRefreshService service, CancellationToken ct)
+    private async Task InvokeRefreshExpiringTokensAsync(TokenRefreshService service, CancellationToken ct)
     {
-        var method = typeof(TokenRefreshService).GetMethod("RefreshAllTokensAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+        var method = typeof(TokenRefreshService).GetMethod("RefreshExpiringTokensAsync", BindingFlags.NonPublic | BindingFlags.Instance);
         var task = (Task)method!.Invoke(service, new object[] { ct })!;
         await task;
     }
@@ -90,7 +90,7 @@ public class TokenRefreshServiceTests : IDisposable
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<TokenRefreshService>.Instance);
 
-        await InvokeRefreshAllTokensAsync(service, CancellationToken.None);
+        await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
@@ -110,7 +110,7 @@ public class TokenRefreshServiceTests : IDisposable
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<TokenRefreshService>.Instance);
 
-        await InvokeRefreshAllTokensAsync(service, CancellationToken.None);
+        await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
@@ -142,7 +142,7 @@ public class TokenRefreshServiceTests : IDisposable
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<TokenRefreshService>.Instance);
 
-        await InvokeRefreshAllTokensAsync(service, CancellationToken.None);
+        await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
 
         Assert.Equal(3, callCount);
         using var db = CreateDb();
