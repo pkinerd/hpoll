@@ -381,4 +381,150 @@ public class EmailRendererTests : IDisposable
         Assert.Contains("08:00", html);
         Assert.Contains("12:00", html);
     }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_DoesNotContainSummaryDataTable()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.DoesNotContain("Summary Data", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_ZeroMotionEvents_ShowsRedBar()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        // Only temperature readings, no motion events
+        AddTemp(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 20.0);
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // Red color should appear for zero-event windows
+        Assert.Contains("#e74c3c", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_ManyMotionEvents_CapsBarAt5Plus()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        // Add 8 motion events in one window
+        for (int i = 0; i < 8; i++)
+        {
+            AddMotion(device.Id, new DateTime(2026, 2, 27, 9, 0, 0, DateTimeKind.Utc).AddMinutes(i * 5));
+        }
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("5+", html);
+        Assert.Contains("#27ae60", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_WindowsAreNewestFirst()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // The newest window (08:00–12:00 on Feb 28) should appear before the oldest (08:00–12:00 on Feb 27)
+        // in the Motion Activity section. Both have label "08:00–12:00" but newest is listed first.
+        var motionIdx = html.IndexOf("Motion Activity");
+        var firstWindowLabel = html.IndexOf("08:00", motionIdx + "Motion Activity".Length);
+        Assert.True(firstWindowLabel > motionIdx, "First window after Motion Activity header should be the newest");
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_GeneratePreviewHtml()
+    {
+        var (customer, hub, device1) = await SeedBaseDataAsync();
+
+        var device2 = new Device { HubId = hub.Id, HueDeviceId = "device-002", DeviceType = "motion_sensor", Name = "Sensor 2" };
+        var device3 = new Device { HubId = hub.Id, HueDeviceId = "device-003", DeviceType = "motion_sensor", Name = "Sensor 3" };
+        _db.Devices.AddRange(device2, device3);
+        await _db.SaveChangesAsync();
+
+        // Window 08:00–12:00 Feb 27: 3 events, 2 devices — GREEN activity, GREEN diversity
+        AddMotion(device1.Id, new DateTime(2026, 2, 27, 9, 0, 0, DateTimeKind.Utc));
+        AddMotion(device1.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        AddMotion(device2.Id, new DateTime(2026, 2, 27, 11, 0, 0, DateTimeKind.Utc));
+        AddTemp(device1.Id, new DateTime(2026, 2, 27, 9, 0, 0, DateTimeKind.Utc), 18.5);
+        AddTemp(device1.Id, new DateTime(2026, 2, 27, 11, 0, 0, DateTimeKind.Utc), 21.0);
+
+        // Window 12:00–16:00 Feb 27: 1 event, 1 device — YELLOW activity, YELLOW diversity
+        AddMotion(device1.Id, new DateTime(2026, 2, 27, 14, 0, 0, DateTimeKind.Utc));
+        AddTemp(device1.Id, new DateTime(2026, 2, 27, 14, 0, 0, DateTimeKind.Utc), 22.5);
+
+        // Window 16:00–20:00 Feb 27: 0 events — RED activity, RED diversity
+        AddTemp(device1.Id, new DateTime(2026, 2, 27, 18, 0, 0, DateTimeKind.Utc), 20.0);
+
+        // Window 20:00–00:00 Feb 27–28: 6 events, 3 devices — GREEN 5+, GREEN diversity
+        AddMotion(device1.Id, new DateTime(2026, 2, 27, 21, 0, 0, DateTimeKind.Utc));
+        AddMotion(device1.Id, new DateTime(2026, 2, 27, 22, 0, 0, DateTimeKind.Utc));
+        AddMotion(device2.Id, new DateTime(2026, 2, 27, 21, 30, 0, DateTimeKind.Utc));
+        AddMotion(device2.Id, new DateTime(2026, 2, 27, 22, 30, 0, DateTimeKind.Utc));
+        AddMotion(device3.Id, new DateTime(2026, 2, 27, 23, 0, 0, DateTimeKind.Utc));
+        AddMotion(device3.Id, new DateTime(2026, 2, 27, 23, 30, 0, DateTimeKind.Utc));
+        AddTemp(device1.Id, new DateTime(2026, 2, 27, 22, 0, 0, DateTimeKind.Utc), 19.0);
+
+        // Window 00:00–04:00 Feb 28: 0 events — RED activity, RED diversity
+
+        // Window 04:00–08:00 Feb 28: 2 events, 1 device — GREEN activity, YELLOW diversity
+        AddMotion(device1.Id, new DateTime(2026, 2, 28, 5, 0, 0, DateTimeKind.Utc));
+        AddMotion(device1.Id, new DateTime(2026, 2, 28, 6, 0, 0, DateTimeKind.Utc));
+        AddTemp(device1.Id, new DateTime(2026, 2, 28, 6, 0, 0, DateTimeKind.Utc), 17.5);
+
+        // Window 08:00–12:00 Feb 28 (current): 1 event, 1 device — YELLOW
+        AddMotion(device2.Id, new DateTime(2026, 2, 28, 8, 30, 0, DateTimeKind.Utc));
+
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        var previewPath = Path.Combine(Path.GetTempPath(), "hpoll_email_preview.html");
+        File.WriteAllText(previewPath, html);
+
+        Assert.NotNull(html);
+        Assert.Contains("Daily Activity Summary", html);
+        Assert.Contains("Motion Activity", html);
+        Assert.Contains("Location Diversity", html);
+        Assert.DoesNotContain("Summary Data", html);
+    }
+
+    private void AddMotion(int deviceId, DateTime timestamp)
+    {
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = deviceId,
+            Timestamp = timestamp,
+            ReadingType = "motion",
+            Value = $"{{\"motion\":true,\"changed\":\"{timestamp:O}\"}}"
+        });
+    }
+
+    private void AddTemp(int deviceId, DateTime timestamp, double temp)
+    {
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = deviceId,
+            Timestamp = timestamp,
+            ReadingType = "temperature",
+            Value = $"{{\"temperature\":{temp},\"changed\":\"{timestamp:O}\"}}"
+        });
+    }
 }
