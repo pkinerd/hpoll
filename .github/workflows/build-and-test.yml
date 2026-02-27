@@ -76,7 +76,6 @@ jobs:
     name: Docker Build & Push
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
     timeout-minutes: 30
 
     steps:
@@ -96,17 +95,31 @@ jobs:
         id: meta
         run: |
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/hpoll"
           echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-          echo "image=${{ secrets.DOCKERHUB_USERNAME }}/hpoll" >> "$GITHUB_OUTPUT"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+
+          # Build tag list based on context
+          TAGS="${IMAGE}:${SHORT_SHA}"
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            TAGS="${TAGS},${IMAGE}:latest"
+          elif [ "${{ github.ref }}" = "refs/heads/dev" ]; then
+            TAGS="${TAGS},${IMAGE}:dev"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            TAGS="${TAGS},${IMAGE}:pr-${{ github.event.pull_request.number }}"
+          else
+            # Branch build — sanitize branch name for use as a tag
+            BRANCH_TAG=$(echo "${{ github.ref_name }}" | sed 's|[^a-zA-Z0-9._-]|-|g' | cut -c1-128)
+            TAGS="${TAGS},${IMAGE}:${BRANCH_TAG}"
+          fi
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
         with:
           context: .
           push: true
-          tags: |
-            ${{ steps.meta.outputs.image }}:latest
-            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.short_sha }}
+          tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
