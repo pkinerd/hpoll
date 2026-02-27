@@ -39,6 +39,11 @@ variables use `__` (double underscore) as section separators.
 Customers and their linked hubs are defined as a JSON array. Each customer has a
 name, email address (for daily reports), and one or more hubs.
 
+The `bridgeId` is the unique hardware identifier of the Hue Bridge (the serial
+number printed on the device, also visible in the Hue app). It is not sent to
+the Hue API — hpoll uses it internally as a unique key to match configuration
+entries to database records and to identify hubs in log messages.
+
 The `hueApplicationKey` is the `username` you receive when pressing the bridge
 link button and creating a new API user (sometimes shown as a 40+ character hex
 string). In the v1 CLIP API this was passed as a URL path segment; in the v2
