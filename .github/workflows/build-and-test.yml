@@ -100,7 +100,7 @@ jobs:
           echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
 
           # Build tag list based on context
-          TAGS="${IMAGE}:${SHORT_SHA}"
+          TAGS="${IMAGE}:${SHORT_SHA},${IMAGE}:latest-any"
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             TAGS="${TAGS},${IMAGE}:latest"
           elif [ "${{ github.ref }}" = "refs/heads/dev" ]; then
