@@ -28,13 +28,12 @@ RUN groupadd -r hpoll && useradd -r -g hpoll -d /app -s /sbin/nologin hpoll
 RUN mkdir -p /app/data && chown -R hpoll:hpoll /app/data
 
 COPY --from=build /app/publish .
-RUN chown -R hpoll:hpoll /app
-
-USER hpoll
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chown -R hpoll:hpoll /app && chmod +x /app/entrypoint.sh
 
 ENV DataPath=/app/data
 ENV DOTNET_ENVIRONMENT=Production
 
 VOLUME ["/app/data"]
 
-ENTRYPOINT ["dotnet", "Hpoll.Worker.dll"]
+ENTRYPOINT ["/app/entrypoint.sh"]

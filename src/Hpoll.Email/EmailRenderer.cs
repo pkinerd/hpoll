@@ -19,10 +19,22 @@ public class EmailRenderer : IEmailRenderer
         _logger = logger;
     }
 
-    public async Task<string> RenderDailySummaryAsync(int customerId, DateTime date, CancellationToken ct = default)
+    public async Task<string> RenderDailySummaryAsync(int customerId, string timeZoneId, DateTime? nowUtc = null, CancellationToken ct = default)
     {
-        var startUtc = date.Date;
-        var endUtc = startUtc.AddDays(1);
+        var tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+        var effectiveNowUtc = nowUtc ?? DateTime.UtcNow;
+        var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(effectiveNowUtc, tz);
+
+        // Query window is simply now minus 32 hours in absolute UTC time —
+        // no timezone handling needed for the data query itself
+        var startUtc = effectiveNowUtc.AddHours(-32);
+        var endUtc = effectiveNowUtc;
+
+        // Snap to the end of the current 4-hour window so it's always included
+        var bucketEndLocal = nowLocal.Date.AddHours(nowLocal.Hour / 4 * 4 + 4);
+
+        // 7 windows of 4 hours each, covering the 28 hours ending at bucketEndLocal
+        var bucketStartLocal = bucketEndLocal.AddHours(-28);
 
         // Get all devices for this customer's hubs
         var hubIds = await _db.Hubs
@@ -39,18 +51,28 @@ public class EmailRenderer : IEmailRenderer
             .Where(r => deviceIds.Contains(r.DeviceId) && r.Timestamp >= startUtc && r.Timestamp < endUtc)
             .ToListAsync(ct);
 
+        if (readings.Count == 0)
+        {
+            _logger.LogInformation(
+                "No readings found for customer {CustomerId} in 32h window {Start} to {End} (UTC)",
+                customerId, startUtc, endUtc);
+        }
+
         // Count motion sensors specifically (not all devices)
         var motionSensorCount = await _db.Devices
             .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == "motion_sensor")
             .CountAsync(ct);
 
-        // Build 4-hour window summaries
+        // Build 7 x 4-hour window summaries using fixed local-time boundaries
         var windows = new List<WindowSummary>();
-        for (int hour = 0; hour < 24; hour += 4)
+        for (int i = 0; i < 7; i++)
         {
-            var windowStart = startUtc.AddHours(hour);
-            var windowEnd = windowStart.AddHours(4);
-            var windowReadings = readings.Where(r => r.Timestamp >= windowStart && r.Timestamp < windowEnd).ToList();
+            var windowStartLocal = bucketStartLocal.AddHours(i * 4);
+            var windowEndLocal = windowStartLocal.AddHours(4);
+            var windowStartUtc = TimeZoneInfo.ConvertTimeToUtc(windowStartLocal, tz);
+            var windowEndUtc = TimeZoneInfo.ConvertTimeToUtc(windowEndLocal, tz);
+
+            var windowReadings = readings.Where(r => r.Timestamp >= windowStartUtc && r.Timestamp < windowEndUtc).ToList();
 
             var motionReadings = windowReadings.Where(r => r.ReadingType == "motion").ToList();
             var tempReadings = windowReadings.Where(r => r.ReadingType == "temperature").ToList();
@@ -84,7 +106,7 @@ public class EmailRenderer : IEmailRenderer
 
             windows.Add(new WindowSummary
             {
-                Label = $"{hour:D2}:00\u2013{hour + 4:D2}:00",
+                Label = $"{windowStartLocal:HH:mm}\u2013{windowEndLocal:HH:mm}",
                 DevicesWithMotion = devicesWithMotion,
                 TotalMotionSensors = motionSensorCount > 0 ? motionSensorCount : 1,
                 TotalMotionEvents = totalMotionEvents,
@@ -94,10 +116,13 @@ public class EmailRenderer : IEmailRenderer
             });
         }
 
-        return BuildHtml(date, windows);
+        // Format the timezone name for display
+        var tzAbbrev = tz.IsDaylightSavingTime(nowLocal) ? tz.DaylightName : tz.StandardName;
+
+        return BuildHtml(bucketStartLocal, bucketEndLocal, tzAbbrev, windows);
     }
 
-    private static string BuildHtml(DateTime date, List<WindowSummary> windows)
+    private static string BuildHtml(DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows)
     {
         // Determine max motion events for relative bar sizing
         var maxMotion = windows.Max(w => w.TotalMotionEvents);
@@ -112,7 +137,7 @@ public class EmailRenderer : IEmailRenderer
         // Header
         sb.AppendLine("<tr><td style=\"background-color:#2c3e50;color:#ffffff;padding:20px;text-align:center;\">");
         sb.AppendLine($"<h1 style=\"margin:0;font-size:22px;\">Daily Activity Summary</h1>");
-        sb.AppendLine($"<p style=\"margin:5px 0 0;font-size:14px;opacity:0.8;\">{date:dddd, d MMMM yyyy}</p>");
+        sb.AppendLine($"<p style=\"margin:5px 0 0;font-size:14px;opacity:0.8;\">{startLocal:d MMM yyyy HH:mm} \u2013 {endLocal:d MMM yyyy HH:mm} ({tzName})</p>");
         sb.AppendLine("</td></tr>");
 
         // Visual section
