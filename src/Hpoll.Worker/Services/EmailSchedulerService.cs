@@ -63,7 +63,7 @@ public class EmailSchedulerService : BackgroundService
         }
     }
 
-    internal DateTime GetNextSendTime(DateTime now)
+    public DateTime GetNextSendTime(DateTime now)
     {
         var times = new List<TimeSpan>();
         foreach (var entry in _settings.SendTimesUtc)
