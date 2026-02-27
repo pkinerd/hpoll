@@ -183,8 +183,8 @@ This is noted as a scaling escape hatch, not a POC/MVP requirement.
 | **ORM** | EF Core with SQLite provider | EF Core with Npgsql (PostgreSQL) | EF Core abstracts the provider — swap by changing connection string + NuGet package |
 | **Database** | **SQLite** | **PostgreSQL** | SQLite: zero-ops for POC (single file, no container). PostgreSQL: production-grade for MVP with concurrent access, JSON, managed backups |
 | **Email templating** | MJML or Razor-based with inline CSS | Same, refined | MJML for max client compatibility; Razor as alternative |
-| **Email sending** | SendGrid free tier or SMTP | AWS SES or SendGrid | Cost-effective, reliable |
-| **Container registry** | Docker Hub | Same | CI builds and pushes image on every merge to main/dev. VPS pulls from registry to deploy |
+| **Email sending** | AWS SES | Same | Cost-effective, reliable, pay-per-send. SES credentials via env vars (`AWS_SES_ACCESS_KEY_ID`, `AWS_SES_SECRET_ACCESS_KEY`, `AWS_SES_REGION`, `AWS_SES_FROM_ADDRESS`) |
+| **Container registry** | Docker Hub (`pkinerd`) | Same | CI builds and pushes image on every merge to main/dev. `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets already configured on the repo. VPS pulls from registry to deploy |
 | **Containerisation** | Docker + SQLite (single container) | Docker Compose (app + PostgreSQL) | POC: single container, SQLite file inside. MVP: separate app + DB containers |
 | **Hosting** | Docker on VPS | VPS with managed PostgreSQL | Single container for POC; managed DB for MVP backups |
 | **Job scheduling** | Timer-based in `BackgroundService` | Hangfire or Quartz.NET (PostgreSQL persistence) | Simple timers for POC; reliable scheduling with retry for MVP |
@@ -290,7 +290,7 @@ This is sufficient for 5-10 customers and avoids building OAuth flow, CLI tools,
 - **Gate:** ~~Do not proceed to full build until API viability is confirmed~~ → **API viability confirmed.** Remaining gate items: refresh token lifetime verification and ToS legal review.
 #### 1.2 — Project Scaffolding
 - .NET solution structure with Dockerfile (multi-stage build: SDK image for build/publish, runtime image for final layer)
-- Update `.github/workflows/build-and-test.yml` to build and push Docker image to Docker Hub after successful build — triggers on push to main/dev. Image tagged with `latest` and short commit SHA (e.g. `hpoll:abc1234`). Requires `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets
+- Update `.github/workflows/build-and-test.yml` to build and push Docker image to Docker Hub after successful build — triggers on push to main/dev. Image tagged with `latest` and short commit SHA (e.g. `hpoll:abc1234`). `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets already configured on the repo
 - EF Core DbContext with SQLite provider + initial migration
 - Config binding: `IOptions<List<CustomerConfig>>` to read customers/hubs from `appsettings.json`
 - On startup: seed/sync DB from config (create/update customer and hub records)
@@ -340,11 +340,11 @@ This is sufficient for 5-10 customers and avoids building OAuth flow, CLI tools,
   - Simple table or card layout — one row/card per sensor device
   - Basic alerts: "no motion detected in 24h" (possible sensor issue), temperature outside normal range
 - `BackgroundService` that sends emails on a fixed schedule (e.g. 8 AM daily)
-- Send via SendGrid free tier or similar SMTP
+- Send via AWS SES (credentials via env vars)
 #### 1.7 — Deploy
 - `docker pull` from Docker Hub + `docker run` on a VPS — image is built and pushed by CI (see Phase 1.2), no local build needed on the server
 - SQLite database file persisted via Docker volume
-- Runtime configuration via environment variables passed to `docker run` (e.g. `-e ConnectionStrings__Default=... -e SendGrid__ApiKey=...`). `appsettings.json` baked into the image contains non-secret defaults; secrets always via env vars
+- Runtime configuration via environment variables passed to `docker run` (e.g. `-e ConnectionStrings__Default=... -e AWS_SES_ACCESS_KEY_ID=... -e AWS_SES_SECRET_ACCESS_KEY=...`). `appsettings.json` baked into the image contains non-secret defaults; secrets always via env vars
 - Volume mounts: `-v /data/hpoll:/app/data` for SQLite DB persistence
 - Example deployment: `docker pull <dockerhub-user>/hpoll:latest && docker run -d --restart unless-stopped -v /data/hpoll:/app/data -e "Customers__0__Name=..." <dockerhub-user>/hpoll:latest`
 - **DB backup/recovery:** admin can download the SQLite `.db` file from the host at any time. On redeployment, mount the existing DB file and the service resumes with all accumulated readings and refreshed tokens — no need to re-register hubs. Config tokens are only used for initial seeding; after that, the DB holds the latest refreshed tokens.
@@ -497,7 +497,7 @@ MVP (build after POC validated):
 ## Existing Files to Modify
 | File | When | Change |
 |---|---|---|
-| `.github/workflows/build-and-test.yml` | POC (Phase 1.2) | Fill in TODO build steps with `dotnet build`. Add Docker build+push to Docker Hub job (login, build, tag with `latest` + commit SHA, push). Requires `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets. Test steps filled in at MVP (Phase 2.9) with `dotnet test` |
+| `.github/workflows/build-and-test.yml` | POC (Phase 1.2) | Fill in TODO build steps with `dotnet build`. Add Docker build+push to Docker Hub job (login, build, tag with `latest` + commit SHA, push). `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets already configured. Test steps filled in at MVP (Phase 2.9) with `dotnet test` |
 | `README.md` | POC (Phase 1.2) | Update with project description, setup instructions |
 
 ## Verification
