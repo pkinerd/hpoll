@@ -40,6 +40,7 @@ The Hue API has two access layers, both using the same CLIP v2 resource model:
 |---|---|---|---|
 | **Local CLIP API** | `https://{bridge_ip}/clip/v2` | `hue-application-key` header (permanent, no expiry) | Direct bridge access on LAN. Supports SSE EventStream for real-time push. Self-signed TLS cert. |
 | **Remote Cloud API** | `https://api.meethue.com/route/clip/v2` | **Dual-header:** `Authorization: Bearer <oauth_token>` + `hue-application-key: <app_key>` | Cloud proxy to bridge. OAuth2 access tokens expire every 7 days. Polling-only (no SSE remotely). |
+
 hpoll uses the **Remote Cloud API** exclusively. The cloud proxy relays requests to the customer's bridge — it does **not** cache any state. If the bridge is offline, cloud returns HTTP 503/timeout.
 ### Remote API authentication flow (verified via shell scripts)
 The full onboarding sequence, demonstrated in `docs/scripts/`:
@@ -51,6 +52,7 @@ The full onboarding sequence, demonstrated in `docs/scripts/`:
 | 3b. Register app | `3_finalize_auth.sh` | `POST /route/api` | POST JSON | Bearer token | Get bridge-specific `username` (= `hue-application-key` / app key). **One-time per bridge.** |
 | 4. Query data | `4_test_connection.sh` | `GET /route/clip/v2/resource/{type}` | GET | Bearer + app key | All ongoing data requests use this dual-header pattern |
 | 5. Refresh | `6_refresh_token.sh` | `POST /v2/oauth2/token` | POST form | Basic (`client_id:client_secret`) | Refresh expired access token using refresh token |
+
 **Credential model per hub:**
 - `client_id` + `client_secret` — shared across all hubs (one app registration)
 - `access_token` — per-hub, expires every 7 days, refreshable
@@ -68,6 +70,7 @@ The full onboarding sequence, demonstrated in `docs/scripts/`:
 | **No pagination** | No documented pagination on any endpoint | Single response contains all resources — fine for typical home setups |
 | **Hub status** | No explicit bridge online/offline field. Cloud proxy returns HTTP 503 or timeout when bridge unreachable. `zigbee_connectivity` and `wifi_connectivity` resources provide per-device reachability when bridge is online. | Hub offline = HTTP 503/timeout from cloud proxy. Device offline = `zigbee_connectivity.status` values: `connected`, `disconnected`, `connectivity_issue` (5 values). Cloud does NOT cache — no data available while bridge is offline. |
 | **Device state** | Full CLIP v2 resource model: 144 operations, 85 paths, 43 resource types. See resource reference below. | Far more data available than needed for initial scope |
+
 ### Rate limit analysis
 The 50k/day limit is **per app (client_id), shared across all customers**. With the `GET /resource` single-call option, each poll cycle needs only **1 API call per hub**:
 | Calls/hub/poll | Polls/day (hourly) | Calls/hub/day | Max hubs at 50k |
@@ -75,6 +78,7 @@ The 50k/day limit is **per app (client_id), shared across all customers**. With 
 | **1** | 24 | **24** | **~2,083** |
 | 2 | 24 | 48 | ~1,041 |
 | 3 | 24 | 72 | ~694 |
+
 **Recommended POC polling strategy:** Use **3 calls per hub per poll cycle** — `GET /resource/motion` + `GET /resource/temperature` + `GET /resource/device` — to stay well within limits while fetching only needed data. The device call is needed to resolve sensor IDs to human-readable names (as demonstrated in `docs/scripts/8_combo_jq.sh`). At 3 calls/hub, supports ~694 hubs comfortably.
 **Alternative:** Use `GET /resource` (single call, returns everything) for simplicity. Slightly larger responses but only 1 call per hub per cycle, supporting ~2,000 hubs. Recommended when scope expands beyond motion + temperature.
 ### CLIP v2 resource model — key concepts
@@ -184,6 +188,7 @@ This is noted as a scaling escape hatch, not a POC/MVP requirement.
 | **Containerisation** | Docker + SQLite (single container) | Docker Compose (app + PostgreSQL) | POC: single container, SQLite file inside. MVP: separate app + DB containers |
 | **Hosting** | Docker on VPS | VPS with managed PostgreSQL | Single container for POC; managed DB for MVP backups |
 | **Job scheduling** | Timer-based in `BackgroundService` | Hangfire or Quartz.NET (PostgreSQL persistence) | Simple timers for POC; reliable scheduling with retry for MVP |
+
 ---
 ## Project Structure
 ### POC structure (minimal)
@@ -445,6 +450,7 @@ Not built now — these inform early decisions to minimise regret.
 | **Rate limits (>2,000 hubs)** | Implement rate budgeting across customers. Or deploy local gateway devices at customer sites to bypass Remote API entirely (see Future Option above) |
 | **Customer portal** | Clean domain layer in `Hpoll.Core` means a customer-facing frontend can be added without rewriting the backend |
 | **Advanced analytics** | Time series in PostgreSQL can be queried with SQL or exported to dedicated analytics tools |
+
 ---
 ## Implementation Sequence Summary
 ```
@@ -486,12 +492,14 @@ MVP (build after POC validated):
 | **Token refresh reliability** | Medium | Refresh every 1-2 days (not at expiry). Monitor refresh failures as key health metric. `POST /v2/oauth2/token` with Basic auth. | Known pattern |
 | **Cross-resource join complexity** | Low | Motion/temperature → device name resolution via `owner.rid` join. Pattern demonstrated in `8_combo_jq.sh`. Straightforward in C#. | **Mitigated** — pattern proven |
 | **Email client compatibility** | Low | MJML is purpose-built for this. Test with real clients during POC | Known approach |
+
 ---
 ## Existing Files to Modify
 | File | When | Change |
 |---|---|---|
 | `.github/workflows/build-and-test.yml` | POC (Phase 1.2) | Fill in TODO build steps with `dotnet build`. Add Docker build+push to Docker Hub job (login, build, tag with `latest` + commit SHA, push). Requires `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets. Test steps filled in at MVP (Phase 2.9) with `dotnet test` |
 | `README.md` | POC (Phase 1.2) | Update with project description, setup instructions |
+
 ## Verification
 ### POC verification
 1. Push to main/dev triggers CI workflow: `dotnet build` succeeds, Docker image built and pushed to Docker Hub
