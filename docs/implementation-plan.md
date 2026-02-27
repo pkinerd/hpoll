@@ -291,11 +291,12 @@ This is sufficient for 5-10 customers and avoids building OAuth flow, CLI tools,
 #### 1.2 — Project Scaffolding
 - .NET solution structure with Dockerfile (multi-stage build: SDK image for build/publish, runtime image for final layer)
 - Update `.github/workflows/build-and-test.yml` to build and push Docker image to Docker Hub after successful build — triggers on push to main/dev. Image tagged with `latest` and short commit SHA (e.g. `hpoll:abc1234`). `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets already configured on the repo
-- **CI pipeline: `dotnet test` with code coverage via codecov.io:**
-  - Add `dotnet test` step with `--collect:"XPlat Code Coverage"` (Coverlet) to generate Cobertura XML coverage reports
+- **CI pipeline: `dotnet test` with code coverage and test results via codecov.io:**
+  - Add `dotnet test` step with `--collect:"XPlat Code Coverage"` (Coverlet) to generate Cobertura XML coverage reports, and `--logger "junit;LogFilePath=TestResults/results.xml"` (via `JunitXml.TestLogger` NuGet package) to generate JUnit XML test results
   - Upload coverage reports to [codecov.io](https://codecov.io) using `codecov/codecov-action` in the workflow
-  - Add `CODECOV_TOKEN` repository secret (obtained from codecov.io after linking the repo)
-  - Coverage runs on every push to main/dev and on every PR — gives visibility into test coverage from day one
+  - Upload test results to codecov.io Test Analytics using `codecov/test-results-action` in the workflow — provides test pass/fail visibility, flaky test detection, and test duration tracking on the codecov.io dashboard
+  - Add `CODECOV_TOKEN` repository secret (obtained from codecov.io after linking the repo) — used by both coverage and test results uploads
+  - Coverage and test results run on every push to main/dev and on every PR — gives visibility into test coverage and test health from day one
   - No minimum coverage threshold enforced at POC — the goal is visibility, not gatekeeping. Thresholds can be added at MVP via `codecov.yml`
 - EF Core DbContext with SQLite provider + initial migration
 - Config binding: `IOptions<List<CustomerConfig>>` to read customers/hubs from `appsettings.json`
@@ -371,7 +372,7 @@ This is sufficient for 5-10 customers and avoids building OAuth flow, CLI tools,
 - Zigbee connectivity monitoring (add in next iteration)
 - Room-based grouping and context (add when expanding beyond motion/temperature)
 - Rate limit budgeting (irrelevant at 5-10 customers, and 3 calls/hub is well within limits)
-- Comprehensive test suite (basic tests run in CI with coverage reporting via codecov.io; thorough unit + integration tests deferred to MVP)
+- Comprehensive test suite (basic tests run in CI with coverage and test result reporting via codecov.io; thorough unit + integration tests deferred to MVP)
 - Full CD automation (deploy manually via `docker pull` + `docker run` — but image build+push is automated in CI)
 - Disconnection recovery / backfill logic
 ### POC deliverables
@@ -381,7 +382,7 @@ This is sufficient for 5-10 customers and avoids building OAuth flow, CLI tools,
 4. Daily token refresh keeping OAuth access tokens valid (application key is permanent)
 5. Daily summary email showing aggregated 4-hour window summaries: motion location diversity, total motion activity, and temperature range (low/median/high) — no individual device/sensor/location names exposed
 6. Email renders correctly on a phone and in Gmail — visual section at top, summary data table at bottom
-7. Code coverage reports visible on codecov.io dashboard for every CI run and PR
+7. Code coverage reports and test results visible on codecov.io dashboard for every CI run and PR (coverage trends + test pass/fail/flaky tracking via Test Analytics)
 ---
 ## Phase 2: MVP
 **Goal:** Serve tens to hundreds of customers reliably.
@@ -444,9 +445,10 @@ This is sufficient for 5-10 customers and avoids building OAuth flow, CLI tools,
 - Audit log for admin actions
 - SPF, DKIM, DMARC for email sending domain
 #### 2.9 — CI/CD & Testing
-- Build, test, and coverage already running in CI from POC (Phase 1.2) — codecov.io integration established
+- Build, test, coverage, and test result uploads already running in CI from POC (Phase 1.2) — codecov.io integration established for both coverage and Test Analytics
 - **Expand test suite:** unit tests for rules engine and health evaluation, integration tests for Hue client and OAuth flow
 - **Add coverage thresholds:** configure `codecov.yml` with minimum coverage targets (e.g. patch coverage ≥ 80%) and PR status checks that block merges when coverage drops
+- **Leverage Test Analytics:** use codecov.io Test Analytics dashboard to identify flaky tests, track test duration regressions, and monitor test suite health as the test count grows
 - Deploy pipeline aligned with existing Issues #0003, #0005, #0006
 ### What to skip at MVP
 - Customer self-service portal (customers never log in)
@@ -484,8 +486,9 @@ POC (build order — config-driven, no UI — motion + temperature scope):
   5. Polling BackgroundService (hourly) — 3 calls/hub: motion, temperature, device
   6. Email templates: privacy-first summary — 4-hour window aggregates (motion diversity,
      total activity, temperature range), visual section + data table, no device/sensor names
-  7. CI: dotnet test with Coverlet coverage → upload to codecov.io; Docker image build + push
-     to Docker Hub; deploy to VPS via docker pull + docker run
+  7. CI: dotnet test with Coverlet coverage + JUnit XML test results → upload both to codecov.io
+     (coverage via codecov-action, test results via test-results-action); Docker image build +
+     push to Docker Hub; deploy to VPS via docker pull + docker run
 MVP (build after POC validated):
   1. Migrate to PostgreSQL + Docker Compose
   2. OAuth flow in code + admin web portal (Razor Pages)
@@ -494,7 +497,8 @@ MVP (build after POC validated):
   5. Rules & alerting engine
   6. Per-customer email scheduling
   7. Security hardening
-  8. Expand tests + enforce codecov.io coverage thresholds (CI infra already from POC)
+  8. Expand tests + enforce codecov.io coverage thresholds + leverage Test Analytics for
+     flaky test detection (CI infra already from POC)
   9. Operational tooling (logging, metrics, rate tracking)
 ```
 ---
@@ -513,12 +517,12 @@ MVP (build after POC validated):
 ## Existing Files to Modify
 | File | When | Change |
 |---|---|---|
-| `.github/workflows/build-and-test.yml` | POC (Phase 1.2) | Fill in TODO build steps with `dotnet build`. Add `dotnet test --collect:"XPlat Code Coverage"` step + `codecov/codecov-action` to upload Cobertura reports to codecov.io. Add Docker build+push to Docker Hub job (login, build, tag with `latest` + commit SHA, push). `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, and `CODECOV_TOKEN` secrets required. |
+| `.github/workflows/build-and-test.yml` | POC (Phase 1.2) | Fill in TODO build steps with `dotnet build`. Add `dotnet test --collect:"XPlat Code Coverage" --logger "junit;LogFilePath=TestResults/results.xml"` step + `codecov/codecov-action` to upload Cobertura coverage reports + `codecov/test-results-action` to upload JUnit XML test results to codecov.io Test Analytics. Add Docker build+push to Docker Hub job (login, build, tag with `latest` + commit SHA, push). `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, and `CODECOV_TOKEN` secrets required. Add `JunitXml.TestLogger` NuGet package to test projects. |
 | `README.md` | POC (Phase 1.2) | Update with project description, setup instructions |
 
 ## Verification
 ### POC verification
-1. Push to main/dev triggers CI workflow: `dotnet build` succeeds, `dotnet test` runs with Coverlet coverage, coverage report uploaded to codecov.io, Docker image built and pushed to Docker Hub
+1. Push to main/dev triggers CI workflow: `dotnet build` succeeds, `dotnet test` runs with Coverlet coverage and JUnit XML test results, coverage report and test results uploaded to codecov.io (coverage + Test Analytics), Docker image built and pushed to Docker Hub
 2. `docker pull` + `docker run` on VPS starts container: initialises SQLite DB if missing, seeds from config (incl. HueApplicationKey), starts all three services
 3. Token refresh keeps OAuth access tokens valid (verify by checking DB/logs after a refresh cycle). Application key remains unchanged (permanent).
 4. Hourly polling stores motion sensor timestamps and temperature readings in SQLite (3 API calls per hub: motion, temperature, device)
@@ -534,4 +538,4 @@ MVP (build after POC validated):
 5. Emails send at individual customer-preferred times across timezones
 6. Rate limit tracking: verify daily API call counter is accurate
 7. Load test: simulate 500+ customers, verify polling completes within hourly window
-8. CI pipeline runs end-to-end on push (build, test, coverage upload to codecov.io, Docker image push — all already working from POC). Codecov.io PR checks enforce minimum coverage thresholds
+8. CI pipeline runs end-to-end on push (build, test, coverage + test result upload to codecov.io, Docker image push — all already working from POC). Codecov.io PR checks enforce minimum coverage thresholds. Test Analytics dashboard shows test health, flaky tests, and duration trends
