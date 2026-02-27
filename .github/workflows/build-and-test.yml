@@ -52,14 +52,6 @@ jobs:
           directory: TestResults
           fail_ci_if_error: false
 
-      - name: Upload test results to Codecov
-        uses: codecov/test-results-action@f2dba722c67b86c6ccc235be77c185e6689ffa7c # v1.1.0
-        if: always()
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: TestResults
-          fail_ci_if_error: false
-
       - name: Upload test reports
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         if: always()
