@@ -25,9 +25,8 @@ public class EmailRenderer : IEmailRenderer
         var effectiveNowUtc = nowUtc ?? DateTime.UtcNow;
         var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(effectiveNowUtc, tz);
 
-        // Snap to the most recent 4-hour boundary in local time
-        var bucketEndLocal = nowLocal.Date.AddHours(nowLocal.Hour / 4 * 4);
-        if (bucketEndLocal > nowLocal) bucketEndLocal = bucketEndLocal.AddHours(-4);
+        // Snap to the end of the current 4-hour window so it's always included
+        var bucketEndLocal = nowLocal.Date.AddHours(nowLocal.Hour / 4 * 4 + 4);
 
         // 7 windows of 4 hours each, covering the 28 hours ending at bucketEndLocal
         var bucketStartLocal = bucketEndLocal.AddHours(-28);

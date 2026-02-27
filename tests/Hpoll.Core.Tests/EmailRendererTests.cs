@@ -12,8 +12,8 @@ public class EmailRendererTests : IDisposable
     private readonly EmailRenderer _renderer;
 
     // nowUtc = Feb 28 08:00 UTC
-    // With UTC timezone: bucketEnd = 08:00, bucketStart = Feb 27 04:00 (28h back)
-    // 7 windows: 04:00–08:00, 08:00–12:00, 12:00–16:00, 16:00–20:00, 20:00–00:00, 00:00–04:00, 04:00–08:00
+    // With UTC timezone: bucketEnd = 12:00 (end of current window), bucketStart = Feb 27 08:00 (28h back)
+    // 7 windows: 08:00–12:00, 12:00–16:00, 16:00–20:00, 20:00–00:00, 00:00–04:00, 04:00–08:00, 08:00–12:00
     private static readonly DateTime NowUtc = new(2026, 2, 28, 8, 0, 0, DateTimeKind.Utc);
     private const string TimeZone = "UTC";
 
@@ -287,7 +287,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        // Header shows time range: "27 Feb 2026 04:00 – 28 Feb 2026 08:00"
+        // Header shows time range: "27 Feb 2026 08:00 – 28 Feb 2026 12:00"
         Assert.Contains("27 Feb 2026", html);
         Assert.Contains("28 Feb 2026", html);
     }
@@ -305,13 +305,13 @@ public class EmailRendererTests : IDisposable
             ReadingType = "motion",
             Value = "{\"motion\":true,\"changed\":\"2026-02-27T10:00:00Z\"}"
         });
-        // Reading outside the window (Feb 27 03:00 — before the 28h window starts at 04:00)
+        // Reading outside the window (Feb 27 07:00 — before the 28h window starts at 08:00)
         _db.DeviceReadings.Add(new DeviceReading
         {
             DeviceId = device.Id,
-            Timestamp = new DateTime(2026, 2, 27, 3, 0, 0, DateTimeKind.Utc),
+            Timestamp = new DateTime(2026, 2, 27, 7, 0, 0, DateTimeKind.Utc),
             ReadingType = "motion",
-            Value = "{\"motion\":true,\"changed\":\"2026-02-27T03:00:00Z\"}"
+            Value = "{\"motion\":true,\"changed\":\"2026-02-27T07:00:00Z\"}"
         });
         await _db.SaveChangesAsync();
 
@@ -353,9 +353,9 @@ public class EmailRendererTests : IDisposable
         await _db.SaveChangesAsync();
 
         // nowUtc = Feb 28 08:00 UTC = Feb 28 19:00 AEDT
-        // bucketEnd = floor(19/4)*4 = 16:00 AEDT on Feb 28 = Feb 28 05:00 UTC
-        // bucketStart = 28h back = 12:00 AEDT on Feb 27 = Feb 27 01:00 UTC
-        // 7 windows: 12:00–16:00, 16:00–20:00, 20:00–00:00, 00:00–04:00, 04:00–08:00, 08:00–12:00, 12:00–16:00 AEDT
+        // bucketEnd = floor(19/4)*4+4 = 20:00 AEDT on Feb 28 = Feb 28 09:00 UTC
+        // bucketStart = 28h back = 16:00 AEDT on Feb 27 = Feb 27 05:00 UTC
+        // 7 windows: 16:00–20:00, 20:00–00:00, 00:00–04:00, 04:00–08:00, 08:00–12:00, 12:00–16:00, 16:00–20:00 AEDT
 
         // Reading at Feb 27 06:00 UTC = Feb 27 17:00 AEDT — falls in 16:00–20:00 AEDT window
         _db.DeviceReadings.Add(new DeviceReading
