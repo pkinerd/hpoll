@@ -225,8 +225,8 @@ public class EmailRendererTests : IDisposable
 
         Assert.NotNull(html);
         Assert.Contains("Daily Activity Summary", html);
-        // 0 areas active out of 1 motion sensor
-        Assert.Contains("0/1", html);
+        // 0 areas active — label shows "0" (not "0/1")
+        Assert.Contains(">0<", html);
     }
 
     [Fact]
@@ -269,8 +269,8 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        // 1 out of 2 motion sensors had activity
-        Assert.Contains("1/2", html);
+        // 1 out of 2 motion sensors had activity — label shows "1"
+        Assert.Contains(">1<", html);
     }
 
     [Fact]

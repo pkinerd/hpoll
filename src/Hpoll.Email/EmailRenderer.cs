@@ -104,9 +104,10 @@ public class EmailRenderer : IEmailRenderer
                 .OrderBy(t => t)
                 .ToList();
 
+            var displayEnd = windowEndLocal > nowLocal ? nowLocal : windowEndLocal;
             windows.Add(new WindowSummary
             {
-                Label = $"{windowStartLocal:HH:mm}\u2013{windowEndLocal:HH:mm}",
+                Label = $"{windowStartLocal:HH:mm}\u2013{displayEnd:HH:mm}",
                 DevicesWithMotion = devicesWithMotion,
                 TotalMotionSensors = motionSensorCount > 0 ? motionSensorCount : 1,
                 TotalMotionEvents = totalMotionEvents,
@@ -183,7 +184,8 @@ public class EmailRenderer : IEmailRenderer
             sb.AppendLine($"<td style=\"background-color:{color};width:{barWidth}%;height:16px;border-radius:3px;\"></td>");
             sb.AppendLine($"<td style=\"width:{100 - barWidth}%;\"></td>");
             sb.AppendLine("</tr></table></td>");
-            sb.AppendLine($"<td style=\"font-size:11px;color:#777;width:36px;text-align:right;\">{active}/{total}</td>");
+            var diversityLabel = active >= 5 ? "5+" : active.ToString();
+            sb.AppendLine($"<td style=\"font-size:11px;color:#777;width:24px;text-align:right;\">{diversityLabel}</td>");
             sb.AppendLine("</tr>");
         }
         sb.AppendLine("</table>");
