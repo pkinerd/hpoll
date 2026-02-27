@@ -120,7 +120,8 @@ public class EmailRenderer : IEmailRenderer
         var tzAbbrev = tz.IsDaylightSavingTime(nowLocal) ? tz.DaylightName : tz.StandardName;
 
         windows.Reverse(); // newest window first for readability
-        return BuildHtml(bucketStartLocal, bucketEndLocal, tzAbbrev, windows);
+        var displayEndLocal = bucketEndLocal > nowLocal ? nowLocal : bucketEndLocal;
+        return BuildHtml(bucketStartLocal, displayEndLocal, tzAbbrev, windows);
     }
 
     private static string BuildHtml(DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows)
