@@ -202,7 +202,7 @@ public class EmailRenderer : IEmailRenderer
             }
             else
             {
-                sb.AppendLine("<td colspan=\"3\" style=\"text-align:center;font-size:12px;color:#ccc;\">No data</td>");
+                sb.AppendLine("<td></td><td></td><td></td>");
             }
             sb.AppendLine("</tr>");
         }

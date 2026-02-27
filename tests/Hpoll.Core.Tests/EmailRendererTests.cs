@@ -72,7 +72,7 @@ public class EmailRendererTests : IDisposable
 
         Assert.NotNull(html);
         Assert.Contains("Daily Activity Summary", html);
-        Assert.Contains("No data", html);
+        Assert.DoesNotContain("No data", html);
     }
 
     [Fact]
