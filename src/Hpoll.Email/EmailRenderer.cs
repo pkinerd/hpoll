@@ -39,7 +39,10 @@ public class EmailRenderer : IEmailRenderer
             .Where(r => deviceIds.Contains(r.DeviceId) && r.Timestamp >= startUtc && r.Timestamp < endUtc)
             .ToListAsync(ct);
 
-        var totalDeviceCount = deviceIds.Count;
+        // Count motion sensors specifically (not all devices)
+        var motionSensorCount = await _db.Devices
+            .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == "motion_sensor")
+            .CountAsync(ct);
 
         // Build 4-hour window summaries
         var windows = new List<WindowSummary>();
@@ -55,7 +58,7 @@ public class EmailRenderer : IEmailRenderer
             // Count distinct devices with motion detected
             var devicesWithMotion = motionReadings
                 .Where(r => {
-                    try { var j = JsonDocument.Parse(r.Value); return j.RootElement.GetProperty("motion").GetBoolean(); }
+                    try { using var j = JsonDocument.Parse(r.Value); return j.RootElement.GetProperty("motion").GetBoolean(); }
                     catch { return false; }
                 })
                 .Select(r => r.DeviceId)
@@ -64,14 +67,14 @@ public class EmailRenderer : IEmailRenderer
 
             var totalMotionEvents = motionReadings
                 .Count(r => {
-                    try { var j = JsonDocument.Parse(r.Value); return j.RootElement.GetProperty("motion").GetBoolean(); }
+                    try { using var j = JsonDocument.Parse(r.Value); return j.RootElement.GetProperty("motion").GetBoolean(); }
                     catch { return false; }
                 });
 
             // Temperature stats
             var temperatures = tempReadings
                 .Select(r => {
-                    try { var j = JsonDocument.Parse(r.Value); return (double?)j.RootElement.GetProperty("temperature").GetDouble(); }
+                    try { using var j = JsonDocument.Parse(r.Value); return (double?)j.RootElement.GetProperty("temperature").GetDouble(); }
                     catch { return null; }
                 })
                 .Where(t => t.HasValue)
@@ -83,7 +86,7 @@ public class EmailRenderer : IEmailRenderer
             {
                 Label = $"{hour:D2}:00\u2013{hour + 4:D2}:00",
                 DevicesWithMotion = devicesWithMotion,
-                TotalMotionSensors = totalDeviceCount > 0 ? totalDeviceCount : 1,
+                TotalMotionSensors = motionSensorCount > 0 ? motionSensorCount : 1,
                 TotalMotionEvents = totalMotionEvents,
                 TemperatureMin = temperatures.Count > 0 ? temperatures.First() : null,
                 TemperatureMedian = temperatures.Count > 0 ? temperatures[temperatures.Count / 2] : null,

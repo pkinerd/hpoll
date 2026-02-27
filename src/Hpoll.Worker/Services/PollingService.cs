@@ -38,12 +38,23 @@ public class PollingService : BackgroundService
             {
                 await PollAllHubsAsync(stoppingToken);
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled error in polling cycle");
             }
 
-            await Task.Delay(TimeSpan.FromMinutes(_settings.IntervalMinutes), stoppingToken);
+            try
+            {
+                await Task.Delay(TimeSpan.FromMinutes(_settings.IntervalMinutes), stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
         }
     }
 
@@ -147,9 +158,6 @@ public class PollingService : BackgroundService
                 });
             }
 
-            await db.SaveChangesAsync(ct);
-
-            hub.LastPolledAt = DateTime.UtcNow;
             hub.LastSuccessAt = DateTime.UtcNow;
             hub.ConsecutiveFailures = 0;
             log.Success = true;
@@ -188,11 +196,18 @@ public class PollingService : BackgroundService
         }
         finally
         {
-            hub.LastPolledAt = DateTime.UtcNow;
-            hub.UpdatedAt = DateTime.UtcNow;
-            log.ApiCallsMade = apiCalls;
-            db.PollingLogs.Add(log);
-            await db.SaveChangesAsync(ct);
+            try
+            {
+                hub.LastPolledAt = DateTime.UtcNow;
+                hub.UpdatedAt = DateTime.UtcNow;
+                log.ApiCallsMade = apiCalls;
+                db.PollingLogs.Add(log);
+                await db.SaveChangesAsync(CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Hub {BridgeId}: failed to save polling log", hub.HueBridgeId);
+            }
         }
     }
 

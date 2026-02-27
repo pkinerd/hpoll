@@ -1,4 +1,7 @@
+using Amazon;
+using Amazon.SimpleEmail;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Services;
@@ -9,7 +12,6 @@ using Hpoll.Worker.Services;
 var builder = Host.CreateApplicationBuilder(args);
 
 // Configuration binding
-builder.Services.Configure<HpollSettings>(builder.Configuration);
 builder.Services.Configure<PollingSettings>(builder.Configuration.GetSection("Polling"));
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.Configure<HueAppSettings>(builder.Configuration.GetSection("HueApp"));
@@ -26,6 +28,14 @@ builder.Services.AddDbContext<HpollDbContext>(options =>
 // HTTP client for Hue API
 builder.Services.AddHttpClient("HueApi");
 builder.Services.AddScoped<IHueApiClient, HueApiClient>();
+
+// AWS SES client (singleton — thread-safe, reuses connections)
+builder.Services.AddSingleton<IAmazonSimpleEmailService>(sp =>
+{
+    var emailSettings = sp.GetRequiredService<IOptions<EmailSettings>>().Value;
+    var region = RegionEndpoint.GetBySystemName(emailSettings.AwsRegion);
+    return new AmazonSimpleEmailServiceClient(region);
+});
 
 // Services
 builder.Services.AddScoped<ConfigSeeder>();
@@ -46,11 +56,11 @@ using (var scope = host.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     await db.Database.MigrateAsync();
 
-    var settings = builder.Configuration.Get<HpollSettings>();
-    if (settings?.Customers.Count > 0)
+    var customers = builder.Configuration.GetSection("Customers").Get<List<CustomerConfig>>();
+    if (customers?.Count > 0)
     {
         var seeder = scope.ServiceProvider.GetRequiredService<ConfigSeeder>();
-        await seeder.SeedAsync(settings.Customers);
+        await seeder.SeedAsync(customers);
     }
 }
 

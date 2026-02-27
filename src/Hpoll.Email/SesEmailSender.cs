@@ -1,6 +1,5 @@
 namespace Hpoll.Email;
 
-using Amazon;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
 using Microsoft.Extensions.Logging;
@@ -11,19 +10,21 @@ using Hpoll.Core.Interfaces;
 public class SesEmailSender : IEmailSender
 {
     private readonly EmailSettings _settings;
+    private readonly IAmazonSimpleEmailService _sesClient;
     private readonly ILogger<SesEmailSender> _logger;
 
-    public SesEmailSender(IOptions<EmailSettings> settings, ILogger<SesEmailSender> logger)
+    public SesEmailSender(
+        IAmazonSimpleEmailService sesClient,
+        IOptions<EmailSettings> settings,
+        ILogger<SesEmailSender> logger)
     {
+        _sesClient = sesClient;
         _settings = settings.Value;
         _logger = logger;
     }
 
     public async Task SendEmailAsync(string toAddress, string subject, string htmlBody, CancellationToken ct = default)
     {
-        var regionEndpoint = RegionEndpoint.GetBySystemName(_settings.AwsRegion);
-        using var client = new AmazonSimpleEmailServiceClient(regionEndpoint);
-
         var sendRequest = new SendEmailRequest
         {
             Source = _settings.FromAddress,
@@ -40,7 +41,7 @@ public class SesEmailSender : IEmailSender
 
         try
         {
-            var response = await client.SendEmailAsync(sendRequest, ct);
+            var response = await _sesClient.SendEmailAsync(sendRequest, ct);
             _logger.LogInformation("Email sent to {To}, MessageId: {MessageId}", toAddress, response.MessageId);
         }
         catch (Exception ex)

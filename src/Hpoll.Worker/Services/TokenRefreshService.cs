@@ -35,12 +35,23 @@ public class TokenRefreshService : BackgroundService
             {
                 await RefreshAllTokensAsync(stoppingToken);
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled error in token refresh cycle");
             }
 
-            await Task.Delay(RefreshInterval, stoppingToken);
+            try
+            {
+                await Task.Delay(RefreshInterval, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
         }
     }
 

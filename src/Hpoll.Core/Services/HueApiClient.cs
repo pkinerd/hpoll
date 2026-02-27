@@ -13,6 +13,7 @@ public class HueApiClient : IHueApiClient
 {
     private const string ClipV2BaseUrl = "https://api.meethue.com/route/clip/v2";
     private const string TokenUrl = "https://api.meethue.com/v2/oauth2/token";
+    private const string HttpClientName = "HueApi";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -53,7 +54,7 @@ public class HueApiClient : IHueApiClient
 
     public async Task<HueTokenResponse> RefreshTokenAsync(string refreshToken, CancellationToken ct = default)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = _httpClientFactory.CreateClient(HttpClientName);
 
         var credentials = Convert.ToBase64String(
             Encoding.UTF8.GetBytes($"{_settings.HueApp.ClientId}:{_settings.HueApp.ClientSecret}"));
@@ -66,7 +67,7 @@ public class HueApiClient : IHueApiClient
             ["refresh_token"] = refreshToken
         });
 
-        var response = await client.SendAsync(request, ct);
+        using var response = await client.SendAsync(request, ct);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -86,7 +87,7 @@ public class HueApiClient : IHueApiClient
     private async Task<HueResponse<T>> GetResourceAsync<T>(
         string path, string accessToken, string applicationKey, CancellationToken ct)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = _httpClientFactory.CreateClient(HttpClientName);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, $"{ClipV2BaseUrl}{path}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -94,7 +95,7 @@ public class HueApiClient : IHueApiClient
 
         _logger.LogDebug("Requesting Hue API: {Path}", path);
 
-        var response = await client.SendAsync(request, ct);
+        using var response = await client.SendAsync(request, ct);
 
         if (!response.IsSuccessStatusCode)
         {
