@@ -180,35 +180,36 @@ Where `appsettings.Production.json` contains:
 
 ### Full `docker-compose.yml` example
 
-Below is a complete `docker-compose.yml` that inlines all configuration. This
-is useful when you don't want a separate `.env` or JSON settings file:
+A self-contained `docker-compose.yml` that pulls the pre-built image and
+configures everything inline — no `.env` or JSON settings file needed:
 
 ```yaml
 services:
-  worker:
-    build: .
+  hpoll:
+    image: ghcr.io/pkinerd/hpoll:latest
+    container_name: hpoll
     volumes:
       - ./data:/app/data
     restart: unless-stopped
     environment:
-      # Hue app credentials
+      # ── Hue app credentials ──────────────────────────────
       HueApp__ClientId: "your-client-id"
       HueApp__ClientSecret: "your-client-secret"
 
-      # Email settings — multiple send times supported
+      # ── Polling ──────────────────────────────────────────
+      Polling__IntervalMinutes: "60"
+
+      # ── Email ────────────────────────────────────────────
       Email__FromAddress: "alerts@example.com"
-      Email__AwsRegion: "us-east-1"
+      Email__AwsRegion: "ap-southeast-2"
       Email__SendTimesUtc__0: "06:00"
       Email__SendTimesUtc__1: "18:00"
 
-      # AWS credentials for SES
+      # ── AWS credentials (SES) ───────────────────────────
       AWS_ACCESS_KEY_ID: ""
       AWS_SECRET_ACCESS_KEY: ""
 
-      # Polling interval
-      Polling__IntervalMinutes: "60"
-
-      # Customer 1
+      # ── Customer 1 ──────────────────────────────────────
       Customers__0__Name: "Jane Doe"
       Customers__0__Email: "jane@example.com"
       Customers__0__TimeZoneId: "Australia/Sydney"
@@ -217,6 +218,16 @@ services:
       Customers__0__Hubs__0__AccessToken: "initial-access-token"
       Customers__0__Hubs__0__RefreshToken: "initial-refresh-token"
       Customers__0__Hubs__0__TokenExpiresAt: "2026-04-01T00:00:00Z"
+
+      # ── Customer 2 (optional) ───────────────────────────
+      # Customers__1__Name: "John Smith"
+      # Customers__1__Email: "john@example.com"
+      # Customers__1__TimeZoneId: "America/New_York"
+      # Customers__1__Hubs__0__BridgeId: "001788FFFE456DEF"
+      # Customers__1__Hubs__0__HueApplicationKey: "..."
+      # Customers__1__Hubs__0__AccessToken: "..."
+      # Customers__1__Hubs__0__RefreshToken: "..."
+      # Customers__1__Hubs__0__TokenExpiresAt: "..."
 ```
 
 ### `docker run`
@@ -226,15 +237,21 @@ mkdir -p data
 docker run -d \
   --name hpoll \
   -v $(pwd)/data:/app/data \
-  --env-file .env \
+  -e HueApp__ClientId=your-client-id \
+  -e HueApp__ClientSecret=your-client-secret \
+  -e Email__FromAddress=alerts@example.com \
+  -e Email__AwsRegion=ap-southeast-2 \
+  -e Email__SendTimesUtc__0=06:00 \
+  -e Email__SendTimesUtc__1=18:00 \
   -e Customers__0__Name=Jane\ Doe \
   -e Customers__0__Email=jane@example.com \
+  -e Customers__0__TimeZoneId=Australia/Sydney \
   -e Customers__0__Hubs__0__BridgeId=001788FFFE123ABC \
   -e Customers__0__Hubs__0__HueApplicationKey=your-hue-application-key \
   -e Customers__0__Hubs__0__AccessToken=initial-access-token \
   -e Customers__0__Hubs__0__RefreshToken=initial-refresh-token \
   -e Customers__0__Hubs__0__TokenExpiresAt=2026-04-01T00:00:00Z \
-  pkinerd/hpoll:latest
+  ghcr.io/pkinerd/hpoll:latest
 ```
 
 ## Building from source
