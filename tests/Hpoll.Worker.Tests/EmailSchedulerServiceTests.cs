@@ -185,13 +185,14 @@ public class EmailSchedulerServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task SendAllEmails_SkipsWhenRendererReturnsNull()
+    public async Task SendAllEmails_SendsEvenWithNoReadings()
     {
         await SeedCustomerAsync("nodata@example.com");
 
-        // Renderer returns null (no data for the period)
         _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string?)null);
+            .ReturnsAsync("<html>No data summary</html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         var now = DateTime.UtcNow;
         var sendTime = now.AddSeconds(1).TimeOfDay;
@@ -212,8 +213,8 @@ public class EmailSchedulerServiceTests : IDisposable
         catch (OperationCanceledException) { }
         finally { await service.StopAsync(CancellationToken.None); }
 
-        // Email should NOT be sent when renderer returns null
-        _mockSender.Verify(s => s.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        // Email should always be sent, even with no readings
+        _mockSender.Verify(s => s.SendEmailAsync("nodata@example.com", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]

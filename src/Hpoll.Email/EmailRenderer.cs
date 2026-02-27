@@ -19,7 +19,7 @@ public class EmailRenderer : IEmailRenderer
         _logger = logger;
     }
 
-    public async Task<string?> RenderDailySummaryAsync(int customerId, string timeZoneId, DateTime? nowUtc = null, CancellationToken ct = default)
+    public async Task<string> RenderDailySummaryAsync(int customerId, string timeZoneId, DateTime? nowUtc = null, CancellationToken ct = default)
     {
         var tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
         var effectiveNowUtc = nowUtc ?? DateTime.UtcNow;
@@ -51,13 +51,11 @@ public class EmailRenderer : IEmailRenderer
             .Where(r => deviceIds.Contains(r.DeviceId) && r.Timestamp >= startUtc && r.Timestamp < endUtc)
             .ToListAsync(ct);
 
-        // No readings in this period — skip sending an empty/misleading email
         if (readings.Count == 0)
         {
             _logger.LogInformation(
-                "No readings found for customer {CustomerId} in 32h window {Start} to {End} (UTC), skipping email",
+                "No readings found for customer {CustomerId} in 32h window {Start} to {End} (UTC)",
                 customerId, startUtc, endUtc);
-            return null;
         }
 
         // Count motion sensors specifically (not all devices)

@@ -64,13 +64,15 @@ public class EmailRendererTests : IDisposable
     }
 
     [Fact]
-    public async Task RenderDailySummaryAsync_WithNoReadings_ReturnsNull()
+    public async Task RenderDailySummaryAsync_WithNoReadings_StillReturnsHtml()
     {
         var (customer, _, _) = await SeedBaseDataAsync();
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        Assert.Null(html);
+        Assert.NotNull(html);
+        Assert.Contains("Daily Activity Summary", html);
+        Assert.Contains("No data", html);
     }
 
     [Fact]
@@ -228,7 +230,7 @@ public class EmailRendererTests : IDisposable
     }
 
     [Fact]
-    public async Task RenderDailySummaryAsync_WithNoCustomerHubs_ReturnsNull()
+    public async Task RenderDailySummaryAsync_WithNoCustomerHubs_StillReturnsHtml()
     {
         var customer = new Customer { Name = "No Hubs User", Email = "nohubs@example.com", TimeZoneId = "UTC" };
         _db.Customers.Add(customer);
@@ -236,7 +238,8 @@ public class EmailRendererTests : IDisposable
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        Assert.Null(html);
+        Assert.NotNull(html);
+        Assert.Contains("Daily Activity Summary", html);
     }
 
     [Fact]

@@ -96,11 +96,6 @@ public class EmailSchedulerService : BackgroundService
             try
             {
                 var html = await renderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId, ct: ct);
-                if (html == null)
-                {
-                    _logger.LogInformation("No data for {Email} in last 24h, skipping email", customer.Email);
-                    continue;
-                }
 
                 var tz = TimeZoneInfo.FindSystemTimeZoneById(customer.TimeZoneId);
                 var localNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
