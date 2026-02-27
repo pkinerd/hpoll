@@ -21,20 +21,14 @@ RUN dotnet publish src/Hpoll.Worker/Hpoll.Worker.csproj -c Release -o /app/publi
 FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
 WORKDIR /app
 
-# Create non-root user
-RUN groupadd -r hpoll && useradd -r -g hpoll -d /app -s /sbin/nologin hpoll
-
 # Create data directory
-RUN mkdir -p /app/data && chown -R hpoll:hpoll /app/data
+RUN mkdir -p /app/data
 
 COPY --from=build /app/publish .
-COPY entrypoint.sh /app/entrypoint.sh
-RUN sed -i 's/\r$//' /app/entrypoint.sh \
-    && chown -R hpoll:hpoll /app && chmod +x /app/entrypoint.sh
 
 ENV DataPath=/app/data
 ENV DOTNET_ENVIRONMENT=Production
 
 VOLUME ["/app/data"]
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["dotnet", "Hpoll.Worker.dll"]
