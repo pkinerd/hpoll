@@ -88,88 +88,43 @@ database. Token refresh is handled automatically after that.
 
 ## Running with Docker
 
-### `docker run`
+The repository includes a `docker-compose.yml` and `.env.example` for quick
+setup. The volume is configured as a **bind mount** (`./data:/app/data`) so the
+SQLite database file is directly visible on the host at `./data/hpoll.db`.
+
+> **Note:** Using a Docker named volume (e.g. `-v hpoll-data:/app/data`) stores
+> the database inside Docker's internal storage, making it invisible on the host
+> filesystem. The examples below use bind mounts instead.
+
+### Docker Compose (recommended)
 
 ```bash
-docker run -d \
-  --name hpoll \
-  -v hpoll-data:/app/data \
-  -e HueApp__ClientId=your-client-id \
-  -e HueApp__ClientSecret=your-client-secret \
-  -e Email__FromAddress=alerts@example.com \
-  -e Email__AwsRegion=us-east-1 \
-  -e Polling__IntervalMinutes=60 \
-  -e Email__SendTimeUtc=08:00 \
-  -e Customers__0__Name=Jane\ Doe \
-  -e Customers__0__Email=jane@example.com \
-  -e Customers__0__Hubs__0__BridgeId=001788FFFE123ABC \
-  -e Customers__0__Hubs__0__HueApplicationKey=your-hue-application-key \
-  -e Customers__0__Hubs__0__AccessToken=initial-access-token \
-  -e Customers__0__Hubs__0__RefreshToken=initial-refresh-token \
-  -e Customers__0__Hubs__0__TokenExpiresAt=2026-04-01T00:00:00Z \
-  -e AWS_ACCESS_KEY_ID=your-aws-key \
-  -e AWS_SECRET_ACCESS_KEY=your-aws-secret \
-  pkinerd/hpoll:latest
+cp .env.example .env
+# Edit .env with your credentials and settings
+docker compose up --build
 ```
 
-### Docker Compose
+The included `docker-compose.yml` builds the image from source and reads
+configuration from `.env`. To add customer/hub config, either set environment
+variables in `.env` or mount an `appsettings.Production.json` file.
 
-```yaml
-services:
-  hpoll:
-    image: pkinerd/hpoll:latest
-    container_name: hpoll
-    restart: unless-stopped
-    volumes:
-      - hpoll-data:/app/data
-    environment:
-      # Hue Remote API app credentials
-      HueApp__ClientId: "your-client-id"
-      HueApp__ClientSecret: "your-client-secret"
+To add customer configuration via environment variables, append to `.env`:
 
-      # Polling
-      Polling__IntervalMinutes: "60"
-
-      # Daily email settings
-      Email__FromAddress: "alerts@example.com"
-      Email__AwsRegion: "us-east-1"
-      Email__SendTimeUtc: "08:00"
-
-      # AWS credentials for SES
-      AWS_ACCESS_KEY_ID: "your-aws-key"
-      AWS_SECRET_ACCESS_KEY: "your-aws-secret"
-
-      # Customer: Jane Doe with one linked hub
-      Customers__0__Name: "Jane Doe"
-      Customers__0__Email: "jane@example.com"
-      Customers__0__Hubs__0__BridgeId: "001788FFFE123ABC"
-      Customers__0__Hubs__0__HueApplicationKey: "your-hue-application-key"
-      Customers__0__Hubs__0__AccessToken: "initial-access-token"
-      Customers__0__Hubs__0__RefreshToken: "initial-refresh-token"
-      Customers__0__Hubs__0__TokenExpiresAt: "2026-04-01T00:00:00Z"
-
-volumes:
-  hpoll-data:
+```
+Customers__0__Name=Jane Doe
+Customers__0__Email=jane@example.com
+Customers__0__Hubs__0__BridgeId=001788FFFE123ABC
+Customers__0__Hubs__0__HueApplicationKey=your-hue-application-key
+Customers__0__Hubs__0__AccessToken=initial-access-token
+Customers__0__Hubs__0__RefreshToken=initial-refresh-token
+Customers__0__Hubs__0__TokenExpiresAt=2026-04-01T00:00:00Z
 ```
 
-Alternatively, mount an `appsettings.Production.json` file instead of using
-environment variables for the customer/hub config:
+Alternatively, mount an `appsettings.Production.json` file by adding this to
+`docker-compose.yml` under the `worker` service volumes:
 
 ```yaml
-services:
-  hpoll:
-    image: pkinerd/hpoll:latest
-    container_name: hpoll
-    restart: unless-stopped
-    volumes:
-      - hpoll-data:/app/data
-      - ./appsettings.Production.json:/app/appsettings.Production.json:ro
-    environment:
-      AWS_ACCESS_KEY_ID: "your-aws-key"
-      AWS_SECRET_ACCESS_KEY: "your-aws-secret"
-
-volumes:
-  hpoll-data:
+- ./appsettings.Production.json:/app/appsettings.Production.json:ro
 ```
 
 Where `appsettings.Production.json` contains:
@@ -206,6 +161,24 @@ Where `appsettings.Production.json` contains:
 }
 ```
 
+### `docker run`
+
+```bash
+mkdir -p data
+docker run -d \
+  --name hpoll \
+  -v $(pwd)/data:/app/data \
+  --env-file .env \
+  -e Customers__0__Name=Jane\ Doe \
+  -e Customers__0__Email=jane@example.com \
+  -e Customers__0__Hubs__0__BridgeId=001788FFFE123ABC \
+  -e Customers__0__Hubs__0__HueApplicationKey=your-hue-application-key \
+  -e Customers__0__Hubs__0__AccessToken=initial-access-token \
+  -e Customers__0__Hubs__0__RefreshToken=initial-refresh-token \
+  -e Customers__0__Hubs__0__TokenExpiresAt=2026-04-01T00:00:00Z \
+  pkinerd/hpoll:latest
+```
+
 ## Building from source
 
 ```bash
@@ -223,5 +196,6 @@ docker build -t hpoll .
 ## Data persistence
 
 The SQLite database is stored at `<DataPath>/hpoll.db` (`/app/data/hpoll.db`
-inside the container). Mount the `/app/data` volume to persist data across
-container restarts.
+inside the container). Use a bind mount (`-v ./data:/app/data`) to persist data
+across container restarts and make the database file accessible on the host at
+`./data/hpoll.db`.

@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -16,12 +17,19 @@ public class TokenRefreshServiceTests : IDisposable
 {
     private readonly ServiceProvider _serviceProvider;
     private readonly Mock<IHueApiClient> _mockHueClient;
+    private readonly IConfiguration _configuration;
     private readonly string _dbName;
+    private readonly string _tempDataPath;
 
     public TokenRefreshServiceTests()
     {
         _dbName = Guid.NewGuid().ToString();
         _mockHueClient = new Mock<IHueApiClient>();
+        _tempDataPath = Path.Combine(Path.GetTempPath(), $"hpoll-test-{_dbName}");
+        Directory.CreateDirectory(_tempDataPath);
+        _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { { "DataPath", _tempDataPath } })
+            .Build();
 
         var services = new ServiceCollection();
         services.AddDbContext<HpollDbContext>(options =>
@@ -35,6 +43,8 @@ public class TokenRefreshServiceTests : IDisposable
     public void Dispose()
     {
         _serviceProvider.Dispose();
+        if (Directory.Exists(_tempDataPath))
+            Directory.Delete(_tempDataPath, recursive: true);
     }
 
     private HpollDbContext CreateDb()
@@ -65,9 +75,9 @@ public class TokenRefreshServiceTests : IDisposable
         return hub;
     }
 
-    private async Task InvokeRefreshAllTokensAsync(TokenRefreshService service, CancellationToken ct)
+    private async Task InvokeRefreshExpiringTokensAsync(TokenRefreshService service, CancellationToken ct)
     {
-        var method = typeof(TokenRefreshService).GetMethod("RefreshAllTokensAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+        var method = typeof(TokenRefreshService).GetMethod("RefreshExpiringTokensAsync", BindingFlags.NonPublic | BindingFlags.Instance);
         var task = (Task)method!.Invoke(service, new object[] { ct })!;
         await task;
     }
@@ -88,9 +98,10 @@ public class TokenRefreshServiceTests : IDisposable
 
         var service = new TokenRefreshService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<TokenRefreshService>.Instance);
+            NullLogger<TokenRefreshService>.Instance,
+            _configuration);
 
-        await InvokeRefreshAllTokensAsync(service, CancellationToken.None);
+        await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
@@ -108,9 +119,10 @@ public class TokenRefreshServiceTests : IDisposable
 
         var service = new TokenRefreshService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<TokenRefreshService>.Instance);
+            NullLogger<TokenRefreshService>.Instance,
+            _configuration);
 
-        await InvokeRefreshAllTokensAsync(service, CancellationToken.None);
+        await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
@@ -140,9 +152,10 @@ public class TokenRefreshServiceTests : IDisposable
 
         var service = new TokenRefreshService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<TokenRefreshService>.Instance);
+            NullLogger<TokenRefreshService>.Instance,
+            _configuration);
 
-        await InvokeRefreshAllTokensAsync(service, CancellationToken.None);
+        await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
 
         Assert.Equal(3, callCount);
         using var db = CreateDb();
