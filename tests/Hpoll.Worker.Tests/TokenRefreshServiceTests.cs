@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -16,12 +17,19 @@ public class TokenRefreshServiceTests : IDisposable
 {
     private readonly ServiceProvider _serviceProvider;
     private readonly Mock<IHueApiClient> _mockHueClient;
+    private readonly IConfiguration _configuration;
     private readonly string _dbName;
+    private readonly string _tempDataPath;
 
     public TokenRefreshServiceTests()
     {
         _dbName = Guid.NewGuid().ToString();
         _mockHueClient = new Mock<IHueApiClient>();
+        _tempDataPath = Path.Combine(Path.GetTempPath(), $"hpoll-test-{_dbName}");
+        Directory.CreateDirectory(_tempDataPath);
+        _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { { "DataPath", _tempDataPath } })
+            .Build();
 
         var services = new ServiceCollection();
         services.AddDbContext<HpollDbContext>(options =>
@@ -35,6 +43,8 @@ public class TokenRefreshServiceTests : IDisposable
     public void Dispose()
     {
         _serviceProvider.Dispose();
+        if (Directory.Exists(_tempDataPath))
+            Directory.Delete(_tempDataPath, recursive: true);
     }
 
     private HpollDbContext CreateDb()
@@ -88,7 +98,8 @@ public class TokenRefreshServiceTests : IDisposable
 
         var service = new TokenRefreshService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<TokenRefreshService>.Instance);
+            NullLogger<TokenRefreshService>.Instance,
+            _configuration);
 
         await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
 
@@ -108,7 +119,8 @@ public class TokenRefreshServiceTests : IDisposable
 
         var service = new TokenRefreshService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<TokenRefreshService>.Instance);
+            NullLogger<TokenRefreshService>.Instance,
+            _configuration);
 
         await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
 
@@ -140,7 +152,8 @@ public class TokenRefreshServiceTests : IDisposable
 
         var service = new TokenRefreshService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<TokenRefreshService>.Instance);
+            NullLogger<TokenRefreshService>.Instance,
+            _configuration);
 
         await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
 
