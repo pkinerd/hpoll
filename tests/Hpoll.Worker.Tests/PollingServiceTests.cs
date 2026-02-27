@@ -535,4 +535,87 @@ public class PollingServiceTests : IDisposable
         // Hue API should never have been called
         _mockHueClient.Verify(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    [Fact]
+    public async Task CleanupOldData_DeletesReadingsAndLogsOlderThan30Days()
+    {
+        var hub = await SeedHubAsync();
+
+        // Seed old and recent readings/logs
+        using (var db = CreateDb())
+        {
+            var device = new Device
+            {
+                HubId = hub.Id,
+                HueDeviceId = "device-001",
+                DeviceType = "motion_sensor",
+                Name = "Sensor"
+            };
+            db.Devices.Add(device);
+            await db.SaveChangesAsync();
+
+            // Old reading (31 days ago)
+            db.DeviceReadings.Add(new DeviceReading
+            {
+                DeviceId = device.Id,
+                Timestamp = DateTime.UtcNow.AddDays(-31),
+                ReadingType = "motion",
+                Value = "{\"motion\":true}"
+            });
+
+            // Recent reading (1 day ago)
+            db.DeviceReadings.Add(new DeviceReading
+            {
+                DeviceId = device.Id,
+                Timestamp = DateTime.UtcNow.AddDays(-1),
+                ReadingType = "motion",
+                Value = "{\"motion\":false}"
+            });
+
+            // Old polling log (31 days ago)
+            db.PollingLogs.Add(new PollingLog
+            {
+                HubId = hub.Id,
+                Timestamp = DateTime.UtcNow.AddDays(-31),
+                Success = true,
+                ApiCallsMade = 3
+            });
+
+            // Recent polling log (1 day ago)
+            db.PollingLogs.Add(new PollingLog
+            {
+                HubId = hub.Id,
+                Timestamp = DateTime.UtcNow.AddDays(-1),
+                Success = true,
+                ApiCallsMade = 3
+            });
+
+            await db.SaveChangesAsync();
+        }
+
+        SetupSuccessfulHueResponses();
+
+        var settings = Options.Create(new PollingSettings { IntervalMinutes = 60 });
+        var service = new PollingService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<PollingService>.Instance,
+            settings);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try { await service.StartAsync(cts.Token); await Task.Delay(2000, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        using var db2 = CreateDb();
+
+        // Old readings should be deleted, recent + newly polled should remain
+        var readings = await db2.DeviceReadings.ToListAsync();
+        Assert.DoesNotContain(readings, r => r.Timestamp < DateTime.UtcNow.AddDays(-30));
+        Assert.Contains(readings, r => r.Timestamp > DateTime.UtcNow.AddDays(-2));
+
+        // Old polling log should be deleted, recent + new should remain
+        var logs = await db2.PollingLogs.ToListAsync();
+        Assert.DoesNotContain(logs, l => l.Timestamp < DateTime.UtcNow.AddDays(-30));
+        Assert.Contains(logs, l => l.Timestamp > DateTime.UtcNow.AddDays(-2));
+    }
 }
