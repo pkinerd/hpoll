@@ -42,7 +42,7 @@ jobs:
           dotnet test --no-build -c Release \
             --settings coverlet.runsettings \
             --collect:"XPlat Code Coverage" \
-            --logger "junit;LogFilePath=TestResults/results.xml" \
+            --logger "junit;LogFilePath=TestResults/{assembly}.junit.xml" \
             --results-directory TestResults
 
       - name: Upload coverage to Codecov
@@ -58,7 +58,7 @@ jobs:
         if: always()
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          directory: TestResults
+          files: TestResults/*.junit.xml
           fail_ci_if_error: false
 
       - name: Upload test reports

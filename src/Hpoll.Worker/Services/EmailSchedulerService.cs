@@ -56,7 +56,14 @@ public class EmailSchedulerService : BackgroundService
             {
                 _logger.LogError(ex, "Unhandled error in email scheduler");
                 // Wait a bit before retrying to avoid tight loop on persistent errors
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
             }
         }
     }
@@ -67,7 +74,8 @@ public class EmailSchedulerService : BackgroundService
         {
             return today.Date.Add(time);
         }
-        return today.Date.AddHours(8); // Default to 8 AM UTC
+        _logger.LogWarning("Failed to parse SendTimeUtc '{Value}', defaulting to 08:00 UTC", _settings.SendTimeUtc);
+        return today.Date.AddHours(8);
     }
 
     private async Task SendAllEmailsAsync(CancellationToken ct)

@@ -71,15 +71,17 @@ public class HueApiClient : IHueApiClient
 
         if (!response.IsSuccessStatusCode)
         {
-            _logger.LogWarning("Token refresh failed with status {StatusCode}", (int)response.StatusCode);
+            var errorBody = await response.Content.ReadAsStringAsync(ct);
+            _logger.LogWarning("Token refresh failed with status {StatusCode}: {Body}",
+                (int)response.StatusCode, errorBody.Length > 500 ? errorBody[..500] : errorBody);
             throw new HttpRequestException(
                 $"Token refresh failed with status {(int)response.StatusCode}",
                 null,
                 response.StatusCode);
         }
 
-        var tokenResponse = await JsonSerializer.DeserializeAsync<HueTokenResponse>(
-            await response.Content.ReadAsStreamAsync(ct), JsonOptions, ct);
+        var json = await response.Content.ReadAsStringAsync(ct);
+        var tokenResponse = JsonSerializer.Deserialize<HueTokenResponse>(json, JsonOptions);
 
         return tokenResponse ?? throw new InvalidOperationException("Failed to deserialize token response.");
     }
@@ -100,7 +102,9 @@ public class HueApiClient : IHueApiClient
         if (!response.IsSuccessStatusCode)
         {
             var statusCode = (int)response.StatusCode;
-            _logger.LogWarning("Hue API request failed for {Path} with status {StatusCode}", path, statusCode);
+            var errorBody = await response.Content.ReadAsStringAsync(ct);
+            _logger.LogWarning("Hue API request failed for {Path} with status {StatusCode}: {Body}",
+                path, statusCode, errorBody.Length > 500 ? errorBody[..500] : errorBody);
 
             throw new HttpRequestException(
                 $"Hue API request failed for {path} with status {statusCode}",
@@ -108,8 +112,8 @@ public class HueApiClient : IHueApiClient
                 response.StatusCode);
         }
 
-        var result = await JsonSerializer.DeserializeAsync<HueResponse<T>>(
-            await response.Content.ReadAsStreamAsync(ct), JsonOptions, ct);
+        var json = await response.Content.ReadAsStringAsync(ct);
+        var result = JsonSerializer.Deserialize<HueResponse<T>>(json, JsonOptions);
 
         return result ?? throw new InvalidOperationException($"Failed to deserialize Hue API response for {path}.");
     }

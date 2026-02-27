@@ -461,6 +461,44 @@ public class PollingServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task PollHub_SkipsHubsWithExpiredTokens()
+    {
+        // Seed a hub with an expired token
+        using (var db = CreateDb())
+        {
+            var customer = new Customer { Name = "Test", Email = "test@example.com" };
+            db.Customers.Add(customer);
+            await db.SaveChangesAsync();
+
+            db.Hubs.Add(new Hub
+            {
+                CustomerId = customer.Id,
+                HueBridgeId = "001788FFFE123456",
+                HueApplicationKey = "appkey",
+                AccessToken = "expired-token",
+                RefreshToken = "refresh",
+                TokenExpiresAt = DateTime.UtcNow.AddHours(-1), // Expired 1 hour ago
+                Status = "active"
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var settings = Options.Create(new PollingSettings { IntervalMinutes = 60 });
+        var service = new PollingService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<PollingService>.Instance,
+            settings);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try { await service.StartAsync(cts.Token); await Task.Delay(2000, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        // Hue API should never have been called for an expired token
+        _mockHueClient.Verify(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task PollHub_SkipsInactiveHubs()
     {
         // Seed an inactive hub
