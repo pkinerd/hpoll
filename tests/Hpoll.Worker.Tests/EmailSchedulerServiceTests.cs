@@ -185,6 +185,38 @@ public class EmailSchedulerServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task SendAllEmails_SkipsWhenRendererReturnsNull()
+    {
+        await SeedCustomerAsync("nodata@example.com");
+
+        // Renderer returns null (no data for the period)
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)null);
+
+        var now = DateTime.UtcNow;
+        var sendTime = now.AddSeconds(1).TimeOfDay;
+        var settings = Options.Create(new EmailSettings
+        {
+            SendTimeUtc = $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}",
+            FromAddress = "noreply@hpoll.com",
+            AwsRegion = "us-east-1"
+        });
+
+        var service = new EmailSchedulerService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<EmailSchedulerService>.Instance,
+            settings);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try { await service.StartAsync(cts.Token); await Task.Delay(3000, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        // Email should NOT be sent when renderer returns null
+        _mockSender.Verify(s => s.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task ParseSendTime_DefaultsTo8AM_OnInvalidFormat()
     {
         await SeedCustomerAsync();
