@@ -11,7 +11,8 @@ public class TokenRefreshService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<TokenRefreshService> _logger;
-    private static readonly TimeSpan RefreshInterval = TimeSpan.FromHours(24);
+    private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
+    private static readonly TimeSpan RefreshThreshold = TimeSpan.FromHours(48);
     private const int MaxRetries = 3;
 
     public TokenRefreshService(
@@ -24,16 +25,15 @@ public class TokenRefreshService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Token refresh service started. Interval: {Hours}h", RefreshInterval.TotalHours);
-
-        // Wait a bit on startup to let things initialize
-        await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+        _logger.LogInformation(
+            "Token refresh service started. Check interval: {Hours}h, refresh threshold: {Threshold}h before expiry",
+            CheckInterval.TotalHours, RefreshThreshold.TotalHours);
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                await RefreshAllTokensAsync(stoppingToken);
+                await RefreshExpiringTokensAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -46,7 +46,7 @@ public class TokenRefreshService : BackgroundService
 
             try
             {
-                await Task.Delay(RefreshInterval, stoppingToken);
+                await Task.Delay(CheckInterval, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -55,7 +55,7 @@ public class TokenRefreshService : BackgroundService
         }
     }
 
-    private async Task RefreshAllTokensAsync(CancellationToken ct)
+    private async Task RefreshExpiringTokensAsync(CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
@@ -65,10 +65,23 @@ public class TokenRefreshService : BackgroundService
             .Where(h => h.Status == "active")
             .ToListAsync(ct);
 
-        _logger.LogInformation("Refreshing tokens for {Count} active hubs", hubs.Count);
+        _logger.LogInformation("Checking tokens for {Count} active hubs", hubs.Count);
 
         foreach (var hub in hubs)
         {
+            var timeUntilExpiry = hub.TokenExpiresAt - DateTime.UtcNow;
+            if (timeUntilExpiry > RefreshThreshold)
+            {
+                _logger.LogDebug(
+                    "Hub {BridgeId}: token still valid for {Hours:F0}h, skipping refresh",
+                    hub.HueBridgeId, timeUntilExpiry.TotalHours);
+                continue;
+            }
+
+            _logger.LogInformation(
+                "Hub {BridgeId}: token expires in {Hours:F1}h (threshold: {Threshold}h), refreshing",
+                hub.HueBridgeId, timeUntilExpiry.TotalHours, RefreshThreshold.TotalHours);
+
             var success = false;
             for (int retry = 0; retry < MaxRetries; retry++)
             {
