@@ -9,6 +9,8 @@ SQLite database, and sends daily summary emails via AWS SES.
 - A [Philips Hue developer account](https://developers.meethue.com/) with a
   registered Remote Hue API app (provides **Client ID** and **Client Secret**)
 - A Hue Bridge on the same Hue account, with its **Bridge ID**
+- A **Hue application key** (the `username` returned when you register a new
+  user on the bridge via the link button) for each bridge
 - An OAuth2 token set (access token, refresh token) obtained through the Hue
   Remote Authentication flow
 - AWS credentials configured for SES (for daily email reports)
@@ -35,7 +37,13 @@ variables use `__` (double underscore) as section separators.
 ### Customer and hub configuration
 
 Customers and their linked hubs are defined as a JSON array. Each customer has a
-name, email address (for daily reports), and one or more hubs:
+name, email address (for daily reports), and one or more hubs.
+
+The `hueApplicationKey` is the `username` you receive when pressing the bridge
+link button and creating a new API user (sometimes shown as a 40+ character hex
+string). In the v1 CLIP API this was passed as a URL path segment; in the v2
+Remote API hpoll sends it as the `hue-application-key` HTTP header alongside the
+OAuth Bearer token.
 
 ```json
 {
