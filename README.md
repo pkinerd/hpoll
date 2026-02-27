@@ -27,7 +27,7 @@ variables use `__` (double underscore) as section separators.
 |---|---|---|---|
 | `DataPath` | `DataPath` | `data` | Directory for the SQLite database file |
 | `Polling:IntervalMinutes` | `Polling__IntervalMinutes` | `60` | Minutes between polling cycles |
-| `Email:SendTimeUtc` | `Email__SendTimeUtc` | `08:00` | Time (UTC) to send daily summary emails |
+| `Email:SendTimesUtc` | `Email__SendTimesUtc__0`, `__1`, … | `["08:00"]` | List of times (UTC, `HH:mm`) to send summary emails |
 | `Email:FromAddress` | `Email__FromAddress` | _(required)_ | Sender address for daily emails (must be SES-verified) |
 | `Email:AwsRegion` | `Email__AwsRegion` | `us-east-1` | AWS region for SES |
 | `HueApp:ClientId` | `HueApp__ClientId` | _(required)_ | Hue Remote API app client ID |
@@ -37,7 +37,8 @@ variables use `__` (double underscore) as section separators.
 ### Customer and hub configuration
 
 Customers and their linked hubs are defined as a JSON array. Each customer has a
-name, email address (for daily reports), and one or more hubs.
+name, email address (for daily reports), a timezone (for email bucketing), and
+one or more hubs.
 
 The `bridgeId` is the unique hardware identifier of the Hue Bridge (the serial
 number printed on the device, also visible in the Hue app). It is not sent to
@@ -56,6 +57,7 @@ OAuth Bearer token.
     {
       "name": "Jane Doe",
       "email": "jane@example.com",
+      "timeZoneId": "Australia/Sydney",
       "hubs": [
         {
           "bridgeId": "001788FFFE123ABC",
@@ -70,12 +72,18 @@ OAuth Bearer token.
 }
 ```
 
+The `timeZoneId` controls how readings are bucketed in the daily email. It
+accepts any IANA timezone identifier (e.g. `Australia/Sydney`, `America/New_York`,
+`Europe/London`). Defaults to `Australia/Sydney` if omitted. All data is stored
+in UTC — the timezone is only used for email presentation.
+
 When using environment variables, array elements are indexed with `__0__`,
 `__1__`, etc.:
 
 ```
 Customers__0__Name=Jane Doe
 Customers__0__Email=jane@example.com
+Customers__0__TimeZoneId=Australia/Sydney
 Customers__0__Hubs__0__BridgeId=001788FFFE123ABC
 Customers__0__Hubs__0__HueApplicationKey=your-hue-application-key
 Customers__0__Hubs__0__AccessToken=initial-access-token
@@ -113,11 +121,19 @@ To add customer configuration via environment variables, append to `.env`:
 ```
 Customers__0__Name=Jane Doe
 Customers__0__Email=jane@example.com
+Customers__0__TimeZoneId=Australia/Sydney
 Customers__0__Hubs__0__BridgeId=001788FFFE123ABC
 Customers__0__Hubs__0__HueApplicationKey=your-hue-application-key
 Customers__0__Hubs__0__AccessToken=initial-access-token
 Customers__0__Hubs__0__RefreshToken=initial-refresh-token
 Customers__0__Hubs__0__TokenExpiresAt=2026-04-01T00:00:00Z
+```
+
+For multiple send times via environment variables:
+
+```
+Email__SendTimesUtc__0=06:00
+Email__SendTimesUtc__1=18:00
 ```
 
 Alternatively, mount an `appsettings.Production.json` file by adding this to
@@ -138,7 +154,7 @@ Where `appsettings.Production.json` contains:
   "Email": {
     "FromAddress": "alerts@example.com",
     "AwsRegion": "us-east-1",
-    "SendTimeUtc": "08:00"
+    "SendTimesUtc": ["06:00", "18:00"]
   },
   "Polling": {
     "IntervalMinutes": 60
@@ -147,6 +163,7 @@ Where `appsettings.Production.json` contains:
     {
       "name": "Jane Doe",
       "email": "jane@example.com",
+      "timeZoneId": "Australia/Sydney",
       "hubs": [
         {
           "bridgeId": "001788FFFE123ABC",
@@ -159,6 +176,47 @@ Where `appsettings.Production.json` contains:
     }
   ]
 }
+```
+
+### Full `docker-compose.yml` example
+
+Below is a complete `docker-compose.yml` that inlines all configuration. This
+is useful when you don't want a separate `.env` or JSON settings file:
+
+```yaml
+services:
+  worker:
+    build: .
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    environment:
+      # Hue app credentials
+      HueApp__ClientId: "your-client-id"
+      HueApp__ClientSecret: "your-client-secret"
+
+      # Email settings — multiple send times supported
+      Email__FromAddress: "alerts@example.com"
+      Email__AwsRegion: "us-east-1"
+      Email__SendTimesUtc__0: "06:00"
+      Email__SendTimesUtc__1: "18:00"
+
+      # AWS credentials for SES
+      AWS_ACCESS_KEY_ID: ""
+      AWS_SECRET_ACCESS_KEY: ""
+
+      # Polling interval
+      Polling__IntervalMinutes: "60"
+
+      # Customer 1
+      Customers__0__Name: "Jane Doe"
+      Customers__0__Email: "jane@example.com"
+      Customers__0__TimeZoneId: "Australia/Sydney"
+      Customers__0__Hubs__0__BridgeId: "001788FFFE123ABC"
+      Customers__0__Hubs__0__HueApplicationKey: "your-hue-application-key"
+      Customers__0__Hubs__0__AccessToken: "initial-access-token"
+      Customers__0__Hubs__0__RefreshToken: "initial-refresh-token"
+      Customers__0__Hubs__0__TokenExpiresAt: "2026-04-01T00:00:00Z"
 ```
 
 ### `docker run`
