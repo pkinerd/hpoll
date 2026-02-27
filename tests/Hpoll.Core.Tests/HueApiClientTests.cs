@@ -241,6 +241,68 @@ public class HueApiClientTests
         Assert.Equal(HttpStatusCode.ServiceUnavailable, ex.StatusCode);
     }
 
+    [Fact]
+    public async Task RefreshTokenAsync_On401_ThrowsHttpRequestException()
+    {
+        _mockHandler.ConfigureResponse(HttpStatusCode.Unauthorized, """{"error":"invalid_grant"}""");
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(
+            () => _client.RefreshTokenAsync(TestRefreshToken));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, ex.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMotionSensorsAsync_UsesCorrectEndpoint()
+    {
+        var responseBody = new HueResponse<HueMotionResource> { Data = new List<HueMotionResource>() };
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, JsonSerializer.Serialize(responseBody, JsonOptions));
+
+        await _client.GetMotionSensorsAsync(TestAccessToken, TestApplicationKey);
+
+        Assert.Contains("api.meethue.com/route/clip/v2/resource/motion", _mockHandler.CapturedRequest!.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task GetTemperatureSensorsAsync_UsesCorrectEndpoint()
+    {
+        var responseBody = new HueResponse<HueTemperatureResource> { Data = new List<HueTemperatureResource>() };
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, JsonSerializer.Serialize(responseBody, JsonOptions));
+
+        await _client.GetTemperatureSensorsAsync(TestAccessToken, TestApplicationKey);
+
+        Assert.Contains("api.meethue.com/route/clip/v2/resource/temperature", _mockHandler.CapturedRequest!.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task GetDevicesAsync_UsesCorrectEndpoint()
+    {
+        var responseBody = new HueResponse<HueDeviceResource> { Data = new List<HueDeviceResource>() };
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, JsonSerializer.Serialize(responseBody, JsonOptions));
+
+        await _client.GetDevicesAsync(TestAccessToken, TestApplicationKey);
+
+        Assert.Contains("api.meethue.com/route/clip/v2/resource/device", _mockHandler.CapturedRequest!.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_UsesCorrectTokenEndpoint()
+    {
+        var tokenResponse = new HueTokenResponse
+        {
+            AccessToken = "new-access",
+            RefreshToken = "new-refresh",
+            TokenType = "bearer",
+            ExpiresIn = 604800
+        };
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, JsonSerializer.Serialize(tokenResponse, JsonOptions));
+
+        await _client.RefreshTokenAsync(TestRefreshToken);
+
+        Assert.Contains("api.meethue.com/v2/oauth2/token", _mockHandler.CapturedRequest!.RequestUri!.ToString());
+        Assert.Equal(HttpMethod.Post, _mockHandler.CapturedRequest.Method);
+    }
+
     /// <summary>
     /// A mock HTTP message handler that captures the request and returns a configured response.
     /// </summary>

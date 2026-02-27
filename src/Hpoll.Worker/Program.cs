@@ -42,7 +42,6 @@ builder.Services.AddSingleton<IAmazonSimpleEmailService>(sp =>
 
 // Services
 builder.Services.AddScoped<ConfigSeeder>();
-builder.Services.AddScoped<HealthEvaluator>();
 builder.Services.AddScoped<IEmailRenderer, EmailRenderer>();
 builder.Services.AddScoped<IEmailSender, SesEmailSender>();
 

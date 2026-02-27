@@ -73,6 +73,11 @@ public class PollingService : BackgroundService
 
         foreach (var hub in activeHubs)
         {
+            if (hub.TokenExpiresAt <= DateTime.UtcNow)
+            {
+                _logger.LogWarning("Hub {BridgeId}: token expired, skipping poll", hub.HueBridgeId);
+                continue;
+            }
             await PollHubAsync(db, hueClient, hub, ct);
         }
     }
@@ -84,17 +89,16 @@ public class PollingService : BackgroundService
 
         try
         {
-            // 1. Fetch motion sensors
-            var motionResponse = await hueClient.GetMotionSensorsAsync(hub.AccessToken, hub.HueApplicationKey, ct);
-            apiCalls++;
+            // Fetch all sensor data in parallel
+            var motionTask = hueClient.GetMotionSensorsAsync(hub.AccessToken, hub.HueApplicationKey, ct);
+            var tempTask = hueClient.GetTemperatureSensorsAsync(hub.AccessToken, hub.HueApplicationKey, ct);
+            var deviceTask = hueClient.GetDevicesAsync(hub.AccessToken, hub.HueApplicationKey, ct);
+            await Task.WhenAll(motionTask, tempTask, deviceTask);
+            apiCalls = 3;
 
-            // 2. Fetch temperature sensors
-            var tempResponse = await hueClient.GetTemperatureSensorsAsync(hub.AccessToken, hub.HueApplicationKey, ct);
-            apiCalls++;
-
-            // 3. Fetch devices for name resolution
-            var deviceResponse = await hueClient.GetDevicesAsync(hub.AccessToken, hub.HueApplicationKey, ct);
-            apiCalls++;
+            var motionResponse = motionTask.Result;
+            var tempResponse = tempTask.Result;
+            var deviceResponse = deviceTask.Result;
 
             // Build device lookup: device ID -> device (for owner.rid lookups)
             // Also build service ID -> device (for cross-referencing by sensor ID)
@@ -192,7 +196,7 @@ public class PollingService : BackgroundService
             _logger.LogError(ex, "Hub {BridgeId}: polling failed", hub.HueBridgeId);
             hub.ConsecutiveFailures++;
             log.Success = false;
-            log.ErrorMessage = ex.Message;
+            log.ErrorMessage = ex.Message.Length > 500 ? ex.Message[..500] : ex.Message;
         }
         finally
         {
