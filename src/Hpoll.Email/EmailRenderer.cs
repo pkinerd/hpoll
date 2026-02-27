@@ -32,8 +32,9 @@ public class EmailRenderer : IEmailRenderer
         // 6 windows of 4 hours each, covering the 24 hours ending at bucketEndLocal
         var bucketStartLocal = bucketEndLocal.AddHours(-24);
 
-        // Convert the overall start/end to UTC for querying
-        var startUtc = TimeZoneInfo.ConvertTimeToUtc(bucketStartLocal, tz);
+        // Query 28 hours of data (4h extra overlap) so readings near the
+        // boundary aren't missed when send time doesn't align with buckets
+        var startUtc = TimeZoneInfo.ConvertTimeToUtc(bucketStartLocal.AddHours(-4), tz);
         var endUtc = TimeZoneInfo.ConvertTimeToUtc(bucketEndLocal, tz);
 
         // Get all devices for this customer's hubs
