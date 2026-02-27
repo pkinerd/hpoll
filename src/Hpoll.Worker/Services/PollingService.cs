@@ -16,6 +16,7 @@ public class PollingService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<PollingService> _logger;
     private readonly PollingSettings _settings;
+    private const int RetentionDays = 30;
 
     public PollingService(
         IServiceScopeFactory scopeFactory,
@@ -37,6 +38,7 @@ public class PollingService : BackgroundService
             try
             {
                 await PollAllHubsAsync(stoppingToken);
+                await CleanupOldDataAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -96,21 +98,12 @@ public class PollingService : BackgroundService
             await Task.WhenAll(motionTask, tempTask, deviceTask);
             apiCalls = 3;
 
-            var motionResponse = motionTask.Result;
-            var tempResponse = tempTask.Result;
-            var deviceResponse = deviceTask.Result;
+            var motionResponse = await motionTask;
+            var tempResponse = await tempTask;
+            var deviceResponse = await deviceTask;
 
             // Build device lookup: device ID -> device (for owner.rid lookups)
-            // Also build service ID -> device (for cross-referencing by sensor ID)
             var deviceById = deviceResponse.Data.ToDictionary(d => d.Id, d => d);
-            var deviceByServiceId = new Dictionary<string, Hpoll.Core.Models.HueDeviceResource>();
-            foreach (var device in deviceResponse.Data)
-            {
-                foreach (var service in device.Services)
-                {
-                    deviceByServiceId[service.Rid] = device;
-                }
-            }
 
             // Process motion readings
             foreach (var motion in motionResponse.Data)
@@ -212,6 +205,39 @@ public class PollingService : BackgroundService
             {
                 _logger.LogError(ex, "Hub {BridgeId}: failed to save polling log", hub.HueBridgeId);
             }
+        }
+    }
+
+    private async Task CleanupOldDataAsync(CancellationToken ct)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
+            var cutoff = DateTime.UtcNow.AddDays(-RetentionDays);
+
+            var oldReadings = await db.DeviceReadings
+                .Where(r => r.Timestamp < cutoff)
+                .ToListAsync(ct);
+
+            var oldLogs = await db.PollingLogs
+                .Where(l => l.Timestamp < cutoff)
+                .ToListAsync(ct);
+
+            if (oldReadings.Count > 0 || oldLogs.Count > 0)
+            {
+                db.DeviceReadings.RemoveRange(oldReadings);
+                db.PollingLogs.RemoveRange(oldLogs);
+                await db.SaveChangesAsync(ct);
+
+                _logger.LogInformation(
+                    "Data retention cleanup: deleted {Readings} readings and {Logs} polling logs older than {Days} days",
+                    oldReadings.Count, oldLogs.Count, RetentionDays);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Data retention cleanup failed");
         }
     }
 
