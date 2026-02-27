@@ -537,6 +537,140 @@ public class PollingServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task PollHub_DetectsMotion_WhenChangedIsAfterCutoff()
+    {
+        var hub = await SeedHubAsync();
+
+        // Changed timestamp is recent (5 minutes ago) — within the polling interval
+        var recentChanged = DateTime.UtcNow.AddMinutes(-5);
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource>
+            {
+                Data = new List<HueMotionResource>
+                {
+                    new()
+                    {
+                        Id = "motion-001",
+                        Type = "motion",
+                        Owner = new HueResourceRef { Rid = "device-001", Rtype = "device" },
+                        Enabled = true,
+                        Motion = new HueMotionData
+                        {
+                            // motion boolean is false (already reset), but Changed is recent
+                            MotionReport = new HueMotionReport { Motion = false, Changed = recentChanged }
+                        }
+                    }
+                }
+            });
+
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource> { Data = new List<HueTemperatureResource>() });
+
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource>
+            {
+                Data = new List<HueDeviceResource>
+                {
+                    new()
+                    {
+                        Id = "device-001",
+                        Type = "device",
+                        Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" },
+                        ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue motion sensor", SoftwareVersion = "1.0" },
+                        Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } }
+                    }
+                }
+            });
+
+        var settings = Options.Create(new PollingSettings { IntervalMinutes = 60 });
+        var service = new PollingService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<PollingService>.Instance,
+            settings);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try { await service.StartAsync(cts.Token); await Task.Delay(2000, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        using var db = CreateDb();
+        var reading = await db.DeviceReadings.FirstAsync(r => r.ReadingType == "motion");
+        // Even though the API's motion boolean was false, Changed is after the cutoff
+        // so motion should be detected as true
+        Assert.Contains("\"motion\":true", reading.Value);
+    }
+
+    [Fact]
+    public async Task PollHub_NoMotion_WhenChangedIsBeforeCutoff()
+    {
+        var hub = await SeedHubAsync();
+
+        // Set LastPolledAt to 30 minutes ago so we have a recent baseline
+        using (var db = CreateDb())
+        {
+            var h = await db.Hubs.FirstAsync(x => x.Id == hub.Id);
+            h.LastPolledAt = DateTime.UtcNow.AddMinutes(-30);
+            await db.SaveChangesAsync();
+        }
+
+        // Changed timestamp is 2 hours ago — before both LastPolledAt and interval cutoff
+        var oldChanged = DateTime.UtcNow.AddHours(-2);
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource>
+            {
+                Data = new List<HueMotionResource>
+                {
+                    new()
+                    {
+                        Id = "motion-001",
+                        Type = "motion",
+                        Owner = new HueResourceRef { Rid = "device-001", Rtype = "device" },
+                        Enabled = true,
+                        Motion = new HueMotionData
+                        {
+                            MotionReport = new HueMotionReport { Motion = false, Changed = oldChanged }
+                        }
+                    }
+                }
+            });
+
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource> { Data = new List<HueTemperatureResource>() });
+
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource>
+            {
+                Data = new List<HueDeviceResource>
+                {
+                    new()
+                    {
+                        Id = "device-001",
+                        Type = "device",
+                        Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" },
+                        ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue motion sensor", SoftwareVersion = "1.0" },
+                        Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } }
+                    }
+                }
+            });
+
+        var settings = Options.Create(new PollingSettings { IntervalMinutes = 60 });
+        var service = new PollingService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<PollingService>.Instance,
+            settings);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try { await service.StartAsync(cts.Token); await Task.Delay(2000, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        using var db2 = CreateDb();
+        var reading = await db2.DeviceReadings.FirstAsync(r => r.ReadingType == "motion");
+        // Changed is before the cutoff — no motion detected
+        Assert.Contains("\"motion\":false", reading.Value);
+    }
+
+    [Fact]
     public async Task CleanupOldData_DeletesReadingsAndLogsOlderThan30Days()
     {
         var hub = await SeedHubAsync();

@@ -105,6 +105,17 @@ public class PollingService : BackgroundService
             // Build device lookup: device ID -> device (for owner.rid lookups)
             var deviceById = deviceResponse.Data.ToDictionary(d => d.Id, d => d);
 
+            // Compute the cutoff for motion detection: the lower of last poll time
+            // or current time minus the polling interval. If Changed is after this
+            // cutoff, motion occurred since we last checked.
+            // The Hue API motion boolean is momentary and resets quickly, so with
+            // 60-minute polling we'd miss most events if we relied on it directly.
+            var now = DateTime.UtcNow;
+            var intervalCutoff = now.AddMinutes(-_settings.IntervalMinutes);
+            var motionCutoff = hub.LastPolledAt.HasValue
+                ? new DateTime(Math.Min(hub.LastPolledAt.Value.Ticks, intervalCutoff.Ticks), DateTimeKind.Utc)
+                : intervalCutoff;
+
             // Process motion readings
             foreach (var motion in motionResponse.Data)
             {
@@ -117,14 +128,16 @@ public class PollingService : BackgroundService
 
                 var dbDevice = await GetOrCreateDeviceAsync(db, hub, motion.Owner.Rid, "motion_sensor", deviceName, ct);
 
+                var motionDetected = motion.Motion.MotionReport.Changed > motionCutoff;
+
                 db.DeviceReadings.Add(new DeviceReading
                 {
                     DeviceId = dbDevice.Id,
-                    Timestamp = DateTime.UtcNow,
+                    Timestamp = now,
                     ReadingType = "motion",
                     Value = JsonSerializer.Serialize(new
                     {
-                        motion = motion.Motion.MotionReport.Motion,
+                        motion = motionDetected,
                         changed = motion.Motion.MotionReport.Changed
                     })
                 });
