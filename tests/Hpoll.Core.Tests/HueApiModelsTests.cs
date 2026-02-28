@@ -204,6 +204,72 @@ public class HueApiModelsTests
     }
 
     [Fact]
+    public void DeserializeDevicePowerResponse_Succeeds()
+    {
+        var json = """
+        {
+            "errors": [],
+            "data": [
+                {
+                    "id": "power-001",
+                    "type": "device_power",
+                    "owner": {
+                        "rid": "dev-456",
+                        "rtype": "device"
+                    },
+                    "power_state": {
+                        "battery_state": "normal",
+                        "battery_level": 85
+                    }
+                }
+            ]
+        }
+        """;
+
+        var result = JsonSerializer.Deserialize<HueResponse<HueDevicePowerResource>>(json, JsonOptions);
+
+        Assert.NotNull(result);
+        Assert.Empty(result.Errors);
+        Assert.Single(result.Data);
+
+        var power = result.Data[0];
+        Assert.Equal("power-001", power.Id);
+        Assert.Equal("device_power", power.Type);
+        Assert.Equal("dev-456", power.Owner.Rid);
+        Assert.Equal("device", power.Owner.Rtype);
+        Assert.Equal("normal", power.PowerState.BatteryState);
+        Assert.Equal(85, power.PowerState.BatteryLevel);
+    }
+
+    [Fact]
+    public void DeserializeDevicePowerResponse_WithNullBattery_HandlesGracefully()
+    {
+        var json = """
+        {
+            "errors": [],
+            "data": [
+                {
+                    "id": "power-002",
+                    "type": "device_power",
+                    "owner": {
+                        "rid": "dev-789",
+                        "rtype": "device"
+                    },
+                    "power_state": {}
+                }
+            ]
+        }
+        """;
+
+        var result = JsonSerializer.Deserialize<HueResponse<HueDevicePowerResource>>(json, JsonOptions);
+
+        Assert.NotNull(result);
+        Assert.Single(result.Data);
+        Assert.Null(result.Data[0].PowerState.BatteryLevel);
+        Assert.Null(result.Data[0].PowerState.BatteryState);
+    }
+
+    [Fact]
     public void DeserializeErrorResponse_Succeeds()
     {
         var json = """

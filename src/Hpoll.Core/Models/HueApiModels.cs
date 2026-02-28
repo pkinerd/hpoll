@@ -130,3 +130,27 @@ public class HueProductData
     [JsonPropertyName("software_version")]
     public string SoftwareVersion { get; set; } = string.Empty;
 }
+
+public class HueDevicePowerResource
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = string.Empty;
+
+    [JsonPropertyName("owner")]
+    public HueResourceRef Owner { get; set; } = new();
+
+    [JsonPropertyName("power_state")]
+    public HuePowerState PowerState { get; set; } = new();
+}
+
+public class HuePowerState
+{
+    [JsonPropertyName("battery_state")]
+    public string? BatteryState { get; set; }
+
+    [JsonPropertyName("battery_level")]
+    public int? BatteryLevel { get; set; }
+}

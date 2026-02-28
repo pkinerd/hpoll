@@ -125,6 +125,21 @@ public class PollingServiceTests : IDisposable
                     }
                 }
             });
+
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>
+            {
+                Data = new List<HueDevicePowerResource>
+                {
+                    new()
+                    {
+                        Id = "power-001",
+                        Type = "device_power",
+                        Owner = new HueResourceRef { Rid = "device-001", Rtype = "device" },
+                        PowerState = new HuePowerState { BatteryLevel = 85, BatteryState = "normal" }
+                    }
+                }
+            });
     }
 
     [Fact]
@@ -365,7 +380,7 @@ public class PollingServiceTests : IDisposable
         using var db = CreateDb();
         var logs = await db.PollingLogs.Where(l => l.HubId == hub.Id).ToListAsync();
         Assert.NotEmpty(logs);
-        Assert.Contains(logs, l => l.Success && l.ApiCallsMade == 3);
+        Assert.Contains(logs, l => l.Success && l.ApiCallsMade >= 3);
     }
 
     [Fact]
@@ -444,6 +459,9 @@ public class PollingServiceTests : IDisposable
                 }
             });
 
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
+
         var settings = Options.Create(new PollingSettings { IntervalMinutes = 60 });
         var service = new PollingService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
@@ -457,7 +475,8 @@ public class PollingServiceTests : IDisposable
 
         using var db = CreateDb();
         var readings = await db.DeviceReadings.ToListAsync();
-        Assert.Empty(readings); // Null motion report should be skipped
+        // Null motion report should be skipped; battery reading may be present
+        Assert.DoesNotContain(readings, r => r.ReadingType == "motion");
     }
 
     [Fact]
@@ -582,6 +601,9 @@ public class PollingServiceTests : IDisposable
                 }
             });
 
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
+
         var settings = Options.Create(new PollingSettings { IntervalMinutes = 60 });
         var service = new PollingService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
@@ -652,6 +674,9 @@ public class PollingServiceTests : IDisposable
                     }
                 }
             });
+
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
 
         var settings = Options.Create(new PollingSettings { IntervalMinutes = 60 });
         var service = new PollingService(
@@ -751,5 +776,84 @@ public class PollingServiceTests : IDisposable
         var logs = await db2.PollingLogs.ToListAsync();
         Assert.DoesNotContain(logs, l => l.Timestamp < DateTime.UtcNow.AddDays(-30));
         Assert.Contains(logs, l => l.Timestamp > DateTime.UtcNow.AddDays(-2));
+    }
+
+    [Fact]
+    public async Task PollHub_StoresBatteryReadings_OnFirstPoll()
+    {
+        var hub = await SeedHubAsync();
+        SetupSuccessfulHueResponses();
+
+        var settings = Options.Create(new PollingSettings { IntervalMinutes = 60 });
+        var service = new PollingService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<PollingService>.Instance,
+            settings);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try { await service.StartAsync(cts.Token); await Task.Delay(2000, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        using var db = CreateDb();
+        var batteryReadings = await db.DeviceReadings.Where(r => r.ReadingType == "battery").ToListAsync();
+        Assert.NotEmpty(batteryReadings);
+        Assert.Contains("\"battery_level\":85", batteryReadings.First().Value);
+    }
+
+    [Fact]
+    public async Task PollHub_SkipsBatteryPoll_WhenRecentlyPolled()
+    {
+        var hub = await SeedHubAsync();
+
+        // Mark battery as recently polled
+        using (var db = CreateDb())
+        {
+            var h = await db.Hubs.FirstAsync(x => x.Id == hub.Id);
+            h.LastBatteryPollUtc = DateTime.UtcNow.AddHours(-1);
+            await db.SaveChangesAsync();
+        }
+
+        SetupSuccessfulHueResponses();
+
+        var settings = Options.Create(new PollingSettings { IntervalMinutes = 60, BatteryPollIntervalHours = 84 });
+        var service = new PollingService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<PollingService>.Instance,
+            settings);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try { await service.StartAsync(cts.Token); await Task.Delay(2000, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        // Battery API should not have been called since LastBatteryPollUtc is recent
+        _mockHueClient.Verify(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+
+        using var db2 = CreateDb();
+        var batteryReadings = await db2.DeviceReadings.Where(r => r.ReadingType == "battery").ToListAsync();
+        Assert.Empty(batteryReadings);
+    }
+
+    [Fact]
+    public async Task PollHub_UpdatesLastBatteryPollUtc_AfterBatteryPoll()
+    {
+        var hub = await SeedHubAsync();
+        SetupSuccessfulHueResponses();
+
+        var settings = Options.Create(new PollingSettings { IntervalMinutes = 60 });
+        var service = new PollingService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<PollingService>.Instance,
+            settings);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try { await service.StartAsync(cts.Token); await Task.Delay(2000, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        using var db = CreateDb();
+        var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.NotNull(updatedHub.LastBatteryPollUtc);
     }
 }

@@ -28,6 +28,7 @@ public class HubConfig
 public class PollingSettings
 {
     public int IntervalMinutes { get; set; } = 60;
+    public int BatteryPollIntervalHours { get; set; } = 84; // ~3.5 days, roughly twice per week
 }
 
 public class EmailSettings

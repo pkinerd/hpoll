@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Interfaces;
+using Hpoll.Core.Models;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 using System.Text.Json;
@@ -91,16 +92,25 @@ public class PollingService : BackgroundService
 
         try
         {
+            // Determine if battery data should be fetched this cycle
+            var shouldPollBattery = !hub.LastBatteryPollUtc.HasValue
+                || (DateTime.UtcNow - hub.LastBatteryPollUtc.Value).TotalHours >= _settings.BatteryPollIntervalHours;
+
             // Fetch all sensor data in parallel
             var motionTask = hueClient.GetMotionSensorsAsync(hub.AccessToken, hub.HueApplicationKey, ct);
             var tempTask = hueClient.GetTemperatureSensorsAsync(hub.AccessToken, hub.HueApplicationKey, ct);
             var deviceTask = hueClient.GetDevicesAsync(hub.AccessToken, hub.HueApplicationKey, ct);
-            await Task.WhenAll(motionTask, tempTask, deviceTask);
-            apiCalls = 3;
+            var batteryTask = shouldPollBattery
+                ? hueClient.GetDevicePowerAsync(hub.AccessToken, hub.HueApplicationKey, ct)
+                : Task.FromResult(new HueResponse<HueDevicePowerResource>());
+
+            await Task.WhenAll(motionTask, tempTask, deviceTask, batteryTask);
+            apiCalls = shouldPollBattery ? 4 : 3;
 
             var motionResponse = await motionTask;
             var tempResponse = await tempTask;
             var deviceResponse = await deviceTask;
+            var batteryResponse = await batteryTask;
 
             // Build device lookup: device ID -> device (for owner.rid lookups)
             var deviceById = deviceResponse.Data.ToDictionary(d => d.Id, d => d);
@@ -166,6 +176,39 @@ public class PollingService : BackgroundService
                         changed = temp.Temperature.TemperatureReport.Changed
                     })
                 });
+            }
+
+            // Process battery readings (only when polled this cycle)
+            if (shouldPollBattery && batteryResponse.Data.Count > 0)
+            {
+                foreach (var power in batteryResponse.Data)
+                {
+                    if (power.PowerState.BatteryLevel == null) continue;
+
+                    var deviceName = deviceById.TryGetValue(power.Owner.Rid, out var ownerDevice)
+                        ? ownerDevice.Metadata.Name
+                        : "Unknown";
+
+                    var dbDevice = await GetOrCreateDeviceAsync(db, hub, power.Owner.Rid, "battery", deviceName, ct);
+
+                    db.DeviceReadings.Add(new DeviceReading
+                    {
+                        DeviceId = dbDevice.Id,
+                        Timestamp = DateTime.UtcNow,
+                        ReadingType = "battery",
+                        Value = JsonSerializer.Serialize(new
+                        {
+                            battery_level = power.PowerState.BatteryLevel.Value,
+                            battery_state = power.PowerState.BatteryState ?? "unknown"
+                        })
+                    });
+                }
+
+                hub.LastBatteryPollUtc = DateTime.UtcNow;
+
+                _logger.LogInformation(
+                    "Hub {BridgeId}: battery data fetched. {BatteryCount} device_power resources",
+                    hub.HueBridgeId, batteryResponse.Data.Count);
             }
 
             hub.LastSuccessAt = DateTime.UtcNow;

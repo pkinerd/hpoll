@@ -52,6 +52,12 @@ public class HueApiClient : IHueApiClient
         return await GetResourceAsync<HueDeviceResource>("/resource/device", accessToken, applicationKey, ct);
     }
 
+    public async Task<HueResponse<HueDevicePowerResource>> GetDevicePowerAsync(
+        string accessToken, string applicationKey, CancellationToken ct = default)
+    {
+        return await GetResourceAsync<HueDevicePowerResource>("/resource/device_power", accessToken, applicationKey, ct);
+    }
+
     public async Task<HueTokenResponse> RefreshTokenAsync(string refreshToken, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient(HttpClientName);

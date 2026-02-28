@@ -120,12 +120,41 @@ public class EmailRenderer : IEmailRenderer
         // Format the timezone name for display
         var tzAbbrev = tz.IsDaylightSavingTime(nowLocal) ? tz.DaylightName : tz.StandardName;
 
+        // Query latest battery reading per device (most recent "battery" reading for each device)
+        var allBatteryReadings = await _db.DeviceReadings
+            .Include(r => r.Device)
+            .Where(r => deviceIds.Contains(r.DeviceId) && r.ReadingType == "battery")
+            .ToListAsync(ct);
+
+        var batteryReadings = allBatteryReadings
+            .GroupBy(r => r.DeviceId)
+            .Select(g => g.OrderByDescending(r => r.Timestamp).First())
+            .ToList();
+
+        var batteryStatuses = new List<BatteryStatus>();
+        foreach (var reading in batteryReadings)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(reading.Value);
+                var level = doc.RootElement.GetProperty("battery_level").GetInt32();
+                batteryStatuses.Add(new BatteryStatus
+                {
+                    DeviceName = reading.Device.Name,
+                    BatteryLevel = level
+                });
+            }
+            catch { }
+        }
+
+        batteryStatuses = batteryStatuses.OrderBy(b => b.BatteryLevel).ToList();
+
         windows.Reverse(); // newest window first for readability
         var displayEndLocal = bucketEndLocal > nowLocal ? nowLocal : bucketEndLocal;
-        return BuildHtml(bucketStartLocal, displayEndLocal, tzAbbrev, windows);
+        return BuildHtml(bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses);
     }
 
-    private static string BuildHtml(DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows)
+    private static string BuildHtml(DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses)
     {
         var sb = new StringBuilder();
         sb.AppendLine("<!DOCTYPE html>");
@@ -211,6 +240,29 @@ public class EmailRenderer : IEmailRenderer
         }
         sb.AppendLine("</table>");
 
+        // Battery status section — only shown if any device is below 30%
+        if (batteryStatuses.Count > 0 && batteryStatuses.Any(b => b.BatteryLevel < 30))
+        {
+            sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-top:20px;\">");
+            sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Battery Status</td></tr>");
+            foreach (var b in batteryStatuses)
+            {
+                var color = b.BatteryLevel < 30 ? "#e74c3c"
+                          : b.BatteryLevel < 50 ? "#f39c12"
+                          : "#27ae60";
+                var barWidth = Math.Max(b.BatteryLevel, 5);
+
+                sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:140px;white-space:nowrap;\">{Encode(b.DeviceName)}</td>");
+                sb.AppendLine($"<td><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"><tr>");
+                sb.AppendLine($"<td style=\"background-color:{color};width:{barWidth}%;height:16px;border-radius:3px;\"></td>");
+                sb.AppendLine($"<td style=\"width:{100 - barWidth}%;\"></td>");
+                sb.AppendLine("</tr></table></td>");
+                sb.AppendLine($"<td style=\"font-size:11px;color:#777;width:36px;text-align:right;\">{b.BatteryLevel}%</td>");
+                sb.AppendLine("</tr>");
+            }
+            sb.AppendLine("</table>");
+        }
+
         sb.AppendLine("</td></tr>");
 
         // Footer
@@ -222,6 +274,9 @@ public class EmailRenderer : IEmailRenderer
         return sb.ToString();
     }
 
+    private static string Encode(string text) =>
+        System.Net.WebUtility.HtmlEncode(text);
+
     private class WindowSummary
     {
         public string Label { get; set; } = string.Empty;
@@ -231,5 +286,11 @@ public class EmailRenderer : IEmailRenderer
         public double? TemperatureMin { get; set; }
         public double? TemperatureMedian { get; set; }
         public double? TemperatureMax { get; set; }
+    }
+
+    private class BatteryStatus
+    {
+        public string DeviceName { get; set; } = string.Empty;
+        public int BatteryLevel { get; set; }
     }
 }
