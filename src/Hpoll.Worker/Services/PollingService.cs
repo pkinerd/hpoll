@@ -18,6 +18,7 @@ public class PollingService : BackgroundService
     private readonly ILogger<PollingService> _logger;
     private readonly PollingSettings _settings;
     private const int RetentionDays = 30;
+    private bool _firstCycle = true;
 
     public PollingService(
         IServiceScopeFactory scopeFactory,
@@ -38,7 +39,8 @@ public class PollingService : BackgroundService
         {
             try
             {
-                await PollAllHubsAsync(stoppingToken);
+                await PollAllHubsAsync(_firstCycle, stoppingToken);
+                _firstCycle = false;
                 await CleanupOldDataAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -61,7 +63,7 @@ public class PollingService : BackgroundService
         }
     }
 
-    private async Task PollAllHubsAsync(CancellationToken ct)
+    private async Task PollAllHubsAsync(bool forceBatteryPoll, CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
@@ -81,11 +83,11 @@ public class PollingService : BackgroundService
                 _logger.LogWarning("Hub {BridgeId}: token expired, skipping poll", hub.HueBridgeId);
                 continue;
             }
-            await PollHubAsync(db, hueClient, hub, ct);
+            await PollHubAsync(db, hueClient, hub, forceBatteryPoll, ct);
         }
     }
 
-    private async Task PollHubAsync(HpollDbContext db, IHueApiClient hueClient, Hub hub, CancellationToken ct)
+    private async Task PollHubAsync(HpollDbContext db, IHueApiClient hueClient, Hub hub, bool forceBatteryPoll, CancellationToken ct)
     {
         var log = new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow };
         int apiCalls = 0;
@@ -93,7 +95,8 @@ public class PollingService : BackgroundService
         try
         {
             // Determine if battery data should be fetched this cycle
-            var shouldPollBattery = !hub.LastBatteryPollUtc.HasValue
+            var shouldPollBattery = forceBatteryPoll
+                || !hub.LastBatteryPollUtc.HasValue
                 || (DateTime.UtcNow - hub.LastBatteryPollUtc.Value).TotalHours >= _settings.BatteryPollIntervalHours;
 
             // Fetch all sensor data in parallel

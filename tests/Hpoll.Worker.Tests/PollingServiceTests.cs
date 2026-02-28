@@ -802,7 +802,7 @@ public class PollingServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task PollHub_SkipsBatteryPoll_WhenRecentlyPolled()
+    public async Task PollHub_AlwaysPollsBattery_OnStartup_EvenWhenRecentlyPolled()
     {
         var hub = await SeedHubAsync();
 
@@ -827,12 +827,12 @@ public class PollingServiceTests : IDisposable
         catch (OperationCanceledException) { }
         finally { await service.StopAsync(CancellationToken.None); }
 
-        // Battery API should not have been called since LastBatteryPollUtc is recent
-        _mockHueClient.Verify(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        // Battery API should be called on the first cycle even though LastBatteryPollUtc is recent
+        _mockHueClient.Verify(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
 
         using var db2 = CreateDb();
         var batteryReadings = await db2.DeviceReadings.Where(r => r.ReadingType == "battery").ToListAsync();
-        Assert.Empty(batteryReadings);
+        Assert.NotEmpty(batteryReadings);
     }
 
     [Fact]
