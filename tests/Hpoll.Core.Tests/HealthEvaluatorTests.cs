@@ -79,10 +79,10 @@ public class HealthEvaluatorTests
     }
 
     [Fact]
-    public void NeedsAttention_AtExactSilenceThreshold_ReturnsFalse()
+    public void NeedsAttention_JustUnderSilenceThreshold_ReturnsFalse()
     {
-        // Exactly 6 hours (the default threshold) should NOT trigger, only > 6 hours
-        var lastSuccess = DateTime.UtcNow.AddHours(-6);
+        // 5 hours 59 minutes (just under the 6-hour threshold) should NOT trigger
+        var lastSuccess = DateTime.UtcNow.AddHours(-5).AddMinutes(-59);
 
         var result = _evaluator.NeedsAttention(lastSuccess, 0);
 

@@ -27,6 +27,16 @@ public class CreateModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
 
+        try
+        {
+            TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            ModelState.AddModelError(nameof(TimeZoneId), "Invalid timezone.");
+            return Page();
+        }
+
         var customer = new Customer
         {
             Name = Name,

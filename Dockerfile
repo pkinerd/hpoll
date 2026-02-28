@@ -22,10 +22,14 @@ RUN dotnet publish src/Hpoll.Worker/Hpoll.Worker.csproj -c Release -o /app/publi
 FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
 WORKDIR /app
 
-# Create data directory
-RUN mkdir -p /app/data
+# Create non-root user and data directory
+RUN adduser --disabled-password --gecos "" appuser \
+    && mkdir -p /app/data \
+    && chown -R appuser:appuser /app
 
-COPY --from=build /app/publish .
+COPY --from=build --chown=appuser:appuser /app/publish .
+
+USER appuser
 
 ENV DataPath=/app/data
 ENV DOTNET_ENVIRONMENT=Production
