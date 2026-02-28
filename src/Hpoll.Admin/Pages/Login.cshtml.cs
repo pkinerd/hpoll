@@ -69,6 +69,12 @@ public class LoginModel : PageModel
 
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
+        var returnUrl = Request.Query["ReturnUrl"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
         return RedirectToPage("/Index");
     }
 
