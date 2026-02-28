@@ -9,10 +9,10 @@ SQLite database, and sends daily summary emails via AWS SES.
 - A [Philips Hue developer account](https://developers.meethue.com/) with a
   registered Remote Hue API app (provides **Client ID** and **Client Secret**)
 - A Hue Bridge on the same Hue account, with its **Bridge ID**
-- A **Hue application key** (the `username` returned when you register a new
-  user on the bridge via the link button) for each bridge
-- An OAuth2 token set (access token, refresh token) obtained through the Hue
-  Remote Authentication flow
+- A **Hue application key** and **OAuth2 tokens** for each bridge — either
+  obtained manually through the Hue Remote Authentication flow or automatically
+  via the admin portal's "Register Hub" feature (see
+  [Web admin console](#web-admin-console))
 - AWS credentials configured for SES (for daily email reports)
 
 ## Configuration
@@ -49,6 +49,7 @@ variables use `__` (double underscore) as section separators.
 | **Hue app** | | | |
 | `HueApp:ClientId` | `HueApp__ClientId` | _(required)_ | Hue Remote API app client ID |
 | `HueApp:ClientSecret` | `HueApp__ClientSecret` | _(required)_ | Hue Remote API app client secret |
+| `HueApp:CallbackUrl` | `HueApp__CallbackUrl` | _(required for admin)_ | OAuth callback URL for hub registration (e.g. `https://admin.example.com/Hubs/OAuthCallback`) |
 | `Customers` | _(see below)_ | `[]` | Array of customer/hub definitions |
 
 ### Customer and hub configuration
@@ -199,7 +200,8 @@ Where `appsettings.Production.json` contains:
 {
   "HueApp": {
     "ClientId": "your-client-id",
-    "ClientSecret": "your-client-secret"
+    "ClientSecret": "your-client-secret",
+    "CallbackUrl": "https://admin.example.com/Hubs/OAuthCallback"
   },
   "Email": {
     "FromAddress": "alerts@example.com",
@@ -259,6 +261,7 @@ services:
       # ── Hue app credentials ──────────────────────────────
       HueApp__ClientId: "your-client-id"
       HueApp__ClientSecret: "your-client-secret"
+      HueApp__CallbackUrl: "https://admin.example.com/Hubs/OAuthCallback"
 
       # ── Polling ──────────────────────────────────────────
       Polling__IntervalMinutes: "60"
@@ -317,6 +320,11 @@ services:
     restart: unless-stopped
     environment:
       ADMIN_PASSWORD_HASH: ""  # generate via the setup page at /Login
+
+      # ── Hue app credentials (needed for hub registration) ──
+      HueApp__ClientId: "your-client-id"
+      HueApp__ClientSecret: "your-client-secret"
+      HueApp__CallbackUrl: "http://localhost:8080/Hubs/OAuthCallback"
 ```
 
 ### `docker run`
@@ -343,6 +351,20 @@ docker run -d \
   pkinerd/hpoll:latest
 ```
 
+To run the admin panel alongside the worker:
+
+```bash
+docker run -d \
+  --name hpoll-admin \
+  -v $(pwd)/data:/app/data \
+  -p 8080:8080 \
+  -e ADMIN_PASSWORD_HASH=your-hash-here \
+  -e HueApp__ClientId=your-client-id \
+  -e HueApp__ClientSecret=your-client-secret \
+  -e HueApp__CallbackUrl=http://localhost:8080/Hubs/OAuthCallback \
+  pkinerd/hpoll-admin:latest
+```
+
 ## Building from source
 
 ```bash
@@ -356,6 +378,48 @@ dotnet run --project src/Hpoll.Worker
 ```bash
 docker build -t hpoll .
 ```
+
+## Web admin console
+
+The admin panel is a web UI for managing customers and hubs without editing
+configuration files or restarting the worker. It runs as a separate container
+(`hpoll-admin`) that shares the same SQLite database via a bind mount.
+
+Through the admin panel you can add customers, edit email addresses, toggle
+active/inactive status, and — most importantly — register new hubs via the
+Hue OAuth flow. Clicking **Register Hub** on a customer's page starts the full
+sequence automatically: OAuth authorization, link-button activation, application
+key registration, bridge ID discovery, and token storage. No manual token
+exchange or API calls required.
+
+### Hub registration via OAuth
+
+1. Navigate to the customer's detail page and click **Register Hub**.
+2. Click the generated Hue authorization link to grant access in the Hue
+   developer portal.
+3. After authorization, Hue redirects back to the admin's callback URL
+   (`/Hubs/OAuthCallback`). The admin exchanges the authorization code for
+   tokens, activates the link button, registers an application key, discovers
+   the bridge ID, and saves the hub to the database.
+4. The worker picks up the new hub on its next polling cycle.
+
+### CallbackUrl configuration
+
+`HueApp:CallbackUrl` must be set to the externally-accessible URL of the admin
+portal's OAuth callback page. The format is:
+
+```
+<admin-base-url>/Hubs/OAuthCallback
+```
+
+| Environment | CallbackUrl value |
+|---|---|
+| Local development | `http://localhost:8080/Hubs/OAuthCallback` |
+| Production (reverse proxy) | `https://admin.example.com/Hubs/OAuthCallback` |
+
+This URL must **exactly match** the "Callback URL" registered in your
+[Hue developer portal](https://developers.meethue.com/) app settings. If they
+do not match, the OAuth redirect will fail.
 
 ## Admin panel password
 
