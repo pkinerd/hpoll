@@ -28,6 +28,15 @@ tests/
   Hpoll.Worker.Tests/  # Unit tests for worker services
 ```
 
+## Environment Setup
+
+The .NET 8.0 SDK must be installed before building or testing locally. If `dotnet` is not available, install it first:
+
+```bash
+# Install .NET 8.0 SDK (Ubuntu/Debian)
+sudo apt-get update && sudo apt-get install -y dotnet-sdk-8.0
+```
+
 ## Build & Test Commands
 
 ```bash
@@ -84,3 +93,13 @@ docker compose up --build                         # Full stack
 ## CI
 
 GitHub Actions workflow (`.github/workflows/build-and-test.yml`) runs on pushes to `main`, `dev`, and `claude/*` branches. It builds, runs tests with coverage, then builds and pushes Docker images.
+
+## Skills (Slash Commands)
+
+The following skills are available and should be preferred over manual alternatives:
+
+- **`/issues`** — Manage issues tracked on the `claude/issues` orphan branch. Use this to list, create, show, update, comment on, close, reopen, search, and filter issues. Always use this skill instead of manually managing issue tracking.
+- **`/hue-api-docs`** — Extract Philips Hue API documentation from the encrypted archive into a temporary directory. Use this whenever you need to reference Hue API endpoints, payloads, or behavior (e.g., when implementing or modifying API calls).
+- **`/poll-build-logs`** — Poll for CI build log branches after pushing code. Use this after every push to monitor whether the build passed or failed, and to analyze test results and build output.
+- **`/prepare-pr`** — Generate PR title, description, and URL for creating a pull request from the current branch. Accepts an optional target branch argument (e.g., `/prepare-pr dev`).
+- **`/simplify`** — Review changed code for reuse, quality, and efficiency, then fix any issues found.
