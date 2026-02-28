@@ -121,6 +121,39 @@ SQLite database file is directly visible on the host at `./data/hpoll.db`.
 > the database inside Docker's internal storage, making it invisible on the host
 > filesystem. The examples below use bind mounts instead.
 
+### Data directory permissions
+
+The containers run as a non-root user (`appuser`, UID 1000) for security. The
+bind-mounted `./data` directory must be writable by this UID. Create it with the
+correct ownership **before** starting the containers:
+
+```bash
+mkdir -p data
+chown 1000:1000 data
+```
+
+If you already have a `./data` directory owned by root (e.g. from a previous
+version that ran as root), fix the permissions:
+
+```bash
+sudo chown -R 1000:1000 data
+```
+
+Alternatively, if your host user's UID is not 1000, you can set the container
+user to match your host UID in `docker-compose.yml`:
+
+```yaml
+services:
+  worker:
+    user: "${UID}:${GID}"
+    # ...
+  admin:
+    user: "${UID}:${GID}"
+    # ...
+```
+
+Then run with `UID=$(id -u) GID=$(id -g) docker compose up --build`.
+
 ### Docker Compose (recommended)
 
 ```bash
