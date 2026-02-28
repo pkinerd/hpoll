@@ -57,6 +57,7 @@ using (var scope = host.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     await db.Database.MigrateAsync();
+    await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
 
     var customers = builder.Configuration.GetSection("Customers").Get<List<CustomerConfig>>();
     if (customers?.Count > 0)
