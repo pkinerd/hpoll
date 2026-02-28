@@ -64,4 +64,61 @@ public class SesEmailSenderTests
 
         _mockSes.Verify(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), cts.Token), Times.Once);
     }
+
+    [Fact]
+    public async Task SendEmailAsync_WithCcAndBcc_SetsDestinationCorrectly()
+    {
+        _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SendEmailResponse { MessageId = "msg-003" });
+
+        var cc = new List<string> { "cc1@example.com", "cc2@example.com" };
+        var bcc = new List<string> { "bcc@example.com" };
+
+        await _sender.SendEmailAsync("user@example.com", "Test", "<html>Body</html>", cc, bcc);
+
+        _mockSes.Verify(s => s.SendEmailAsync(
+            It.Is<SendEmailRequest>(r =>
+                r.Destination.ToAddresses.Contains("user@example.com") &&
+                r.Destination.CcAddresses.Count == 2 &&
+                r.Destination.CcAddresses.Contains("cc1@example.com") &&
+                r.Destination.CcAddresses.Contains("cc2@example.com") &&
+                r.Destination.BccAddresses.Count == 1 &&
+                r.Destination.BccAddresses.Contains("bcc@example.com")),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task SendEmailAsync_WithNullCcBcc_DoesNotSetCcBcc()
+    {
+        _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SendEmailResponse { MessageId = "msg-004" });
+
+        await _sender.SendEmailAsync("user@example.com", "Test", "<html>Body</html>", null, null);
+
+        _mockSes.Verify(s => s.SendEmailAsync(
+            It.Is<SendEmailRequest>(r =>
+                r.Destination.ToAddresses.Contains("user@example.com") &&
+                (r.Destination.CcAddresses == null || r.Destination.CcAddresses.Count == 0) &&
+                (r.Destination.BccAddresses == null || r.Destination.BccAddresses.Count == 0)),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task SendEmailAsync_WithEmptyCcBcc_DoesNotSetCcBcc()
+    {
+        _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SendEmailResponse { MessageId = "msg-005" });
+
+        await _sender.SendEmailAsync("user@example.com", "Test", "<html>Body</html>", new List<string>(), new List<string>());
+
+        _mockSes.Verify(s => s.SendEmailAsync(
+            It.Is<SendEmailRequest>(r =>
+                r.Destination.ToAddresses.Contains("user@example.com") &&
+                (r.Destination.CcAddresses == null || r.Destination.CcAddresses.Count == 0) &&
+                (r.Destination.BccAddresses == null || r.Destination.BccAddresses.Count == 0)),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 }

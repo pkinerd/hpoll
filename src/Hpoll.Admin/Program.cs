@@ -22,6 +22,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 // Configuration binding
 builder.Services.Configure<HueAppSettings>(builder.Configuration.GetSection("HueApp"));
 builder.Services.Configure<PollingSettings>(builder.Configuration.GetSection("Polling"));
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 
 // Database — same SQLite path as the worker
 var dbPath = Path.Combine(

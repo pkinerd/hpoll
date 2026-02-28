@@ -1,0 +1,43 @@
+@page
+@model Hpoll.Admin.Pages.AboutModel
+@{
+    ViewData["Title"] = "About";
+}
+
+<h1>About hpoll</h1>
+
+<div class="cards">
+    <div class="card">
+        <h3>Customers</h3>
+        <div class="value">@Model.CustomerCount</div>
+    </div>
+    <div class="card">
+        <h3>Hubs</h3>
+        <div class="value">@Model.HubCount</div>
+    </div>
+    <div class="card">
+        <h3>Devices</h3>
+        <div class="value">@Model.DeviceCount</div>
+    </div>
+</div>
+
+<h2>Build Information</h2>
+<div class="card">
+    <dl>
+        <dt>Version</dt><dd>@Model.Version</dd>
+        <dt>Runtime</dt><dd>@Model.Runtime</dd>
+        <dt>Environment</dt><dd>@Model.Environment</dd>
+        <dt>Data Path</dt><dd>@Model.DatabasePath</dd>
+    </dl>
+</div>
+
+<h2>Hue API</h2>
+<div class="card">
+    <dl>
+        <dt>App Configured</dt><dd>@(Model.HueAppConfigured ? "Yes" : "No")</dd>
+        @if (!string.IsNullOrEmpty(Model.HueCallbackUrl))
+        {
+            <dt>Callback URL</dt><dd>@Model.HueCallbackUrl</dd>
+        }
+    </dl>
+</div>

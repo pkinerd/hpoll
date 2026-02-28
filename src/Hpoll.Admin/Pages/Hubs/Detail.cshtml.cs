@@ -95,6 +95,34 @@ public class DetailModel : PageModel
         return await LoadHub(id);
     }
 
+    public async Task<IActionResult> OnPostTestConnectionAsync(int id)
+    {
+        var hub = await _db.Hubs.FindAsync(id);
+        if (hub == null) return NotFound();
+
+        try
+        {
+            var devices = await _hueClient.GetDevicesAsync(hub.AccessToken, hub.HueApplicationKey);
+            SuccessMessage = $"Connection successful. Found {devices.Data.Count} device(s) on this bridge.";
+            _logger.LogInformation("API connection test succeeded for hub {BridgeId}: {Count} devices",
+                hub.HueBridgeId, devices.Data.Count);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "API connection test failed for hub {BridgeId}", hub.HueBridgeId);
+            ErrorMessage = ex.StatusCode.HasValue
+                ? $"Connection test failed: Hue API returned HTTP {(int)ex.StatusCode}."
+                : "Connection test failed: could not reach the Hue API.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "API connection test failed for hub {BridgeId}", hub.HueBridgeId);
+            ErrorMessage = "Connection test failed due to an unexpected error. Check the server logs for details.";
+        }
+
+        return await LoadHub(id);
+    }
+
     private async Task<IActionResult> LoadHub(int id)
     {
         var hub = await _db.Hubs

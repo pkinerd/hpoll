@@ -23,12 +23,25 @@ public class SesEmailSender : IEmailSender
         _logger = logger;
     }
 
-    public async Task SendEmailAsync(string toAddress, string subject, string htmlBody, CancellationToken ct = default)
+    public Task SendEmailAsync(string toAddress, string subject, string htmlBody, CancellationToken ct = default)
     {
+        return SendEmailAsync(toAddress, subject, htmlBody, null, null, ct);
+    }
+
+    public async Task SendEmailAsync(string toAddress, string subject, string htmlBody, List<string>? ccAddresses, List<string>? bccAddresses, CancellationToken ct = default)
+    {
+        var destination = new Destination { ToAddresses = new List<string> { toAddress } };
+
+        if (ccAddresses?.Count > 0)
+            destination.CcAddresses = ccAddresses;
+
+        if (bccAddresses?.Count > 0)
+            destination.BccAddresses = bccAddresses;
+
         var sendRequest = new SendEmailRequest
         {
             Source = _settings.FromAddress,
-            Destination = new Destination { ToAddresses = new List<string> { toAddress } },
+            Destination = destination,
             Message = new Message
             {
                 Subject = new Content(subject),

@@ -20,6 +20,17 @@
 </div>
 
 <div class="card" style="max-width: 500px;">
+    <form method="post" asp-page-handler="UpdateName" asp-route-id="@Model.Customer.Id">
+        <div class="form-group">
+            <label asp-for="EditName">Name</label>
+            <input asp-for="EditName" />
+            <span asp-validation-for="EditName" style="color: #dc2626; font-size: 0.85rem;"></span>
+        </div>
+        <button type="submit" class="btn">Update Name</button>
+    </form>
+</div>
+
+<div class="card" style="max-width: 500px;">
     <form method="post" asp-page-handler="UpdateEmail" asp-route-id="@Model.Customer.Id">
         <div class="form-group">
             <label asp-for="EditEmail">Email</label>
@@ -27,6 +38,22 @@
             <span asp-validation-for="EditEmail" style="color: #dc2626; font-size: 0.85rem;"></span>
         </div>
         <button type="submit" class="btn">Update Email</button>
+    </form>
+</div>
+
+<div class="card" style="max-width: 500px;">
+    <form method="post" asp-page-handler="UpdateCcBcc" asp-route-id="@Model.Customer.Id">
+        <div class="form-group">
+            <label asp-for="EditCcEmails">CC Emails</label>
+            <input asp-for="EditCcEmails" placeholder="email1@example.com, email2@example.com" />
+            <span style="font-size: 0.8rem; color: #666;">Comma-separated list of CC recipients</span>
+        </div>
+        <div class="form-group">
+            <label asp-for="EditBccEmails">BCC Emails</label>
+            <input asp-for="EditBccEmails" placeholder="email1@example.com, email2@example.com" />
+            <span style="font-size: 0.8rem; color: #666;">Comma-separated list of BCC recipients</span>
+        </div>
+        <button type="submit" class="btn">Update CC/BCC</button>
     </form>
 </div>
 
@@ -78,4 +105,64 @@
 else
 {
     <p>No hubs registered. Use "Register Hub" to start the Hue OAuth flow.</p>
+}
+
+<h2>Activity Summary</h2>
+@if (!Model.ShowActivitySummary)
+{
+    <a asp-page="/Customers/Detail" asp-route-id="@Model.Customer.Id" asp-route-activity="true" class="btn">Show Activity Summary</a>
+}
+else
+{
+    <a asp-page="/Customers/Detail" asp-route-id="@Model.Customer.Id" class="btn" style="margin-bottom: 1rem; display: inline-block;">Hide Activity Summary</a>
+
+    @if (Model.ActivityWindows.Any())
+    {
+        <div class="card">
+            <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: #666; margin-bottom: 0.5rem;">Motion Activity</h3>
+            <table style="margin-bottom: 1rem;">
+                <thead><tr><th>Window</th><th>Events</th><th>Active Sensors</th></tr></thead>
+                <tbody>
+                @foreach (var w in Model.ActivityWindows)
+                {
+                    var cappedEvents = Math.Min(w.TotalMotionEvents, 5);
+                    var color = w.TotalMotionEvents == 0 ? "#e74c3c" : w.TotalMotionEvents == 1 ? "#f39c12" : "#27ae60";
+                    var label = w.TotalMotionEvents >= 5 ? "5+" : w.TotalMotionEvents.ToString();
+                    <tr>
+                        <td>@w.Label</td>
+                        <td><span style="color: @color; font-weight: 600;">@label</span></td>
+                        <td>@w.DevicesWithMotion / @w.TotalMotionSensors</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+
+            <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: #666; margin-bottom: 0.5rem;">Temperature Range (&deg;C)</h3>
+            <table>
+                <thead><tr><th>Window</th><th>Low</th><th>Median</th><th>High</th></tr></thead>
+                <tbody>
+                @foreach (var w in Model.ActivityWindows)
+                {
+                    <tr>
+                        <td>@w.Label</td>
+                        @if (w.TemperatureMin.HasValue)
+                        {
+                            <td style="color: #3498db;">@w.TemperatureMin.Value.ToString("F1")</td>
+                            <td style="font-weight: bold;">@w.TemperatureMedian!.Value.ToString("F1")</td>
+                            <td style="color: #e74c3c;">@w.TemperatureMax!.Value.ToString("F1")</td>
+                        }
+                        else
+                        {
+                            <td colspan="3" style="color: #999;">&mdash;</td>
+                        }
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <p>No activity data available for the current summary window.</p>
+    }
 }
