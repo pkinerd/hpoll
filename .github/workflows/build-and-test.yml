@@ -123,6 +123,58 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  docker-admin:
+    name: Docker Build & Push (Admin)
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.2.2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/hpoll-admin"
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+
+          # Build tag list based on context
+          TAGS="${IMAGE}:${SHORT_SHA},${IMAGE}:latest-any"
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            TAGS="${TAGS},${IMAGE}:latest"
+          elif [ "${{ github.ref }}" = "refs/heads/dev" ]; then
+            TAGS="${TAGS},${IMAGE}:dev"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            TAGS="${TAGS},${IMAGE}:pr-${{ github.event.pull_request.number }}"
+          else
+            # Branch build — sanitize branch name for use as a tag
+            BRANCH_TAG=$(echo "${{ github.ref_name }}" | sed 's|[^a-zA-Z0-9._-]|-|g' | cut -c1-128)
+            TAGS="${TAGS},${IMAGE}:${BRANCH_TAG}"
+          fi
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
+        with:
+          context: .
+          file: Dockerfile.admin
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha,scope=admin
+          cache-to: type=gha,mode=max,scope=admin
+
   # ──────────────────────────────────────────────────────────────────────────
   # Push Build Logs
   #
@@ -132,7 +184,7 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   push-build-logs:
     name: Push Build Logs
-    needs: [build-and-test, docker]
+    needs: [build-and-test, docker, docker-admin]
     if: always()
     runs-on: ubuntu-latest
     permissions:
@@ -144,7 +196,10 @@ jobs:
         run: |
           BUILD_RESULT="${{ needs.build-and-test.result }}"
           DOCKER_RESULT="${{ needs.docker.result }}"
-          if [ "$BUILD_RESULT" = "success" ] && [ "$DOCKER_RESULT" = "success" -o "$DOCKER_RESULT" = "skipped" ]; then
+          DOCKER_ADMIN_RESULT="${{ needs.docker-admin.result }}"
+          if [ "$BUILD_RESULT" = "success" ] \
+            && [ "$DOCKER_RESULT" = "success" -o "$DOCKER_RESULT" = "skipped" ] \
+            && [ "$DOCKER_ADMIN_RESULT" = "success" -o "$DOCKER_ADMIN_RESULT" = "skipped" ]; then
             echo "result=pass" >> "$GITHUB_OUTPUT"
           else
             echo "result=fail" >> "$GITHUB_OUTPUT"

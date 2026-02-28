@@ -306,6 +306,17 @@ services:
       # Customers__1__Hubs__0__AccessToken: "..."
       # Customers__1__Hubs__0__RefreshToken: "..."
       # Customers__1__Hubs__0__TokenExpiresAt: "..."
+
+  admin:
+    image: pkinerd/hpoll-admin:latest
+    container_name: hpoll-admin
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    environment:
+      ADMIN_PASSWORD_HASH: ""  # generate via the setup page at /Login
 ```
 
 ### `docker run`
