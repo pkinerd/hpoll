@@ -17,7 +17,6 @@ public class PollingService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<PollingService> _logger;
     private readonly PollingSettings _settings;
-    private const int RetentionDays = 30;
     private bool _firstCycle = true;
 
     public PollingService(
@@ -273,7 +272,7 @@ public class PollingService : BackgroundService
         {
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
-            var cutoff = DateTime.UtcNow.AddDays(-RetentionDays);
+            var cutoff = DateTime.UtcNow.AddHours(-_settings.DataRetentionHours);
 
             var oldReadings = await db.DeviceReadings
                 .Where(r => r.Timestamp < cutoff)
@@ -290,8 +289,8 @@ public class PollingService : BackgroundService
                 await db.SaveChangesAsync(ct);
 
                 _logger.LogInformation(
-                    "Data retention cleanup: deleted {Readings} readings and {Logs} polling logs older than {Days} days",
-                    oldReadings.Count, oldLogs.Count, RetentionDays);
+                    "Data retention cleanup: deleted {Readings} readings and {Logs} polling logs older than {Hours} hours",
+                    oldReadings.Count, oldLogs.Count, _settings.DataRetentionHours);
             }
         }
         catch (Exception ex)

@@ -696,7 +696,7 @@ public class PollingServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task CleanupOldData_DeletesReadingsAndLogsOlderThan30Days()
+    public async Task CleanupOldData_DeletesReadingsAndLogsOlderThanRetentionPeriod()
     {
         var hub = await SeedHubAsync();
 
@@ -713,38 +713,38 @@ public class PollingServiceTests : IDisposable
             db.Devices.Add(device);
             await db.SaveChangesAsync();
 
-            // Old reading (31 days ago)
+            // Old reading (3 days ago, well past 48h retention)
             db.DeviceReadings.Add(new DeviceReading
             {
                 DeviceId = device.Id,
-                Timestamp = DateTime.UtcNow.AddDays(-31),
+                Timestamp = DateTime.UtcNow.AddDays(-3),
                 ReadingType = "motion",
                 Value = "{\"motion\":true}"
             });
 
-            // Recent reading (1 day ago)
+            // Recent reading (1 hour ago)
             db.DeviceReadings.Add(new DeviceReading
             {
                 DeviceId = device.Id,
-                Timestamp = DateTime.UtcNow.AddDays(-1),
+                Timestamp = DateTime.UtcNow.AddHours(-1),
                 ReadingType = "motion",
                 Value = "{\"motion\":false}"
             });
 
-            // Old polling log (31 days ago)
+            // Old polling log (3 days ago)
             db.PollingLogs.Add(new PollingLog
             {
                 HubId = hub.Id,
-                Timestamp = DateTime.UtcNow.AddDays(-31),
+                Timestamp = DateTime.UtcNow.AddDays(-3),
                 Success = true,
                 ApiCallsMade = 3
             });
 
-            // Recent polling log (1 day ago)
+            // Recent polling log (1 hour ago)
             db.PollingLogs.Add(new PollingLog
             {
                 HubId = hub.Id,
-                Timestamp = DateTime.UtcNow.AddDays(-1),
+                Timestamp = DateTime.UtcNow.AddHours(-1),
                 Success = true,
                 ApiCallsMade = 3
             });
@@ -769,13 +769,13 @@ public class PollingServiceTests : IDisposable
 
         // Old readings should be deleted, recent + newly polled should remain
         var readings = await db2.DeviceReadings.ToListAsync();
-        Assert.DoesNotContain(readings, r => r.Timestamp < DateTime.UtcNow.AddDays(-30));
-        Assert.Contains(readings, r => r.Timestamp > DateTime.UtcNow.AddDays(-2));
+        Assert.DoesNotContain(readings, r => r.Timestamp < DateTime.UtcNow.AddHours(-48));
+        Assert.Contains(readings, r => r.Timestamp > DateTime.UtcNow.AddHours(-2));
 
         // Old polling log should be deleted, recent + new should remain
         var logs = await db2.PollingLogs.ToListAsync();
-        Assert.DoesNotContain(logs, l => l.Timestamp < DateTime.UtcNow.AddDays(-30));
-        Assert.Contains(logs, l => l.Timestamp > DateTime.UtcNow.AddDays(-2));
+        Assert.DoesNotContain(logs, l => l.Timestamp < DateTime.UtcNow.AddHours(-48));
+        Assert.Contains(logs, l => l.Timestamp > DateTime.UtcNow.AddHours(-2));
     }
 
     [Fact]
