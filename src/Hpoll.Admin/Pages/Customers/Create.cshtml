@@ -1,0 +1,35 @@
+@page
+@model Hpoll.Admin.Pages.Customers.CreateModel
+@{
+    ViewData["Title"] = "Add Customer";
+}
+
+<h1>Add Customer</h1>
+
+<div class="card" style="max-width: 500px;">
+    <form method="post">
+        <div class="form-group">
+            <label asp-for="Name">Name</label>
+            <input asp-for="Name" />
+            <span asp-validation-for="Name" style="color: #dc2626; font-size: 0.85rem;"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Email">Email</label>
+            <input asp-for="Email" type="email" />
+            <span asp-validation-for="Email" style="color: #dc2626; font-size: 0.85rem;"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="TimeZoneId">Timezone</label>
+            <select asp-for="TimeZoneId">
+                @foreach (var tz in TimeZoneInfo.GetSystemTimeZones().OrderBy(t => t.BaseUtcOffset))
+                {
+                    <option value="@tz.Id">@tz.DisplayName</option>
+                }
+            </select>
+        </div>
+        <div class="actions">
+            <button type="submit" class="btn btn-primary">Create Customer</button>
+            <a asp-page="Index" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>

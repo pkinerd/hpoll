@@ -499,9 +499,6 @@ public class EmailRendererTests : IDisposable
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        var previewPath = Path.Combine(Path.GetTempPath(), "hpoll_email_preview.html");
-        File.WriteAllText(previewPath, html);
-
         Assert.NotNull(html);
         Assert.Contains("Daily Activity Summary", html);
         Assert.Contains("Motion Activity", html);

@@ -88,7 +88,8 @@ public class PollingService : BackgroundService
 
     private async Task PollHubAsync(HpollDbContext db, IHueApiClient hueClient, Hub hub, bool forceBatteryPoll, CancellationToken ct)
     {
-        var log = new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow };
+        var pollTime = DateTime.UtcNow;
+        var log = new PollingLog { HubId = hub.Id, Timestamp = pollTime };
         int apiCalls = 0;
 
         try
@@ -96,7 +97,7 @@ public class PollingService : BackgroundService
             // Determine if battery data should be fetched this cycle
             var shouldPollBattery = forceBatteryPoll
                 || !hub.LastBatteryPollUtc.HasValue
-                || (DateTime.UtcNow - hub.LastBatteryPollUtc.Value).TotalHours >= _settings.BatteryPollIntervalHours;
+                || (pollTime - hub.LastBatteryPollUtc.Value).TotalHours >= _settings.BatteryPollIntervalHours;
 
             // Fetch all sensor data in parallel
             var motionTask = hueClient.GetMotionSensorsAsync(hub.AccessToken, hub.HueApplicationKey, ct);
@@ -122,8 +123,7 @@ public class PollingService : BackgroundService
             // cutoff, motion occurred since we last checked.
             // The Hue API motion boolean is momentary and resets quickly, so with
             // 60-minute polling we'd miss most events if we relied on it directly.
-            var now = DateTime.UtcNow;
-            var intervalCutoff = now.AddMinutes(-_settings.IntervalMinutes);
+            var intervalCutoff = pollTime.AddMinutes(-_settings.IntervalMinutes);
             var motionCutoff = hub.LastPolledAt.HasValue
                 ? new DateTime(Math.Min(hub.LastPolledAt.Value.Ticks, intervalCutoff.Ticks), DateTimeKind.Utc)
                 : intervalCutoff;
@@ -145,7 +145,7 @@ public class PollingService : BackgroundService
                 db.DeviceReadings.Add(new DeviceReading
                 {
                     DeviceId = dbDevice.Id,
-                    Timestamp = now,
+                    Timestamp = pollTime,
                     ReadingType = "motion",
                     Value = JsonSerializer.Serialize(new
                     {
@@ -170,7 +170,7 @@ public class PollingService : BackgroundService
                 db.DeviceReadings.Add(new DeviceReading
                 {
                     DeviceId = dbDevice.Id,
-                    Timestamp = DateTime.UtcNow,
+                    Timestamp = pollTime,
                     ReadingType = "temperature",
                     Value = JsonSerializer.Serialize(new
                     {
@@ -196,7 +196,7 @@ public class PollingService : BackgroundService
                     db.DeviceReadings.Add(new DeviceReading
                     {
                         DeviceId = dbDevice.Id,
-                        Timestamp = DateTime.UtcNow,
+                        Timestamp = pollTime,
                         ReadingType = "battery",
                         Value = JsonSerializer.Serialize(new
                         {
@@ -206,14 +206,14 @@ public class PollingService : BackgroundService
                     });
                 }
 
-                hub.LastBatteryPollUtc = DateTime.UtcNow;
+                hub.LastBatteryPollUtc = pollTime;
 
                 _logger.LogInformation(
                     "Hub {BridgeId}: battery data fetched. {BatteryCount} device_power resources",
                     hub.HueBridgeId, batteryResponse.Data.Count);
             }
 
-            hub.LastSuccessAt = DateTime.UtcNow;
+            hub.LastSuccessAt = pollTime;
             hub.ConsecutiveFailures = 0;
             log.Success = true;
 
@@ -253,8 +253,8 @@ public class PollingService : BackgroundService
         {
             try
             {
-                hub.LastPolledAt = DateTime.UtcNow;
-                hub.UpdatedAt = DateTime.UtcNow;
+                hub.LastPolledAt = pollTime;
+                hub.UpdatedAt = pollTime;
                 log.ApiCallsMade = apiCalls;
                 db.PollingLogs.Add(log);
                 await db.SaveChangesAsync(CancellationToken.None);
@@ -274,23 +274,46 @@ public class PollingService : BackgroundService
             var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
             var cutoff = DateTime.UtcNow.AddHours(-_settings.DataRetentionHours);
 
-            var oldReadings = await db.DeviceReadings
-                .Where(r => r.Timestamp < cutoff)
-                .ToListAsync(ct);
+            // Delete in batches to avoid loading excessive rows into memory at once
+            const int batchSize = 1000;
+            int totalReadings = 0, totalLogs = 0;
 
-            var oldLogs = await db.PollingLogs
-                .Where(l => l.Timestamp < cutoff)
-                .ToListAsync(ct);
-
-            if (oldReadings.Count > 0 || oldLogs.Count > 0)
+            int deleted;
+            do
             {
-                db.DeviceReadings.RemoveRange(oldReadings);
-                db.PollingLogs.RemoveRange(oldLogs);
-                await db.SaveChangesAsync(ct);
+                var batch = await db.DeviceReadings
+                    .Where(r => r.Timestamp < cutoff)
+                    .Take(batchSize)
+                    .ToListAsync(ct);
+                deleted = batch.Count;
+                if (deleted > 0)
+                {
+                    db.DeviceReadings.RemoveRange(batch);
+                    await db.SaveChangesAsync(ct);
+                    totalReadings += deleted;
+                }
+            } while (deleted == batchSize);
 
+            do
+            {
+                var batch = await db.PollingLogs
+                    .Where(l => l.Timestamp < cutoff)
+                    .Take(batchSize)
+                    .ToListAsync(ct);
+                deleted = batch.Count;
+                if (deleted > 0)
+                {
+                    db.PollingLogs.RemoveRange(batch);
+                    await db.SaveChangesAsync(ct);
+                    totalLogs += deleted;
+                }
+            } while (deleted == batchSize);
+
+            if (totalReadings > 0 || totalLogs > 0)
+            {
                 _logger.LogInformation(
                     "Data retention cleanup: deleted {Readings} readings and {Logs} polling logs older than {Hours} hours",
-                    oldReadings.Count, oldLogs.Count, _settings.DataRetentionHours);
+                    totalReadings, totalLogs, _settings.DataRetentionHours);
             }
         }
         catch (Exception ex)

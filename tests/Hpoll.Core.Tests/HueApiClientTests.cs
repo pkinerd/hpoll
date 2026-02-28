@@ -344,6 +344,100 @@ public class HueApiClientTests
         Assert.Equal(HttpMethod.Post, _mockHandler.CapturedRequest.Method);
     }
 
+    [Fact]
+    public async Task ExchangeAuthorizationCodeAsync_SendsCorrectRequest()
+    {
+        var json = """
+        {
+            "access_token": "new-access-token",
+            "refresh_token": "new-refresh-token",
+            "token_type": "bearer",
+            "expires_in": 604799
+        }
+        """;
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, json);
+
+        var result = await _client.ExchangeAuthorizationCodeAsync("auth-code-123", "http://localhost/callback");
+
+        Assert.NotNull(_mockHandler.CapturedRequest);
+        Assert.Equal(HttpMethod.Post, _mockHandler.CapturedRequest!.Method);
+        Assert.Contains("oauth2/token", _mockHandler.CapturedRequest.RequestUri!.ToString());
+        Assert.Equal("Basic", _mockHandler.CapturedRequest.Headers.Authorization?.Scheme);
+        Assert.Equal("new-access-token", result.AccessToken);
+        Assert.Equal("new-refresh-token", result.RefreshToken);
+        Assert.Equal(604799, result.ExpiresIn);
+    }
+
+    [Fact]
+    public async Task EnableLinkButtonAsync_SendsPutWithBearerAuth()
+    {
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, "[]");
+
+        await _client.EnableLinkButtonAsync(TestAccessToken);
+
+        Assert.NotNull(_mockHandler.CapturedRequest);
+        Assert.Equal(HttpMethod.Put, _mockHandler.CapturedRequest!.Method);
+        Assert.Contains("route/api/0/config", _mockHandler.CapturedRequest.RequestUri!.ToString());
+        Assert.Equal("Bearer", _mockHandler.CapturedRequest.Headers.Authorization?.Scheme);
+        Assert.Equal(TestAccessToken, _mockHandler.CapturedRequest.Headers.Authorization?.Parameter);
+    }
+
+    [Fact]
+    public async Task RegisterApplicationAsync_ReturnsUsername()
+    {
+        var json = """[{"success":{"username":"generated-app-key-12345"}}]""";
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, json);
+
+        var result = await _client.RegisterApplicationAsync(TestAccessToken);
+
+        Assert.Equal("generated-app-key-12345", result);
+        Assert.NotNull(_mockHandler.CapturedRequest);
+        Assert.Equal(HttpMethod.Post, _mockHandler.CapturedRequest!.Method);
+        Assert.Contains("route/api", _mockHandler.CapturedRequest.RequestUri!.ToString());
+        Assert.Equal("Bearer", _mockHandler.CapturedRequest.Headers.Authorization?.Scheme);
+    }
+
+    [Fact]
+    public async Task RegisterApplicationAsync_OnUnexpectedFormat_Throws()
+    {
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, """[{"error":{"type":101,"description":"link button not pressed"}}]""");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _client.RegisterApplicationAsync(TestAccessToken));
+    }
+
+    [Fact]
+    public async Task GetBridgeIdAsync_ReturnsBridgeId()
+    {
+        var json = """
+        {
+            "errors": [],
+            "data": [
+                {
+                    "id": "bridge-uuid-001",
+                    "bridge_id": "001788fffe123456"
+                }
+            ]
+        }
+        """;
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, json);
+
+        var result = await _client.GetBridgeIdAsync(TestAccessToken, TestApplicationKey);
+
+        Assert.Equal("001788fffe123456", result);
+        Assert.Contains("resource/bridge", _mockHandler.CapturedRequest!.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task GetBridgeIdAsync_NoBridgeData_Throws()
+    {
+        var json = """{"errors": [], "data": []}""";
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, json);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _client.GetBridgeIdAsync(TestAccessToken, TestApplicationKey));
+    }
+
     /// <summary>
     /// A mock HTTP message handler that captures the request and returns a configured response.
     /// </summary>

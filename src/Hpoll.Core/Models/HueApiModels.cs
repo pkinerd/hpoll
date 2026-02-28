@@ -154,3 +154,12 @@ public class HuePowerState
     [JsonPropertyName("battery_level")]
     public int? BatteryLevel { get; set; }
 }
+
+public class HueBridgeResource
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("bridge_id")]
+    public string BridgeId { get; set; } = string.Empty;
+}

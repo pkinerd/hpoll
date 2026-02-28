@@ -1,0 +1,31 @@
+@page
+@model Hpoll.Admin.Pages.Customers.IndexModel
+@{
+    ViewData["Title"] = "Customers";
+}
+
+<h1>Customers</h1>
+
+<div class="actions">
+    <a asp-page="Create" class="btn btn-primary">Add Customer</a>
+</div>
+
+<table>
+    <thead><tr><th>Name</th><th>Email</th><th>Timezone</th><th>Status</th><th>Hubs</th></tr></thead>
+    <tbody>
+    @foreach (var c in Model.Customers)
+    {
+        <tr>
+            <td><a asp-page="Detail" asp-route-id="@c.Id">@c.Name</a></td>
+            <td>@c.Email</td>
+            <td>@c.TimeZoneId</td>
+            <td><span class="status status-@c.Status">@c.Status</span></td>
+            <td>@c.Hubs.Count</td>
+        </tr>
+    }
+    @if (!Model.Customers.Any())
+    {
+        <tr><td colspan="5">No customers yet.</td></tr>
+    }
+    </tbody>
+</table>

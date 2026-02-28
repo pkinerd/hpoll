@@ -16,10 +16,10 @@ RUN dotnet restore
 
 # Copy everything else and build
 COPY . .
-RUN dotnet publish src/Hpoll.Worker/Hpoll.Worker.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish src/Hpoll.Admin/Hpoll.Admin.csproj -c Release -o /app/publish --no-restore
 
-# Runtime stage (worker service, no HTTP -- use smaller runtime image)
-FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
+# Runtime stage (ASP.NET Core app — needs aspnet image, not just runtime)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
 # Create non-root user and data directory
@@ -33,7 +33,9 @@ USER appuser
 
 ENV DataPath=/app/data
 ENV DOTNET_ENVIRONMENT=Production
+ENV ASPNETCORE_URLS=http://+:8080
 
 VOLUME ["/app/data"]
+EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "Hpoll.Worker.dll"]
+ENTRYPOINT ["dotnet", "Hpoll.Admin.dll"]

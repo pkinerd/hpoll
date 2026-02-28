@@ -1,8 +1,22 @@
 services:
   worker:
     build: .
+    user: "${PUID:-1000}:${PGID:-1000}"
     volumes:
       - ./data:/app/data
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+    user: "${PUID:-1000}:${PGID:-1000}"
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8080:8080"
     env_file:
       - .env
     restart: unless-stopped

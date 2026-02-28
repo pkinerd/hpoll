@@ -121,6 +121,39 @@ SQLite database file is directly visible on the host at `./data/hpoll.db`.
 > the database inside Docker's internal storage, making it invisible on the host
 > filesystem. The examples below use bind mounts instead.
 
+### Data directory permissions
+
+The containers run as a non-root user (`appuser`, UID 1000) for security. The
+bind-mounted `./data` directory must be writable by this UID. Create it with the
+correct ownership **before** starting the containers:
+
+```bash
+mkdir -p data
+chown 1000:1000 data
+```
+
+If you already have a `./data` directory owned by root (e.g. from a previous
+version that ran as root), fix the permissions:
+
+```bash
+sudo chown -R 1000:1000 data
+```
+
+Alternatively, if your host user's UID is not 1000, you can set the container
+user to match your host UID in `docker-compose.yml`:
+
+```yaml
+services:
+  worker:
+    user: "${UID}:${GID}"
+    # ...
+  admin:
+    user: "${UID}:${GID}"
+    # ...
+```
+
+Then run with `UID=$(id -u) GID=$(id -g) docker compose up --build`.
+
 ### Docker Compose (recommended)
 
 ```bash
@@ -273,6 +306,17 @@ services:
       # Customers__1__Hubs__0__AccessToken: "..."
       # Customers__1__Hubs__0__RefreshToken: "..."
       # Customers__1__Hubs__0__TokenExpiresAt: "..."
+
+  admin:
+    image: pkinerd/hpoll-admin:latest
+    container_name: hpoll-admin
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    environment:
+      ADMIN_PASSWORD_HASH: ""  # generate via the setup page at /Login
 ```
 
 ### `docker run`
@@ -312,6 +356,22 @@ dotnet run --project src/Hpoll.Worker
 ```bash
 docker build -t hpoll .
 ```
+
+## Admin panel password
+
+The admin panel requires a hashed password set via the `ADMIN_PASSWORD_HASH`
+environment variable.
+
+To generate a hash, start the admin container without `ADMIN_PASSWORD_HASH` set.
+The login page will show a setup form where you enter your desired password. The
+page generates a hash — copy it into your `.env` file and restart:
+
+```
+ADMIN_PASSWORD_HASH=AQAAAAIAAYag...
+```
+
+The password is hashed using PBKDF2-SHA256 with a random salt. The plain-text
+password is never stored.
 
 ## Data persistence
 

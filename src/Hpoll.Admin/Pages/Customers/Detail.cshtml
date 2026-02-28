@@ -1,0 +1,81 @@
+@page "{id:int}"
+@model Hpoll.Admin.Pages.Customers.DetailModel
+@{
+    ViewData["Title"] = Model.Customer.Name;
+}
+
+<h1>@Model.Customer.Name</h1>
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success">@Model.SuccessMessage</div>
+}
+
+<div class="card">
+    <dl>
+        <dt>Status</dt><dd><span class="status status-@Model.Customer.Status">@Model.Customer.Status</span></dd>
+        <dt>Timezone</dt><dd>@Model.Customer.TimeZoneId</dd>
+        <dt>Created</dt><dd>@Model.Customer.CreatedAt.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+    </dl>
+</div>
+
+<div class="card" style="max-width: 500px;">
+    <form method="post" asp-page-handler="UpdateEmail" asp-route-id="@Model.Customer.Id">
+        <div class="form-group">
+            <label asp-for="EditEmail">Email</label>
+            <input asp-for="EditEmail" type="email" />
+            <span asp-validation-for="EditEmail" style="color: #dc2626; font-size: 0.85rem;"></span>
+        </div>
+        <button type="submit" class="btn">Update Email</button>
+    </form>
+</div>
+
+<div class="actions">
+    <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@Model.Customer.Id" style="display:inline;">
+        @if (Model.Customer.Status == "active")
+        {
+            <button type="submit" class="btn btn-danger">Deactivate</button>
+        }
+        else
+        {
+            <button type="submit" class="btn btn-success">Reactivate</button>
+        }
+    </form>
+    <form method="post" asp-page-handler="RegisterHub" asp-route-id="@Model.Customer.Id" style="display:inline;">
+        <button type="submit" class="btn btn-primary">Register Hub</button>
+    </form>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.OAuthUrl))
+{
+    <div class="alert alert-success">
+        <strong>Hue OAuth URL generated.</strong> Open this link to authorize a hub:<br />
+        <a href="@Model.OAuthUrl" target="_blank" rel="noopener" style="word-break: break-all;">@Model.OAuthUrl</a>
+    </div>
+}
+
+<h2>Hubs</h2>
+@if (Model.Customer.Hubs.Any())
+{
+    <table>
+        <thead><tr><th>Bridge ID</th><th>Status</th><th>Token Expires</th><th>Last Polled</th><th>Failures</th></tr></thead>
+        <tbody>
+        @foreach (var hub in Model.Customer.Hubs)
+        {
+            var remaining = hub.TokenExpiresAt - DateTime.UtcNow;
+            var tokenClass = remaining.TotalHours > 48 ? "token-green" : remaining.TotalHours > 24 ? "token-yellow" : "token-red";
+            <tr>
+                <td><a asp-page="/Hubs/Detail" asp-route-id="@hub.Id">@hub.HueBridgeId</a></td>
+                <td><span class="status status-@hub.Status">@hub.Status</span></td>
+                <td class="@tokenClass">@hub.TokenExpiresAt.ToString("MM-dd HH:mm") (@($"{remaining.TotalHours:F0}h"))</td>
+                <td>@(hub.LastPolledAt?.ToString("MM-dd HH:mm") ?? "Never")</td>
+                <td>@hub.ConsecutiveFailures</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No hubs registered. Use "Register Hub" to start the Hue OAuth flow.</p>
+}
