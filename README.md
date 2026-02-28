@@ -194,7 +194,7 @@ configures everything inline — no `.env` or JSON settings file needed:
 ```yaml
 services:
   hpoll:
-    image: ghcr.io/pkinerd/hpoll:latest
+    image: pkinerd/hpoll:latest
     container_name: hpoll
     volumes:
       - ./data:/app/data
@@ -263,7 +263,7 @@ docker run -d \
   -e Customers__0__Hubs__0__AccessToken=initial-access-token \
   -e Customers__0__Hubs__0__RefreshToken=initial-refresh-token \
   -e Customers__0__Hubs__0__TokenExpiresAt=2026-04-01T00:00:00Z \
-  ghcr.io/pkinerd/hpoll:latest
+  pkinerd/hpoll:latest
 ```
 
 ## Building from source
