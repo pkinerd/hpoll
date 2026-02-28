@@ -27,8 +27,10 @@ variables use `__` (double underscore) as section separators.
 |---|---|---|---|
 | `DataPath` | `DataPath` | `data` | Directory for the SQLite database file |
 | `Polling:IntervalMinutes` | `Polling__IntervalMinutes` | `60` | Minutes between polling cycles |
+| `Polling:BatteryPollIntervalHours` | `Polling__BatteryPollIntervalHours` | `84` | Hours between battery level polls (~twice per week) |
 | `Email:SendTimesUtc` | `Email__SendTimesUtc__0`, `__1`, … | `["08:00"]` | List of times (UTC, `HH:mm`) to send summary emails |
 | `Email:FromAddress` | `Email__FromAddress` | _(required)_ | Sender address for daily emails (must be SES-verified) |
+| `Email:BatteryAlertThreshold` | `Email__BatteryAlertThreshold` | `30` | Battery % below which devices appear in the email alert section |
 | `Email:AwsRegion` | `Email__AwsRegion` | `us-east-1` | AWS region for SES |
 | `HueApp:ClientId` | `HueApp__ClientId` | _(required)_ | Hue Remote API app client ID |
 | `HueApp:ClientSecret` | `HueApp__ClientSecret` | _(required)_ | Hue Remote API app client secret |
@@ -154,10 +156,12 @@ Where `appsettings.Production.json` contains:
   "Email": {
     "FromAddress": "alerts@example.com",
     "AwsRegion": "us-east-1",
-    "SendTimesUtc": ["06:00", "18:00"]
+    "SendTimesUtc": ["06:00", "18:00"],
+    "BatteryAlertThreshold": 30
   },
   "Polling": {
-    "IntervalMinutes": 60
+    "IntervalMinutes": 60,
+    "BatteryPollIntervalHours": 84
   },
   "Customers": [
     {
@@ -198,12 +202,14 @@ services:
 
       # ── Polling ──────────────────────────────────────────
       Polling__IntervalMinutes: "60"
+      Polling__BatteryPollIntervalHours: "84"
 
       # ── Email ────────────────────────────────────────────
       Email__FromAddress: "alerts@example.com"
       Email__AwsRegion: "ap-southeast-2"
       Email__SendTimesUtc__0: "06:00"
       Email__SendTimesUtc__1: "18:00"
+      Email__BatteryAlertThreshold: "30"
 
       # ── AWS credentials (SES) ───────────────────────────
       AWS_ACCESS_KEY_ID: ""
