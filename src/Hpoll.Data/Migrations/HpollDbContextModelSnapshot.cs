@@ -23,6 +23,14 @@ namespace Hpoll.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("BccEmails")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CcEmails")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 

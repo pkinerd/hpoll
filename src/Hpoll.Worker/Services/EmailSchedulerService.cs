@@ -94,6 +94,16 @@ public class EmailSchedulerService : BackgroundService
         return now.Date.AddDays(1).Add(times[0]);
     }
 
+    private static List<string>? ParseEmailList(string commaDelimited)
+    {
+        if (string.IsNullOrWhiteSpace(commaDelimited)) return null;
+        var list = commaDelimited
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(e => e.Contains('@'))
+            .ToList();
+        return list.Count > 0 ? list : null;
+    }
+
     private async Task SendAllEmailsAsync(CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
@@ -116,7 +126,9 @@ public class EmailSchedulerService : BackgroundService
                 var tz = TimeZoneInfo.FindSystemTimeZoneById(customer.TimeZoneId);
                 var localNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
                 var subject = $"hpoll Daily Summary - {localNow:d MMM yyyy}";
-                await sender.SendEmailAsync(customer.Email, subject, html, ct);
+                var ccList = ParseEmailList(customer.CcEmails);
+                var bccList = ParseEmailList(customer.BccEmails);
+                await sender.SendEmailAsync(customer.Email, subject, html, ccList, bccList, ct);
 
                 _logger.LogInformation("Email sent to {Email}", customer.Email);
             }
