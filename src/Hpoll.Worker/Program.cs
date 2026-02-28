@@ -26,9 +26,10 @@ builder.Services.AddDbContext<HpollDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
 
 // HTTP client for Hue API
+var pollingSettings = builder.Configuration.GetSection("Polling").Get<PollingSettings>() ?? new PollingSettings();
 builder.Services.AddHttpClient("HueApi", client =>
 {
-    client.Timeout = TimeSpan.FromSeconds(30);
+    client.Timeout = TimeSpan.FromSeconds(pollingSettings.HttpTimeoutSeconds);
 });
 builder.Services.AddScoped<IHueApiClient, HueApiClient>();
 

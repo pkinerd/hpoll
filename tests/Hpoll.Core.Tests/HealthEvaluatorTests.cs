@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using Hpoll.Core.Configuration;
 using Hpoll.Core.Services;
 using Xunit;
 
@@ -5,7 +7,7 @@ namespace Hpoll.Core.Tests;
 
 public class HealthEvaluatorTests
 {
-    private readonly HealthEvaluator _evaluator = new();
+    private readonly HealthEvaluator _evaluator = new(Options.Create(new PollingSettings()));
 
     [Theory]
     [InlineData(0)]

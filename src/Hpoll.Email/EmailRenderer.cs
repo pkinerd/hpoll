@@ -29,16 +29,18 @@ public class EmailRenderer : IEmailRenderer
         var effectiveNowUtc = nowUtc ?? DateTime.UtcNow;
         var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(effectiveNowUtc, tz);
 
-        // Query window is simply now minus 32 hours in absolute UTC time —
-        // no timezone handling needed for the data query itself
-        var startUtc = effectiveNowUtc.AddHours(-32);
+        var windowHours = _emailSettings.SummaryWindowHours;
+        var windowCount = _emailSettings.SummaryWindowCount;
+        var totalHours = windowCount * windowHours;
+
+        // Query window covers the full span plus one extra bucket for overlap
+        var startUtc = effectiveNowUtc.AddHours(-(totalHours + windowHours));
         var endUtc = effectiveNowUtc;
 
-        // Snap to the end of the current 4-hour window so it's always included
-        var bucketEndLocal = nowLocal.Date.AddHours(nowLocal.Hour / 4 * 4 + 4);
+        // Snap to the end of the current window so it's always included
+        var bucketEndLocal = nowLocal.Date.AddHours(nowLocal.Hour / windowHours * windowHours + windowHours);
 
-        // 7 windows of 4 hours each, covering the 28 hours ending at bucketEndLocal
-        var bucketStartLocal = bucketEndLocal.AddHours(-28);
+        var bucketStartLocal = bucketEndLocal.AddHours(-totalHours);
 
         // Get all devices for this customer's hubs
         var hubIds = await _db.Hubs
@@ -58,8 +60,8 @@ public class EmailRenderer : IEmailRenderer
         if (readings.Count == 0)
         {
             _logger.LogInformation(
-                "No readings found for customer {CustomerId} in 32h window {Start} to {End} (UTC)",
-                customerId, startUtc, endUtc);
+                "No readings found for customer {CustomerId} in {Hours}h window {Start} to {End} (UTC)",
+                customerId, totalHours + windowHours, startUtc, endUtc);
         }
 
         // Count motion sensors specifically (not all devices)
@@ -67,12 +69,11 @@ public class EmailRenderer : IEmailRenderer
             .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == "motion_sensor")
             .CountAsync(ct);
 
-        // Build 7 x 4-hour window summaries using fixed local-time boundaries
         var windows = new List<WindowSummary>();
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < windowCount; i++)
         {
-            var windowStartLocal = bucketStartLocal.AddHours(i * 4);
-            var windowEndLocal = windowStartLocal.AddHours(4);
+            var windowStartLocal = bucketStartLocal.AddHours(i * windowHours);
+            var windowEndLocal = windowStartLocal.AddHours(windowHours);
             var windowStartUtc = TimeZoneInfo.ConvertTimeToUtc(windowStartLocal, tz);
             var windowEndUtc = TimeZoneInfo.ConvertTimeToUtc(windowEndLocal, tz);
 
