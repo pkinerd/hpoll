@@ -61,17 +61,10 @@ dotnet run --project src/Hpoll.Admin     # Run admin portal locally
 ## Code Conventions
 
 - **Namespaces:** `Hpoll.<Project>` (e.g., `Hpoll.Core.Services`)
-- **Classes/Methods/Properties:** PascalCase
 - **Private fields:** `_camelCase` prefix (e.g., `_logger`, `_httpClientFactory`)
 - **Async methods:** suffix with `Async` (e.g., `GetMotionSensorsAsync`)
-- **Nullable reference types:** enabled project-wide
-- **Implicit usings:** enabled project-wide
-- **Dependency injection:** constructor injection via `Microsoft.Extensions.DependencyInjection`
 - **Configuration:** Options pattern with `IOptions<T>`, environment variables use `__` separator (e.g., `Polling__IntervalMinutes`)
 - **Background services:** inherit `BackgroundService`, use `IServiceScopeFactory` for scoped dependencies
-- **EF Core:** fluent configuration in `OnModelCreating`, cascade delete, indexed query columns
-- **Testing:** Fact/Theory attributes, mock HTTP handlers for API tests, Assert static methods
-- **Logging:** `ILogger<T>` with structured message templates
 
 ## Database
 
