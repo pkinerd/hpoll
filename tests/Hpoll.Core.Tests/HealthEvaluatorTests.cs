@@ -69,4 +69,23 @@ public class HealthEvaluatorTests
 
         Assert.False(result);
     }
+
+    [Fact]
+    public void NeedsAttention_WhenLastSuccessNull_And_ManyFailures_ReturnsTrue()
+    {
+        var result = _evaluator.NeedsAttention(null, 5);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void NeedsAttention_AtExactSilenceThreshold_ReturnsFalse()
+    {
+        // Exactly 6 hours (the default threshold) should NOT trigger, only > 6 hours
+        var lastSuccess = DateTime.UtcNow.AddHours(-6);
+
+        var result = _evaluator.NeedsAttention(lastSuccess, 0);
+
+        Assert.False(result);
+    }
 }

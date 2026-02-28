@@ -224,4 +224,56 @@ public class ConfigSeederTests : IDisposable
         Assert.Empty(await _db.Customers.ToListAsync());
         Assert.Empty(await _db.Hubs.ToListAsync());
     }
+
+    [Fact]
+    public async Task SeedAsync_UpdatesTimeZoneId()
+    {
+        _db.Customers.Add(new Customer
+        {
+            Name = "Eve",
+            Email = "eve@example.com",
+            TimeZoneId = "UTC"
+        });
+        await _db.SaveChangesAsync();
+
+        var seeder = CreateSeeder();
+        var configs = new List<CustomerConfig>
+        {
+            new()
+            {
+                Name = "Eve",
+                Email = "eve@example.com",
+                TimeZoneId = "Australia/Sydney",
+                Hubs = new List<HubConfig>()
+            }
+        };
+
+        await seeder.SeedAsync(configs);
+
+        var customer = await _db.Customers.FirstOrDefaultAsync(c => c.Email == "eve@example.com");
+        Assert.NotNull(customer);
+        Assert.Equal("Australia/Sydney", customer.TimeZoneId);
+    }
+
+    [Fact]
+    public async Task SeedAsync_SetsTimeZoneIdOnNewCustomer()
+    {
+        var seeder = CreateSeeder();
+        var configs = new List<CustomerConfig>
+        {
+            new()
+            {
+                Name = "Frank",
+                Email = "frank@example.com",
+                TimeZoneId = "America/New_York",
+                Hubs = new List<HubConfig>()
+            }
+        };
+
+        await seeder.SeedAsync(configs);
+
+        var customer = await _db.Customers.FirstOrDefaultAsync(c => c.Email == "frank@example.com");
+        Assert.NotNull(customer);
+        Assert.Equal("America/New_York", customer.TimeZoneId);
+    }
 }
