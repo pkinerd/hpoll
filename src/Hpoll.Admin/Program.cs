@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
@@ -9,6 +10,14 @@ using Hpoll.Core.Services;
 using Hpoll.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Forward headers from reverse proxy (X-Forwarded-For, X-Forwarded-Proto, etc.)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // Configuration binding
 builder.Services.Configure<HueAppSettings>(builder.Configuration.GetSection("HueApp"));
@@ -64,6 +73,7 @@ using (var scope = app.Services.CreateScope())
     await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
 }
 
+app.UseForwardedHeaders();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
