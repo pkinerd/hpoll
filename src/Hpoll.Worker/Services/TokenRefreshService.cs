@@ -1,7 +1,6 @@
 namespace Hpoll.Worker.Services;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -14,20 +13,16 @@ public class TokenRefreshService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<TokenRefreshService> _logger;
-    private readonly string _tokenLogPath;
     private readonly PollingSettings _settings;
 
     public TokenRefreshService(
         IServiceScopeFactory scopeFactory,
         ILogger<TokenRefreshService> logger,
-        IConfiguration configuration,
         IOptions<PollingSettings> settings)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _settings = settings.Value;
-        var dataPath = configuration.GetValue<string>("DataPath") ?? "data";
-        _tokenLogPath = Path.Combine(dataPath, "token-refresh.log");
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -115,8 +110,6 @@ public class TokenRefreshService : BackgroundService
                         "Hub {BridgeId}: token refreshed. Expires at {Expiry}",
                         hub.HueBridgeId, hub.TokenExpiresAt);
 
-                    await AppendTokenLogAsync(hub.HueBridgeId, hub.AccessToken, hub.RefreshToken);
-
                     success = true;
                     break;
                 }
@@ -142,19 +135,6 @@ public class TokenRefreshService : BackgroundService
                 hub.UpdatedAt = DateTime.UtcNow;
                 await db.SaveChangesAsync(ct);
             }
-        }
-    }
-
-    private async Task AppendTokenLogAsync(string bridgeId, string accessToken, string refreshToken)
-    {
-        try
-        {
-            var line = $"{DateTime.UtcNow:O} bridge={bridgeId} access_token={accessToken} refresh_token={refreshToken}\n";
-            await File.AppendAllTextAsync(_tokenLogPath, line);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to write token refresh log entry");
         }
     }
 }
