@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ using Hpoll.Data.Entities;
 
 namespace Hpoll.Admin.Pages.Hubs;
 
+[AllowAnonymous]
 public class OAuthCallbackModel : PageModel
 {
     private readonly HpollDbContext _db;
