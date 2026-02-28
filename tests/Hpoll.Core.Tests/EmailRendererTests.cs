@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using Hpoll.Core.Configuration;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 using Hpoll.Email;
@@ -23,7 +25,8 @@ public class EmailRendererTests : IDisposable
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         _db = new HpollDbContext(options);
-        _renderer = new EmailRenderer(_db, NullLogger<EmailRenderer>.Instance);
+        var emailSettings = Options.Create(new EmailSettings());
+        _renderer = new EmailRenderer(_db, NullLogger<EmailRenderer>.Instance, emailSettings);
     }
 
     public void Dispose()

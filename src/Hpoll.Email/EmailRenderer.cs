@@ -2,6 +2,8 @@ namespace Hpoll.Email;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Hpoll.Core.Configuration;
 using Hpoll.Core.Interfaces;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
@@ -12,11 +14,13 @@ public class EmailRenderer : IEmailRenderer
 {
     private readonly HpollDbContext _db;
     private readonly ILogger<EmailRenderer> _logger;
+    private readonly EmailSettings _emailSettings;
 
-    public EmailRenderer(HpollDbContext db, ILogger<EmailRenderer> logger)
+    public EmailRenderer(HpollDbContext db, ILogger<EmailRenderer> logger, IOptions<EmailSettings> emailSettings)
     {
         _db = db;
         _logger = logger;
+        _emailSettings = emailSettings.Value;
     }
 
     public async Task<string> RenderDailySummaryAsync(int customerId, string timeZoneId, DateTime? nowUtc = null, CancellationToken ct = default)
@@ -151,10 +155,10 @@ public class EmailRenderer : IEmailRenderer
 
         windows.Reverse(); // newest window first for readability
         var displayEndLocal = bucketEndLocal > nowLocal ? nowLocal : bucketEndLocal;
-        return BuildHtml(bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses);
+        return BuildHtml(bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, _emailSettings.BatteryAlertThreshold);
     }
 
-    private static string BuildHtml(DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses)
+    private static string BuildHtml(DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses, int batteryAlertThreshold)
     {
         var sb = new StringBuilder();
         sb.AppendLine("<!DOCTYPE html>");
@@ -240,8 +244,8 @@ public class EmailRenderer : IEmailRenderer
         }
         sb.AppendLine("</table>");
 
-        // Battery status section — only shown if any device is below 30%
-        if (batteryStatuses.Count > 0 && batteryStatuses.Any(b => b.BatteryLevel < 30))
+        // Battery status section — only shown if any device is below the alert threshold
+        if (batteryStatuses.Count > 0 && batteryStatuses.Any(b => b.BatteryLevel < batteryAlertThreshold))
         {
             sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-top:20px;\">");
             sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Battery Status</td></tr>");
