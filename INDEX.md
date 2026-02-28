@@ -25,13 +25,13 @@
 | 0021 | Collapse sequential COUNT queries on Dashboard and About pages | open | low | enhancement, performance |
 | 0022 | Add standalone Timestamp index on PollingLog for cleanup queries | open | medium | enhancement, performance |
 | 0023 | Cache parsed SendTimesUtc in EmailSchedulerService constructor | open | low | enhancement, performance |
-| 0024 | Tokens embedded in HTML page source on Hub detail page | open | medium | security |
+| 0024 | Tokens embedded in HTML page source on Hub detail page | open | high | security |
 | 0025 | Logout endpoint lacks antiforgery validation (CSRF logout) | open | medium | security |
 | 0026 | Cookie SecurePolicy set to SameAsRequest allows HTTP transmission | open | medium | security |
-| 0027 | Rate limiting dictionary has no size bounds (DoS risk) | open | low | security |
+| 0027 | Rate limiting dictionary has no size bounds (DoS risk) | open | medium | security |
 | 0028 | Forwarded headers trust all proxies — IP spoofing possible | open | low | security |
 | 0029 | CC/BCC email fields lack server-side format validation | open | low | security |
-| 0030 | Encrypt OAuth tokens at rest in SQLite database | open | low | security |
+| 0030 | Encrypt OAuth tokens at rest in SQLite database | open | critical | security |
 | 0031 | Create Hpoll.Admin.Tests project for admin portal page models | open | high | testing |
 | 0032 | Expand TokenRefreshService tests (currently only 3 tests for 140 lines) | open | high | testing |
 | 0033 | Fix timing-dependent tests in Worker test suite | open | high | testing, bug |
@@ -43,3 +43,13 @@
 | 0039 | Add architecture overview and development instructions to README | open | medium | documentation |
 | 0040 | Expand .env.example to cover all configuration options | open | medium | documentation |
 | 0041 | Add inline comments for complex algorithms and design decisions | open | low | documentation |
+| 0042 | Add security response headers (CSP, X-Frame-Options, HSTS) | open | high | security |
+| 0043 | Hue API response errors array is never checked after deserialization | open | medium | bug |
+| 0044 | Silent catch blocks swallow JSON parsing exceptions without logging | open | high | bug, code-quality |
+| 0045 | 401 during polling does not trigger immediate token refresh or status change | open | high | bug |
+| 0046 | Disabled sensors are not filtered during polling | open | medium | bug |
+| 0047 | Invalid TimeZoneId crashes email sending for all subsequent customers | open | medium | bug |
+| 0048 | Persist Data Protection keys and add Secure flag to session cookie | open | medium | security |
+| 0049 | HealthEvaluator class is dead code — never registered or used | open | low | code-quality |
+| 0050 | Remove or fix orphaned entrypoint.sh | open | low | bug |
+| 0051 | BatteryAlertThreshold boundary condition — device at exactly threshold level is neither shown nor alerted | open | medium | bug |
