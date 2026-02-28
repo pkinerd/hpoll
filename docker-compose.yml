@@ -1,6 +1,7 @@
 services:
   worker:
     build: .
+    user: "${PUID:-1000}:${PGID:-1000}"
     volumes:
       - ./data:/app/data
     env_file:
@@ -11,6 +12,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.admin
+    user: "${PUID:-1000}:${PGID:-1000}"
     volumes:
       - ./data:/app/data
     ports:
