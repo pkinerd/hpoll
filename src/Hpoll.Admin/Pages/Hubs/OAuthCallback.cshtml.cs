@@ -143,10 +143,17 @@ public class OAuthCallbackModel : PageModel
 
             _logger.LogInformation("Hub registration complete for bridge {BridgeId}, customer {CustomerId}", bridgeId, customerId);
         }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "OAuth hub registration failed for customer {CustomerId}", customerId);
+            Message = ex.StatusCode.HasValue
+                ? $"Hub registration failed: Hue API returned HTTP {(int)ex.StatusCode}."
+                : "Hub registration failed: could not reach the Hue API.";
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "OAuth hub registration failed for customer {CustomerId}", customerId);
-            Message = $"Hub registration failed: {ex.Message}";
+            Message = "Hub registration failed due to an unexpected error. Check the server logs for details.";
         }
 
         return Page();

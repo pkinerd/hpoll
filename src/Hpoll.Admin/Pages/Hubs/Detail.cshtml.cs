@@ -79,10 +79,17 @@ public class DetailModel : PageModel
                 hub.HueBridgeId, hub.TokenExpiresAt);
             SuccessMessage = $"Token refreshed. New expiry: {hub.TokenExpiresAt:yyyy-MM-dd HH:mm} UTC";
         }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Manual token refresh failed for hub {BridgeId}", hub.HueBridgeId);
+            ErrorMessage = ex.StatusCode.HasValue
+                ? $"Token refresh failed: Hue API returned HTTP {(int)ex.StatusCode}."
+                : "Token refresh failed: could not reach the Hue API.";
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Manual token refresh failed for hub {BridgeId}", hub.HueBridgeId);
-            ErrorMessage = $"Token refresh failed: {ex.Message}";
+            ErrorMessage = "Token refresh failed due to an unexpected error. Check the server logs for details.";
         }
 
         return await LoadHub(id);

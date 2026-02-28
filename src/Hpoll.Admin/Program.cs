@@ -68,8 +68,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages().RequireAuthorization();
 
-// Logout endpoint
-app.MapGet("/Logout", async (HttpContext ctx) =>
+// Logout endpoint — POST to prevent CSRF-triggered logouts
+app.MapPost("/Logout", async (HttpContext ctx) =>
 {
     await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     return Results.Redirect("/Login");

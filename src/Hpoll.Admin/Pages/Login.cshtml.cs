@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -23,7 +25,9 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        if (password != expected)
+        var passwordBytes = Encoding.UTF8.GetBytes(password ?? string.Empty);
+        var expectedBytes = Encoding.UTF8.GetBytes(expected);
+        if (!CryptographicOperations.FixedTimeEquals(passwordBytes, expectedBytes))
         {
             ErrorMessage = "Invalid password.";
             return Page();
