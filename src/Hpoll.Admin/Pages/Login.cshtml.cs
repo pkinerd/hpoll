@@ -1,10 +1,9 @@
 using System.Collections.Concurrent;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -14,15 +13,29 @@ namespace Hpoll.Admin.Pages;
 public class LoginModel : PageModel
 {
     private static readonly ConcurrentDictionary<string, (int Count, DateTime ResetAt)> _failedAttempts = new();
+    private static readonly PasswordHasher<object> _hasher = new();
     private const int MaxAttempts = 5;
     private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
 
+    public bool IsSetupMode { get; set; }
     public string? ErrorMessage { get; set; }
+    public string? GeneratedHash { get; set; }
 
-    public void OnGet() { }
+    public void OnGet()
+    {
+        IsSetupMode = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ADMIN_PASSWORD_HASH"));
+    }
 
     public async Task<IActionResult> OnPostAsync(string password)
     {
+        var storedHash = Environment.GetEnvironmentVariable("ADMIN_PASSWORD_HASH");
+        if (string.IsNullOrEmpty(storedHash))
+        {
+            IsSetupMode = true;
+            ErrorMessage = "ADMIN_PASSWORD_HASH is not configured. Use the form below to generate one.";
+            return Page();
+        }
+
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
         // Check rate limit
@@ -36,18 +49,9 @@ public class LoginModel : PageModel
             _failedAttempts.TryRemove(clientIp, out _);
         }
 
-        var expected = Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
-        if (string.IsNullOrEmpty(expected))
+        var result = _hasher.VerifyHashedPassword(null!, storedHash, password ?? string.Empty);
+        if (result == PasswordVerificationResult.Failed)
         {
-            ErrorMessage = "ADMIN_PASSWORD environment variable is not configured.";
-            return Page();
-        }
-
-        var passwordBytes = Encoding.UTF8.GetBytes(password ?? string.Empty);
-        var expectedBytes = Encoding.UTF8.GetBytes(expected);
-        if (!CryptographicOperations.FixedTimeEquals(passwordBytes, expectedBytes))
-        {
-            // Track failed attempt
             _failedAttempts.AddOrUpdate(clientIp,
                 _ => (1, DateTime.UtcNow.Add(LockoutDuration)),
                 (_, existing) => (existing.Count + 1, DateTime.UtcNow.Add(LockoutDuration)));
@@ -66,5 +70,31 @@ public class LoginModel : PageModel
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
         return RedirectToPage("/Index");
+    }
+
+    public IActionResult OnPostSetup(string password, string confirmPassword)
+    {
+        IsSetupMode = true;
+
+        if (string.IsNullOrEmpty(password))
+        {
+            ErrorMessage = "Password is required.";
+            return Page();
+        }
+
+        if (password.Length < 8)
+        {
+            ErrorMessage = "Password must be at least 8 characters.";
+            return Page();
+        }
+
+        if (password != confirmPassword)
+        {
+            ErrorMessage = "Passwords do not match.";
+            return Page();
+        }
+
+        GeneratedHash = _hasher.HashPassword(null!, password);
+        return Page();
     }
 }

@@ -9,12 +9,13 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>hpoll admin - Login</title>
+    <title>hpoll admin - @(Model.IsSetupMode ? "Setup" : "Login")</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .login-box { background: #fff; padding: 2rem; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 320px; }
-        .login-box h1 { font-size: 1.2rem; margin-bottom: 1.5rem; text-align: center; }
+        .login-box { background: #fff; padding: 2rem; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 420px; }
+        .login-box h1 { font-size: 1.2rem; margin-bottom: 0.5rem; text-align: center; }
+        .subtitle { font-size: 0.85rem; color: #6b7280; text-align: center; margin-bottom: 1.5rem; }
         .form-group { margin-bottom: 1rem; }
         .form-group label { display: block; font-weight: 500; margin-bottom: 0.25rem; font-size: 0.9rem; }
         .form-group input { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.9rem; }
@@ -22,22 +23,70 @@
         .btn { width: 100%; padding: 0.5rem; background: #1a1a1a; color: #fff; border: none; border-radius: 4px; font-size: 0.9rem; cursor: pointer; }
         .btn:hover { background: #333; }
         .error { color: #dc2626; font-size: 0.85rem; margin-bottom: 0.75rem; }
+        .hash-result { margin-top: 1rem; padding: 1rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; }
+        .hash-result p { font-size: 0.85rem; margin-bottom: 0.5rem; color: #166534; }
+        .hash-result code { display: block; word-break: break-all; font-size: 0.8rem; background: #fff; padding: 0.5rem; border-radius: 3px; border: 1px solid #d1d5db; margin-bottom: 0.75rem; user-select: all; }
+        .hash-result ol { font-size: 0.8rem; color: #374151; padding-left: 1.25rem; }
+        .hash-result ol li { margin-bottom: 0.25rem; }
+        .hash-result ol code { display: inline; padding: 0.1rem 0.3rem; margin: 0; border: none; background: #e5e7eb; font-size: 0.8rem; }
     </style>
 </head>
 <body>
     <div class="login-box">
-        <h1>hpoll admin</h1>
-        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        @if (Model.IsSetupMode)
         {
-            <p class="error">@Model.ErrorMessage</p>
+            <h1>hpoll admin setup</h1>
+            <p class="subtitle">Create a password to secure the admin panel</p>
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <p class="error">@Model.ErrorMessage</p>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.GeneratedHash))
+            {
+                <div class="hash-result">
+                    <p>Your password hash:</p>
+                    <code>@Model.GeneratedHash</code>
+                    <ol>
+                        <li>Copy the hash above</li>
+                        <li>Set <code>ADMIN_PASSWORD_HASH</code> in your <code>.env</code> file</li>
+                        <li>Restart the container</li>
+                    </ol>
+                </div>
+            }
+            else
+            {
+                <form method="post" asp-page-handler="Setup">
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" autofocus required minlength="8" />
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required minlength="8" />
+                    </div>
+                    <button type="submit" class="btn">Generate hash</button>
+                </form>
+            }
         }
-        <form method="post">
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" autofocus required />
-            </div>
-            <button type="submit" class="btn">Sign in</button>
-        </form>
+        else
+        {
+            <h1>hpoll admin</h1>
+            <p class="subtitle">Sign in to continue</p>
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <p class="error">@Model.ErrorMessage</p>
+            }
+            <form method="post">
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" autofocus required />
+                </div>
+                <button type="submit" class="btn">Sign in</button>
+            </form>
+        }
     </div>
 </body>
 </html>

@@ -346,6 +346,22 @@ dotnet run --project src/Hpoll.Worker
 docker build -t hpoll .
 ```
 
+## Admin panel password
+
+The admin panel requires a hashed password set via the `ADMIN_PASSWORD_HASH`
+environment variable.
+
+To generate a hash, start the admin container without `ADMIN_PASSWORD_HASH` set.
+The login page will show a setup form where you enter your desired password. The
+page generates a hash — copy it into your `.env` file and restart:
+
+```
+ADMIN_PASSWORD_HASH=AQAAAAIAAYag...
+```
+
+The password is hashed using PBKDF2-SHA256 with a random salt. The plain-text
+password is never stored.
+
 ## Data persistence
 
 The SQLite database is stored at `<DataPath>/hpoll.db` (`/app/data/hpoll.db`
