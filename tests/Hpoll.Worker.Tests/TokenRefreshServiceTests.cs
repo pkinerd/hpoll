@@ -4,7 +4,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
+using Hpoll.Core.Configuration;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Models;
 using Hpoll.Data;
@@ -99,7 +101,8 @@ public class TokenRefreshServiceTests : IDisposable
         var service = new TokenRefreshService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<TokenRefreshService>.Instance,
-            _configuration);
+            _configuration,
+            Options.Create(new PollingSettings()));
 
         await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
 
@@ -120,7 +123,8 @@ public class TokenRefreshServiceTests : IDisposable
         var service = new TokenRefreshService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<TokenRefreshService>.Instance,
-            _configuration);
+            _configuration,
+            Options.Create(new PollingSettings()));
 
         await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
 
@@ -153,7 +157,8 @@ public class TokenRefreshServiceTests : IDisposable
         var service = new TokenRefreshService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<TokenRefreshService>.Instance,
-            _configuration);
+            _configuration,
+            Options.Create(new PollingSettings()));
 
         await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
 

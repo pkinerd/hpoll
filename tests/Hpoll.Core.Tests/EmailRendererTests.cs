@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using Hpoll.Core.Configuration;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 using Hpoll.Email;
@@ -23,7 +25,8 @@ public class EmailRendererTests : IDisposable
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         _db = new HpollDbContext(options);
-        _renderer = new EmailRenderer(_db, NullLogger<EmailRenderer>.Instance);
+        var emailSettings = Options.Create(new EmailSettings());
+        _renderer = new EmailRenderer(_db, NullLogger<EmailRenderer>.Instance, emailSettings);
     }
 
     public void Dispose()
@@ -526,5 +529,145 @@ public class EmailRendererTests : IDisposable
             ReadingType = "temperature",
             Value = $"{{\"temperature\":{temp},\"changed\":\"{timestamp:O}\"}}"
         });
+    }
+
+    private void AddBattery(int deviceId, DateTime timestamp, int level, string state = "normal")
+    {
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = deviceId,
+            Timestamp = timestamp,
+            ReadingType = "battery",
+            Value = $"{{\"battery_level\":{level},\"battery_state\":\"{state}\"}}"
+        });
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_WithLowBattery_ShowsBatterySection()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        // Create a battery-type device
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-bat-001",
+            DeviceType = "battery",
+            Name = "Hallway Sensor"
+        };
+        _db.Devices.Add(batteryDevice);
+        await _db.SaveChangesAsync();
+
+        // Add a battery reading below 30%
+        AddBattery(batteryDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 15, "low");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("Battery Status", html);
+        Assert.Contains("Hallway Sensor", html);
+        Assert.Contains("15%", html);
+        // Red color for <30%
+        Assert.Contains("#e74c3c", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_WithAllBatteriesAbove30_NoBatterySection()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-bat-002",
+            DeviceType = "battery",
+            Name = "Living Room Sensor"
+        };
+        _db.Devices.Add(batteryDevice);
+        await _db.SaveChangesAsync();
+
+        // Add a battery reading above 30%
+        AddBattery(batteryDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 85);
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.DoesNotContain("Battery Status", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_WithMixedBatteryLevels_ShowsColorCoded()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var lowDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-low", DeviceType = "battery", Name = "Garage Sensor" };
+        var midDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-mid", DeviceType = "battery", Name = "Kitchen Sensor" };
+        var highDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-high", DeviceType = "battery", Name = "Bedroom Sensor" };
+        _db.Devices.AddRange(lowDevice, midDevice, highDevice);
+        await _db.SaveChangesAsync();
+
+        AddBattery(lowDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 10, "critical");
+        AddBattery(midDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 40);
+        AddBattery(highDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 80);
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("Battery Status", html);
+        Assert.Contains("Garage Sensor", html);
+        Assert.Contains("Kitchen Sensor", html);
+        Assert.Contains("Bedroom Sensor", html);
+        Assert.Contains("10%", html);
+        Assert.Contains("40%", html);
+        Assert.Contains("80%", html);
+        // All three colors should be present
+        Assert.Contains("#e74c3c", html); // red for 10%
+        Assert.Contains("#f39c12", html); // yellow for 40%
+        Assert.Contains("#27ae60", html); // green for 80%
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_NoBatteryReadings_NoBatterySection()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.DoesNotContain("Battery Status", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_BatterySection_ShowsLatestReadingOnly()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-bat-003",
+            DeviceType = "battery",
+            Name = "Study Sensor"
+        };
+        _db.Devices.Add(batteryDevice);
+        await _db.SaveChangesAsync();
+
+        // Older reading at 80%, newer reading at 20%
+        AddBattery(batteryDevice.Id, new DateTime(2026, 2, 26, 10, 0, 0, DateTimeKind.Utc), 80);
+        AddBattery(batteryDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 20, "low");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // Should show battery section since latest reading is 20% (<30%)
+        Assert.Contains("Battery Status", html);
+        Assert.Contains("20%", html);
     }
 }

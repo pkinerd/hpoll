@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Interfaces;
+using Hpoll.Core.Models;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 using System.Text.Json;
@@ -16,7 +17,7 @@ public class PollingService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<PollingService> _logger;
     private readonly PollingSettings _settings;
-    private const int RetentionDays = 30;
+    private bool _firstCycle = true;
 
     public PollingService(
         IServiceScopeFactory scopeFactory,
@@ -37,7 +38,8 @@ public class PollingService : BackgroundService
         {
             try
             {
-                await PollAllHubsAsync(stoppingToken);
+                await PollAllHubsAsync(_firstCycle, stoppingToken);
+                _firstCycle = false;
                 await CleanupOldDataAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -60,7 +62,7 @@ public class PollingService : BackgroundService
         }
     }
 
-    private async Task PollAllHubsAsync(CancellationToken ct)
+    private async Task PollAllHubsAsync(bool forceBatteryPoll, CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
@@ -80,27 +82,37 @@ public class PollingService : BackgroundService
                 _logger.LogWarning("Hub {BridgeId}: token expired, skipping poll", hub.HueBridgeId);
                 continue;
             }
-            await PollHubAsync(db, hueClient, hub, ct);
+            await PollHubAsync(db, hueClient, hub, forceBatteryPoll, ct);
         }
     }
 
-    private async Task PollHubAsync(HpollDbContext db, IHueApiClient hueClient, Hub hub, CancellationToken ct)
+    private async Task PollHubAsync(HpollDbContext db, IHueApiClient hueClient, Hub hub, bool forceBatteryPoll, CancellationToken ct)
     {
         var log = new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow };
         int apiCalls = 0;
 
         try
         {
+            // Determine if battery data should be fetched this cycle
+            var shouldPollBattery = forceBatteryPoll
+                || !hub.LastBatteryPollUtc.HasValue
+                || (DateTime.UtcNow - hub.LastBatteryPollUtc.Value).TotalHours >= _settings.BatteryPollIntervalHours;
+
             // Fetch all sensor data in parallel
             var motionTask = hueClient.GetMotionSensorsAsync(hub.AccessToken, hub.HueApplicationKey, ct);
             var tempTask = hueClient.GetTemperatureSensorsAsync(hub.AccessToken, hub.HueApplicationKey, ct);
             var deviceTask = hueClient.GetDevicesAsync(hub.AccessToken, hub.HueApplicationKey, ct);
-            await Task.WhenAll(motionTask, tempTask, deviceTask);
-            apiCalls = 3;
+            var batteryTask = shouldPollBattery
+                ? hueClient.GetDevicePowerAsync(hub.AccessToken, hub.HueApplicationKey, ct)
+                : Task.FromResult(new HueResponse<HueDevicePowerResource>());
+
+            await Task.WhenAll(motionTask, tempTask, deviceTask, batteryTask);
+            apiCalls = shouldPollBattery ? 4 : 3;
 
             var motionResponse = await motionTask;
             var tempResponse = await tempTask;
             var deviceResponse = await deviceTask;
+            var batteryResponse = await batteryTask;
 
             // Build device lookup: device ID -> device (for owner.rid lookups)
             var deviceById = deviceResponse.Data.ToDictionary(d => d.Id, d => d);
@@ -168,6 +180,39 @@ public class PollingService : BackgroundService
                 });
             }
 
+            // Process battery readings (only when polled this cycle)
+            if (shouldPollBattery && batteryResponse.Data.Count > 0)
+            {
+                foreach (var power in batteryResponse.Data)
+                {
+                    if (power.PowerState.BatteryLevel == null) continue;
+
+                    var deviceName = deviceById.TryGetValue(power.Owner.Rid, out var ownerDevice)
+                        ? ownerDevice.Metadata.Name
+                        : "Unknown";
+
+                    var dbDevice = await GetOrCreateDeviceAsync(db, hub, power.Owner.Rid, "battery", deviceName, ct);
+
+                    db.DeviceReadings.Add(new DeviceReading
+                    {
+                        DeviceId = dbDevice.Id,
+                        Timestamp = DateTime.UtcNow,
+                        ReadingType = "battery",
+                        Value = JsonSerializer.Serialize(new
+                        {
+                            battery_level = power.PowerState.BatteryLevel.Value,
+                            battery_state = power.PowerState.BatteryState ?? "unknown"
+                        })
+                    });
+                }
+
+                hub.LastBatteryPollUtc = DateTime.UtcNow;
+
+                _logger.LogInformation(
+                    "Hub {BridgeId}: battery data fetched. {BatteryCount} device_power resources",
+                    hub.HueBridgeId, batteryResponse.Data.Count);
+            }
+
             hub.LastSuccessAt = DateTime.UtcNow;
             hub.ConsecutiveFailures = 0;
             log.Success = true;
@@ -227,7 +272,7 @@ public class PollingService : BackgroundService
         {
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
-            var cutoff = DateTime.UtcNow.AddDays(-RetentionDays);
+            var cutoff = DateTime.UtcNow.AddHours(-_settings.DataRetentionHours);
 
             var oldReadings = await db.DeviceReadings
                 .Where(r => r.Timestamp < cutoff)
@@ -244,8 +289,8 @@ public class PollingService : BackgroundService
                 await db.SaveChangesAsync(ct);
 
                 _logger.LogInformation(
-                    "Data retention cleanup: deleted {Readings} readings and {Logs} polling logs older than {Days} days",
-                    oldReadings.Count, oldLogs.Count, RetentionDays);
+                    "Data retention cleanup: deleted {Readings} readings and {Logs} polling logs older than {Hours} hours",
+                    oldReadings.Count, oldLogs.Count, _settings.DataRetentionHours);
             }
         }
         catch (Exception ex)

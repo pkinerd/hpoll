@@ -12,6 +12,7 @@ public class Hub
     public DateTime TokenExpiresAt { get; set; }
     public string Status { get; set; } = "active"; // active, inactive, needs_reauth
     public DateTime? LastPolledAt { get; set; }
+    public DateTime? LastBatteryPollUtc { get; set; }
     public DateTime? LastSuccessAt { get; set; }
     public int ConsecutiveFailures { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
