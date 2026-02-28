@@ -31,6 +31,8 @@ variables use `__` (double underscore) as section separators.
 | `Email:SendTimesUtc` | `Email__SendTimesUtc__0`, `__1`, … | `["08:00"]` | List of times (UTC, `HH:mm`) to send summary emails |
 | `Email:FromAddress` | `Email__FromAddress` | _(required)_ | Sender address for daily emails (must be SES-verified) |
 | `Email:BatteryAlertThreshold` | `Email__BatteryAlertThreshold` | `30` | Battery % below which devices appear in the email alert section |
+| `Email:BatteryLevelCritical` | `Email__BatteryLevelCritical` | `30` | Battery % below which the bar is red |
+| `Email:BatteryLevelWarning` | `Email__BatteryLevelWarning` | `50` | Battery % below which the bar is yellow (green above) |
 | `Email:AwsRegion` | `Email__AwsRegion` | `us-east-1` | AWS region for SES |
 | `HueApp:ClientId` | `HueApp__ClientId` | _(required)_ | Hue Remote API app client ID |
 | `HueApp:ClientSecret` | `HueApp__ClientSecret` | _(required)_ | Hue Remote API app client secret |
@@ -157,7 +159,9 @@ Where `appsettings.Production.json` contains:
     "FromAddress": "alerts@example.com",
     "AwsRegion": "us-east-1",
     "SendTimesUtc": ["06:00", "18:00"],
-    "BatteryAlertThreshold": 30
+    "BatteryAlertThreshold": 30,
+    "BatteryLevelCritical": 30,
+    "BatteryLevelWarning": 50
   },
   "Polling": {
     "IntervalMinutes": 60,
@@ -210,6 +214,8 @@ services:
       Email__SendTimesUtc__0: "06:00"
       Email__SendTimesUtc__1: "18:00"
       Email__BatteryAlertThreshold: "30"
+      Email__BatteryLevelCritical: "30"
+      Email__BatteryLevelWarning: "50"
 
       # ── AWS credentials (SES) ───────────────────────────
       AWS_ACCESS_KEY_ID: ""

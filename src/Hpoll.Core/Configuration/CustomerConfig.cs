@@ -37,6 +37,8 @@ public class EmailSettings
     public string FromAddress { get; set; } = string.Empty;
     public string AwsRegion { get; set; } = "us-east-1";
     public int BatteryAlertThreshold { get; set; } = 30; // Show battery section when any device is below this %
+    public int BatteryLevelCritical { get; set; } = 30; // Battery bar turns red below this %
+    public int BatteryLevelWarning { get; set; } = 50; // Battery bar turns yellow below this %
 }
 
 public class HueAppSettings

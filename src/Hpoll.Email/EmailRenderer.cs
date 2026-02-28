@@ -155,10 +155,10 @@ public class EmailRenderer : IEmailRenderer
 
         windows.Reverse(); // newest window first for readability
         var displayEndLocal = bucketEndLocal > nowLocal ? nowLocal : bucketEndLocal;
-        return BuildHtml(bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, _emailSettings.BatteryAlertThreshold);
+        return BuildHtml(bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, _emailSettings.BatteryAlertThreshold, _emailSettings.BatteryLevelCritical, _emailSettings.BatteryLevelWarning);
     }
 
-    private static string BuildHtml(DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses, int batteryAlertThreshold)
+    private static string BuildHtml(DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses, int batteryAlertThreshold, int batteryLevelCritical, int batteryLevelWarning)
     {
         var sb = new StringBuilder();
         sb.AppendLine("<!DOCTYPE html>");
@@ -251,8 +251,8 @@ public class EmailRenderer : IEmailRenderer
             sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Battery Status</td></tr>");
             foreach (var b in batteryStatuses)
             {
-                var color = b.BatteryLevel < 30 ? "#e74c3c"
-                          : b.BatteryLevel < 50 ? "#f39c12"
+                var color = b.BatteryLevel < batteryLevelCritical ? "#e74c3c"
+                          : b.BatteryLevel < batteryLevelWarning ? "#f39c12"
                           : "#27ae60";
                 var barWidth = Math.Max(b.BatteryLevel, 5);
 
