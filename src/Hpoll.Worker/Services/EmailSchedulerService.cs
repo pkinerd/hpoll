@@ -53,7 +53,7 @@ public class EmailSchedulerService : BackgroundService
                 // Wait a bit before retrying to avoid tight loop on persistent errors
                 try
                 {
-                    await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                    await Task.Delay(TimeSpan.FromMinutes(_settings.ErrorRetryDelayMinutes), stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {

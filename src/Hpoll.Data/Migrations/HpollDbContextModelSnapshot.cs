@@ -148,6 +148,9 @@ namespace Hpoll.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("LastBatteryPollUtc")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("LastPolledAt")
                         .HasColumnType("TEXT");
 

@@ -26,10 +26,27 @@ variables use `__` (double underscore) as section separators.
 | Setting | Env var | Default | Description |
 |---|---|---|---|
 | `DataPath` | `DataPath` | `data` | Directory for the SQLite database file |
+| **Polling** | | | |
 | `Polling:IntervalMinutes` | `Polling__IntervalMinutes` | `60` | Minutes between polling cycles |
+| `Polling:BatteryPollIntervalHours` | `Polling__BatteryPollIntervalHours` | `84` | Hours between battery level polls (~twice per week) |
+| `Polling:DataRetentionHours` | `Polling__DataRetentionHours` | `48` | Hours to keep device readings and polling logs before cleanup |
+| `Polling:HttpTimeoutSeconds` | `Polling__HttpTimeoutSeconds` | `30` | HTTP client timeout for Hue API calls |
+| `Polling:TokenRefreshCheckHours` | `Polling__TokenRefreshCheckHours` | `24` | Hours between token refresh checks |
+| `Polling:TokenRefreshThresholdHours` | `Polling__TokenRefreshThresholdHours` | `48` | Hours before token expiry to trigger a refresh |
+| `Polling:TokenRefreshMaxRetries` | `Polling__TokenRefreshMaxRetries` | `3` | Maximum retry attempts for token refresh |
+| `Polling:HealthFailureThreshold` | `Polling__HealthFailureThreshold` | `3` | Consecutive poll failures before a hub is flagged unhealthy |
+| `Polling:HealthMaxSilenceHours` | `Polling__HealthMaxSilenceHours` | `6` | Hours since last successful poll before a hub needs attention |
+| **Email** | | | |
 | `Email:SendTimesUtc` | `Email__SendTimesUtc__0`, `__1`, … | `["08:00"]` | List of times (UTC, `HH:mm`) to send summary emails |
 | `Email:FromAddress` | `Email__FromAddress` | _(required)_ | Sender address for daily emails (must be SES-verified) |
+| `Email:BatteryAlertThreshold` | `Email__BatteryAlertThreshold` | `30` | Battery % below which devices appear in the email alert section |
+| `Email:BatteryLevelCritical` | `Email__BatteryLevelCritical` | `30` | Battery % below which the bar is red |
+| `Email:BatteryLevelWarning` | `Email__BatteryLevelWarning` | `50` | Battery % below which the bar is yellow (green above) |
+| `Email:SummaryWindowHours` | `Email__SummaryWindowHours` | `4` | Hours per time window in the daily summary email |
+| `Email:SummaryWindowCount` | `Email__SummaryWindowCount` | `7` | Number of time windows in the daily summary email |
+| `Email:ErrorRetryDelayMinutes` | `Email__ErrorRetryDelayMinutes` | `5` | Minutes to wait before retrying after an email scheduler error |
 | `Email:AwsRegion` | `Email__AwsRegion` | `us-east-1` | AWS region for SES |
+| **Hue app** | | | |
 | `HueApp:ClientId` | `HueApp__ClientId` | _(required)_ | Hue Remote API app client ID |
 | `HueApp:ClientSecret` | `HueApp__ClientSecret` | _(required)_ | Hue Remote API app client secret |
 | `Customers` | _(see below)_ | `[]` | Array of customer/hub definitions |
@@ -154,10 +171,24 @@ Where `appsettings.Production.json` contains:
   "Email": {
     "FromAddress": "alerts@example.com",
     "AwsRegion": "us-east-1",
-    "SendTimesUtc": ["06:00", "18:00"]
+    "SendTimesUtc": ["06:00", "18:00"],
+    "BatteryAlertThreshold": 30,
+    "BatteryLevelCritical": 30,
+    "BatteryLevelWarning": 50,
+    "SummaryWindowHours": 4,
+    "SummaryWindowCount": 7,
+    "ErrorRetryDelayMinutes": 5
   },
   "Polling": {
-    "IntervalMinutes": 60
+    "IntervalMinutes": 60,
+    "BatteryPollIntervalHours": 84,
+    "DataRetentionHours": 48,
+    "HttpTimeoutSeconds": 30,
+    "TokenRefreshCheckHours": 24,
+    "TokenRefreshThresholdHours": 48,
+    "TokenRefreshMaxRetries": 3,
+    "HealthFailureThreshold": 3,
+    "HealthMaxSilenceHours": 6
   },
   "Customers": [
     {
@@ -186,7 +217,7 @@ configures everything inline — no `.env` or JSON settings file needed:
 ```yaml
 services:
   hpoll:
-    image: ghcr.io/pkinerd/hpoll:latest
+    image: pkinerd/hpoll:latest
     container_name: hpoll
     volumes:
       - ./data:/app/data
@@ -198,12 +229,26 @@ services:
 
       # ── Polling ──────────────────────────────────────────
       Polling__IntervalMinutes: "60"
+      Polling__BatteryPollIntervalHours: "84"
+      Polling__DataRetentionHours: "48"
+      Polling__HttpTimeoutSeconds: "30"
+      Polling__TokenRefreshCheckHours: "24"
+      Polling__TokenRefreshThresholdHours: "48"
+      Polling__TokenRefreshMaxRetries: "3"
+      Polling__HealthFailureThreshold: "3"
+      Polling__HealthMaxSilenceHours: "6"
 
       # ── Email ────────────────────────────────────────────
       Email__FromAddress: "alerts@example.com"
       Email__AwsRegion: "ap-southeast-2"
       Email__SendTimesUtc__0: "06:00"
       Email__SendTimesUtc__1: "18:00"
+      Email__BatteryAlertThreshold: "30"
+      Email__BatteryLevelCritical: "30"
+      Email__BatteryLevelWarning: "50"
+      Email__SummaryWindowHours: "4"
+      Email__SummaryWindowCount: "7"
+      Email__ErrorRetryDelayMinutes: "5"
 
       # ── AWS credentials (SES) ───────────────────────────
       AWS_ACCESS_KEY_ID: ""
@@ -251,7 +296,7 @@ docker run -d \
   -e Customers__0__Hubs__0__AccessToken=initial-access-token \
   -e Customers__0__Hubs__0__RefreshToken=initial-refresh-token \
   -e Customers__0__Hubs__0__TokenExpiresAt=2026-04-01T00:00:00Z \
-  ghcr.io/pkinerd/hpoll:latest
+  pkinerd/hpoll:latest
 ```
 
 ## Building from source

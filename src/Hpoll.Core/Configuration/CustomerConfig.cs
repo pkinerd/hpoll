@@ -28,6 +28,14 @@ public class HubConfig
 public class PollingSettings
 {
     public int IntervalMinutes { get; set; } = 60;
+    public int BatteryPollIntervalHours { get; set; } = 84;
+    public int DataRetentionHours { get; set; } = 48;
+    public int HttpTimeoutSeconds { get; set; } = 30;
+    public int TokenRefreshCheckHours { get; set; } = 24;
+    public int TokenRefreshThresholdHours { get; set; } = 48;
+    public int TokenRefreshMaxRetries { get; set; } = 3;
+    public int HealthFailureThreshold { get; set; } = 3;
+    public int HealthMaxSilenceHours { get; set; } = 6;
 }
 
 public class EmailSettings
@@ -35,6 +43,12 @@ public class EmailSettings
     public List<string> SendTimesUtc { get; set; } = new() { "08:00" };
     public string FromAddress { get; set; } = string.Empty;
     public string AwsRegion { get; set; } = "us-east-1";
+    public int BatteryAlertThreshold { get; set; } = 30;
+    public int BatteryLevelCritical { get; set; } = 30;
+    public int BatteryLevelWarning { get; set; } = 50;
+    public int SummaryWindowHours { get; set; } = 4;
+    public int SummaryWindowCount { get; set; } = 7;
+    public int ErrorRetryDelayMinutes { get; set; } = 5;
 }
 
 public class HueAppSettings

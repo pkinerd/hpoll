@@ -286,6 +286,47 @@ public class HueApiClientTests
     }
 
     [Fact]
+    public async Task GetDevicePowerAsync_UsesCorrectEndpoint()
+    {
+        var responseBody = new HueResponse<HueDevicePowerResource> { Data = new List<HueDevicePowerResource>() };
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, JsonSerializer.Serialize(responseBody, JsonOptions));
+
+        await _client.GetDevicePowerAsync(TestAccessToken, TestApplicationKey);
+
+        Assert.Contains("api.meethue.com/route/clip/v2/resource/device_power", _mockHandler.CapturedRequest!.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task GetDevicePowerAsync_ReturnsDeserializedData()
+    {
+        var json = """
+        {
+            "errors": [],
+            "data": [
+                {
+                    "id": "power-001",
+                    "type": "device_power",
+                    "owner": { "rid": "dev-001", "rtype": "device" },
+                    "power_state": {
+                        "battery_state": "normal",
+                        "battery_level": 85
+                    }
+                }
+            ]
+        }
+        """;
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, json);
+
+        var result = await _client.GetDevicePowerAsync(TestAccessToken, TestApplicationKey);
+
+        Assert.NotNull(result);
+        Assert.Single(result.Data);
+        Assert.Equal("power-001", result.Data[0].Id);
+        Assert.Equal(85, result.Data[0].PowerState.BatteryLevel);
+        Assert.Equal("normal", result.Data[0].PowerState.BatteryState);
+    }
+
+    [Fact]
     public async Task RefreshTokenAsync_UsesCorrectTokenEndpoint()
     {
         var tokenResponse = new HueTokenResponse
