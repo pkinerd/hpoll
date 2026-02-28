@@ -1,0 +1,41 @@
+@page
+@model Hpoll.Admin.Pages.Hubs.OAuthCallbackModel
+@{
+    ViewData["Title"] = "Hub Registration";
+}
+
+<h1>Hub Registration</h1>
+
+@if (Model.Success)
+{
+    <div class="alert alert-success">
+        @Model.Message
+        @if (Model.DeviceCount.HasValue)
+        {
+            <br /><strong>@Model.DeviceCount devices</strong> found on this bridge.
+        }
+    </div>
+
+    <div class="actions">
+        @if (Model.HubId.HasValue)
+        {
+            <a asp-page="/Hubs/Detail" asp-route-id="@Model.HubId" class="btn btn-primary">View Hub</a>
+        }
+        @if (Model.CustomerId.HasValue)
+        {
+            <a asp-page="/Customers/Detail" asp-route-id="@Model.CustomerId" class="btn">Back to Customer</a>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-error">@Model.Message</div>
+    @if (Model.CustomerId.HasValue)
+    {
+        <a asp-page="/Customers/Detail" asp-route-id="@Model.CustomerId" class="btn">Back to Customer</a>
+    }
+    else
+    {
+        <a asp-page="/Index" class="btn">Back to Dashboard</a>
+    }
+}

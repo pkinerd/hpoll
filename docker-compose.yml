@@ -6,3 +6,15 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    restart: unless-stopped

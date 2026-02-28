@@ -1,0 +1,97 @@
+@page "{id:int}"
+@model Hpoll.Admin.Pages.Hubs.DetailModel
+@{
+    ViewData["Title"] = $"Hub {Model.Hub.HueBridgeId}";
+    var remaining = Model.Hub.TokenExpiresAt - DateTime.UtcNow;
+    var tokenClass = remaining.TotalHours > 48 ? "token-green" : remaining.TotalHours > 24 ? "token-yellow" : "token-red";
+}
+
+<h1>Hub @Model.Hub.HueBridgeId</h1>
+<p><a asp-page="/Customers/Detail" asp-route-id="@Model.Hub.CustomerId">@Model.Hub.Customer.Name</a></p>
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success">@Model.SuccessMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-error">@Model.ErrorMessage</div>
+}
+
+<div class="card">
+    <dl>
+        <dt>Status</dt><dd><span class="status status-@Model.Hub.Status">@Model.Hub.Status</span></dd>
+        <dt>Token Expires</dt><dd class="@tokenClass">@Model.Hub.TokenExpiresAt.ToString("yyyy-MM-dd HH:mm") UTC (@($"{remaining.TotalHours:F0}h") remaining)</dd>
+        <dt>Last Polled</dt><dd>@(Model.Hub.LastPolledAt?.ToString("yyyy-MM-dd HH:mm") ?? "Never")</dd>
+        <dt>Last Success</dt><dd>@(Model.Hub.LastSuccessAt?.ToString("yyyy-MM-dd HH:mm") ?? "Never")</dd>
+        <dt>Consecutive Failures</dt><dd>@Model.Hub.ConsecutiveFailures</dd>
+        <dt>Created</dt><dd>@Model.Hub.CreatedAt.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+    </dl>
+</div>
+
+<div class="actions">
+    <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@Model.Hub.Id" style="display:inline;">
+        @if (Model.Hub.Status == "active")
+        {
+            <button type="submit" class="btn btn-danger">Deactivate</button>
+        }
+        else if (Model.Hub.Status == "inactive")
+        {
+            <button type="submit" class="btn btn-success">Reactivate</button>
+        }
+    </form>
+    <form method="post" asp-page-handler="RefreshToken" asp-route-id="@Model.Hub.Id" style="display:inline;">
+        <button type="submit" class="btn">Refresh Token Now</button>
+    </form>
+    @if (Model.Hub.Status == "needs_reauth")
+    {
+        <form method="post" asp-page-handler="ClearReauth" asp-route-id="@Model.Hub.Id" style="display:inline;">
+            <button type="submit" class="btn btn-success">Clear Needs Re-auth</button>
+        </form>
+    }
+</div>
+
+<h2>Devices (@Model.Devices.Count)</h2>
+@if (Model.Devices.Any())
+{
+    <table>
+        <thead><tr><th>Name</th><th>Type</th><th>Room</th></tr></thead>
+        <tbody>
+        @foreach (var device in Model.Devices)
+        {
+            <tr>
+                <td>@device.Name</td>
+                <td>@device.DeviceType</td>
+                <td>@device.RoomName</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No devices discovered yet. Devices are populated during polling.</p>
+}
+
+<h2>Recent Polling Logs</h2>
+@if (Model.RecentLogs.Any())
+{
+    <table>
+        <thead><tr><th>Time</th><th>Status</th><th>API Calls</th><th>Error</th></tr></thead>
+        <tbody>
+        @foreach (var log in Model.RecentLogs)
+        {
+            <tr>
+                <td>@log.Timestamp.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@(log.Success ? "OK" : "FAIL")</td>
+                <td>@log.ApiCallsMade</td>
+                <td style="font-size: 0.8rem; color: #666;">@(log.ErrorMessage ?? "")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No polling logs yet.</p>
+}

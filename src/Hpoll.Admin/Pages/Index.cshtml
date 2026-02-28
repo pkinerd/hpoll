@@ -1,0 +1,98 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h1>Dashboard</h1>
+
+<div class="cards">
+    <div class="card">
+        <h3>Customers</h3>
+        <div class="value">@Model.ActiveCustomers</div>
+        @if (Model.InactiveCustomers > 0) { <div>@Model.InactiveCustomers inactive</div> }
+    </div>
+    <div class="card">
+        <h3>Hubs Active</h3>
+        <div class="value">@Model.ActiveHubs</div>
+    </div>
+    @if (Model.InactiveHubs > 0)
+    {
+        <div class="card">
+            <h3>Hubs Inactive</h3>
+            <div class="value">@Model.InactiveHubs</div>
+        </div>
+    }
+    @if (Model.NeedsReauthHubs > 0)
+    {
+        <div class="card">
+            <h3>Needs Re-auth</h3>
+            <div class="value" style="color: #dc2626;">@Model.NeedsReauthHubs</div>
+        </div>
+    }
+</div>
+
+@if (Model.ExpiringTokenHubs.Any())
+{
+    <h2>Token Expiry Warnings</h2>
+    <table>
+        <thead><tr><th>Customer</th><th>Bridge ID</th><th>Expires At</th><th>Time Left</th></tr></thead>
+        <tbody>
+        @foreach (var hub in Model.ExpiringTokenHubs)
+        {
+            var remaining = hub.TokenExpiresAt - DateTime.UtcNow;
+            var color = remaining.TotalHours < 24 ? "token-red" : "token-yellow";
+            <tr>
+                <td>@hub.Customer.Name</td>
+                <td><a asp-page="/Hubs/Detail" asp-route-id="@hub.Id">@hub.HueBridgeId</a></td>
+                <td>@hub.TokenExpiresAt.ToString("yyyy-MM-dd HH:mm") UTC</td>
+                <td class="@color">@($"{remaining.TotalHours:F0}h")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@if (Model.FailingHubs.Any())
+{
+    <h2>Hubs with Failures</h2>
+    <table>
+        <thead><tr><th>Customer</th><th>Bridge ID</th><th>Consecutive Failures</th><th>Last Success</th></tr></thead>
+        <tbody>
+        @foreach (var hub in Model.FailingHubs)
+        {
+            <tr>
+                <td>@hub.Customer.Name</td>
+                <td><a asp-page="/Hubs/Detail" asp-route-id="@hub.Id">@hub.HueBridgeId</a></td>
+                <td>@hub.ConsecutiveFailures</td>
+                <td>@(hub.LastSuccessAt?.ToString("yyyy-MM-dd HH:mm") ?? "Never")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+<h2>Recent Polling Activity</h2>
+@if (Model.RecentLogs.Any())
+{
+    <table>
+        <thead><tr><th>Time</th><th>Customer</th><th>Bridge</th><th>Status</th><th>API Calls</th><th>Error</th></tr></thead>
+        <tbody>
+        @foreach (var log in Model.RecentLogs)
+        {
+            <tr>
+                <td>@log.Timestamp.ToString("MM-dd HH:mm")</td>
+                <td>@log.Hub.Customer.Name</td>
+                <td><a asp-page="/Hubs/Detail" asp-route-id="@log.HubId">@log.Hub.HueBridgeId</a></td>
+                <td>@(log.Success ? "OK" : "FAIL")</td>
+                <td>@log.ApiCallsMade</td>
+                <td style="font-size: 0.8rem; color: #666;">@(log.ErrorMessage ?? "")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No polling activity yet.</p>
+}

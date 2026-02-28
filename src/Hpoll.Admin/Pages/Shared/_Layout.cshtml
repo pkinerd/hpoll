@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - hpoll admin</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; background: #f5f5f5; font-size: 14px; }
+        nav { background: #1a1a1a; color: #fff; padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 2rem; }
+        nav .brand { font-weight: 600; font-size: 1.1rem; letter-spacing: 0.5px; }
+        nav a { color: #ccc; text-decoration: none; font-size: 0.9rem; }
+        nav a:hover { color: #fff; }
+        nav .spacer { flex: 1; }
+        main { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
+        h1 { font-size: 1.4rem; margin-bottom: 1rem; }
+        h2 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 1rem; }
+        th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #fafafa; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
+        td { font-size: 0.9rem; }
+        tr:last-child td { border-bottom: none; }
+        a { color: #2563eb; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .card { background: #fff; border-radius: 4px; padding: 1rem 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 1rem; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .card h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: #666; margin-bottom: 0.25rem; }
+        .card .value { font-size: 1.8rem; font-weight: 700; }
+        .status { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 0.8rem; font-weight: 500; }
+        .status-active { background: #dcfce7; color: #166534; }
+        .status-inactive { background: #f3f4f6; color: #6b7280; }
+        .status-needs_reauth { background: #fef2f2; color: #991b1b; }
+        .btn { display: inline-block; padding: 0.4rem 1rem; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; color: #374151; font-size: 0.85rem; cursor: pointer; text-decoration: none; }
+        .btn:hover { background: #f9fafb; text-decoration: none; }
+        .btn-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-danger { background: #dc2626; color: #fff; border-color: #dc2626; }
+        .btn-danger:hover { background: #b91c1c; }
+        .btn-success { background: #16a34a; color: #fff; border-color: #16a34a; }
+        .btn-success:hover { background: #15803d; }
+        .form-group { margin-bottom: 0.75rem; }
+        .form-group label { display: block; font-weight: 500; margin-bottom: 0.25rem; font-size: 0.9rem; }
+        .form-group input, .form-group select { width: 100%; padding: 0.4rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.9rem; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
+        .alert { padding: 0.75rem 1rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.9rem; }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        .token-green { color: #16a34a; }
+        .token-yellow { color: #ca8a04; }
+        .token-red { color: #dc2626; }
+        dl { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; }
+        dt { font-weight: 500; color: #666; }
+        dd { margin: 0; }
+    </style>
+</head>
+<body>
+    <nav>
+        <span class="brand">hpoll</span>
+        <a asp-page="/Index">Dashboard</a>
+        <a asp-page="/Customers/Index">Customers</a>
+        <span class="spacer"></span>
+        <a href="/Logout">Logout</a>
+    </nav>
+    <main>
+        @RenderBody()
+    </main>
+</body>
+</html>
