@@ -1,7 +1,7 @@
 ---
 id: 68
 title: "IEmailRenderer XML doc comment is misleading — hardcodes configurable values"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [documentation]
@@ -23,3 +23,7 @@ The only XML doc comment in the entire `src/` directory (on `IEmailRenderer.Rend
 *Found during comprehensive review (documentation review, cross-referenced with Hue API docs).*
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Closed:** Consolidated into #0038 (Add XML documentation comments to public interfaces and services). This finding was already identified in #0038's existing comments ("IEmailRenderer: Existing doc comment hardcodes '28 hours' and '4-hour windows'"). Fixing the only existing doc comment is a natural first step in #0038's implementation.

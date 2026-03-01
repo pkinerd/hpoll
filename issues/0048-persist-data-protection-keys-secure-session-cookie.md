@@ -36,3 +36,15 @@ The session cookie stores OAuth CSRF tokens for the hub registration flow. Witho
 **Related:** #26 (auth cookie SecurePolicy)
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Consolidated from #0026 and #0063 (closed as subsets of this issue).**
+
+This issue now encompasses the full HTTPS/cookie hardening task for the admin portal:
+
+3. **Auth cookie SecurePolicy** (from #0026): In `Admin/Program.cs` line 53, `CookieSecurePolicy.SameAsRequest` means the auth cookie can be transmitted over HTTP. Change to `CookieSecurePolicy.Always` for production. The default docker-compose setup exposes port 8080 without TLS.
+
+4. **HTTPS redirect middleware** (from #0063): Add `app.UseHttpsRedirection()` and `app.UseHsts()` conditionally in production. The `ForwardedHeaders` middleware is already configured for proxy setups. Document that a reverse proxy with TLS termination is required for production deployment.
+
+All four items (Data Protection keys, session cookie Secure flag, auth cookie SecurePolicy, HTTPS redirect) should be implemented together in a single PR since they all involve `Program.cs` and form a coherent "production HTTPS hardening" change.

@@ -1,7 +1,7 @@
 ---
 id: 26
 title: "Cookie SecurePolicy set to SameAsRequest allows HTTP transmission"
-status: open
+status: closed
 created: 2026-02-28
 author: claude
 labels: [security]
@@ -17,3 +17,7 @@ In `Admin/Program.cs` line 53, `CookieSecurePolicy.SameAsRequest` means the auth
 **Remediation:** Set `CookieSecurePolicy.Always` for production. Document that production deployments must use HTTPS (via reverse proxy). Also apply `SecurePolicy` and `SameSite` to the session cookie configuration explicitly (lines 59-64).
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Closed:** Consolidated into #0048 (Persist Data Protection keys and add Secure flag to session cookie). The auth cookie `SecurePolicy.Always` fix is now item 3 in #0048's implementation checklist, alongside session cookie security, Data Protection key persistence, and HTTPS redirect middleware.

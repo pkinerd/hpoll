@@ -12,7 +12,7 @@
 | 0008 | Implementation plan | closed | medium | planning, documentation |
 | 0009 | Extract shared ActivitySummaryBuilder to eliminate duplicated window aggregation logic | open | high | enhancement, code-quality |
 | 0010 | Introduce string constants or enums for Status, ReadingType, and DeviceType fields | open | high | enhancement, code-quality |
-| 0011 | Extract DeviceReading JSON parsing into typed accessor methods | open | medium | enhancement, code-quality |
+| 0011 | Extract DeviceReading JSON parsing into typed accessor methods | closed | medium | enhancement, code-quality |
 | 0012 | Extract Hub.ApplyTokenResponse to eliminate 3-location token update duplication | open | medium | enhancement, code-quality |
 | 0013 | Extract shared LoadCustomerAsync helper in Detail page model | open | low | enhancement, code-quality |
 | 0014 | Extract HttpRequestException error formatting helper | open | low | enhancement, code-quality |
@@ -27,7 +27,7 @@
 | 0023 | Cache parsed SendTimesUtc in EmailSchedulerService constructor | open | low | enhancement, performance |
 | 0024 | Tokens embedded in HTML page source on Hub detail page | open | high | security |
 | 0025 | Logout endpoint lacks antiforgery validation (CSRF logout) | open | medium | security |
-| 0026 | Cookie SecurePolicy set to SameAsRequest allows HTTP transmission | open | medium | security |
+| 0026 | Cookie SecurePolicy set to SameAsRequest allows HTTP transmission | closed | medium | security |
 | 0027 | Rate limiting dictionary has no size bounds (DoS risk) | open | medium | security |
 | 0028 | Forwarded headers trust all proxies — IP spoofing possible | open | low | security |
 | 0029 | CC/BCC email fields lack server-side format validation | open | low | security |
@@ -54,24 +54,24 @@
 | 0050 | Remove or fix orphaned entrypoint.sh | open | low | bug |
 | 0051 | BatteryAlertThreshold boundary condition — device at exactly threshold level is neither shown nor alerted | open | medium | bug |
 | 0052 | Pin NuGet and Docker dependency versions for reproducible builds | open | low | security, enhancement |
-| 0053 | RegisterApplicationAsync leaks full Hue API response body in exception message | open | medium | bug, security |
+| 0053 | RegisterApplicationAsync leaks full Hue API response body in exception message | closed | medium | bug, security |
 | 0054 | Introduce EmailMessage model to simplify IEmailSender interface | open | medium | enhancement, code-quality |
-| 0055 | Filter DeviceReadings by ReadingType at database level in activity summary queries | open | medium | enhancement, performance |
-| 0056 | Duplicate JSON parsing of motion readings doubles memory and CPU cost | open | medium | enhancement, performance |
+| 0055 | Filter DeviceReadings by ReadingType at database level in activity summary queries | closed | medium | enhancement, performance |
+| 0056 | Duplicate JSON parsing of motion readings doubles memory and CPU cost | closed | medium | enhancement, performance |
 | 0057 | Add configuration validation tests for boundary conditions | closed | medium | testing, bug |
 | 0058 | Add CI coverage thresholds and codecov.yml configuration | closed | medium | enhancement, testing |
 | 0059 | Add missing HueApiClient error path tests | closed | medium | testing |
 | 0060 | Consolidate Docker CI tag-building script into reusable action or shared script | open | low | enhancement |
 | 0061 | Admin portal Docker container binds to all network interfaces | open | low | security |
 | 0062 | Sequential email sending limits scalability for large customer counts | open | low | enhancement, performance |
-| 0063 | Add HTTPS redirect middleware for admin portal in production | open | medium | security |
+| 0063 | Add HTTPS redirect middleware for admin portal in production | closed | medium | security |
 | 0064 | Sanitize exception messages before persisting in PollingLog | open | medium | security |
 | 0065 | OAuth callback should use signed state parameter instead of session-based CSRF | open | medium | security, enhancement |
 | 0066 | Fix CLAUDE.md inaccuracies: CI trigger pattern and missing battery mention | open | low | documentation |
 | 0067 | Entity default values use DateTime.UtcNow at instantiation, not persistence time | open | medium | enhancement, code-quality |
-| 0068 | IEmailRenderer XML doc comment is misleading — hardcodes configurable values | open | medium | documentation |
-| 0069 | PollingService motion detection comment is inaccurate per Hue API docs | open | medium | documentation |
-| 0070 | DeviceReading inline comments outdated — missing battery reading type | open | medium | documentation |
+| 0068 | IEmailRenderer XML doc comment is misleading — hardcodes configurable values | closed | medium | documentation |
+| 0069 | PollingService motion detection comment is inaccurate per Hue API docs | closed | medium | documentation |
+| 0070 | DeviceReading inline comments outdated — missing battery reading type | closed | medium | documentation |
 | 0071 | EmailSchedulerService.ExecuteAsync error retry path has 0% test coverage | open | medium | testing |
-| 0072 | OAuthCallback page is AllowAnonymous but performs sensitive operations | open | medium | security |
+| 0072 | OAuthCallback page is AllowAnonymous but performs sensitive operations | closed | medium | security |
 | 0073 | Missing CancellationToken propagation in Admin page handlers | open | low | enhancement, code-quality |

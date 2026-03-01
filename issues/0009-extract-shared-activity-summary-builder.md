@@ -22,3 +22,15 @@ Additionally, the JSON parsing lambdas for motion detection are duplicated **wit
 **Recommendation:** Extract a shared `ActivitySummaryBuilder` service into `Hpoll.Core` that takes `customerId`, `timeZoneId`, and `nowUtc`, returning a list of summary window objects. Both `EmailRenderer` and `Detail.cshtml.cs` should call this shared service. The `WindowSummary` / `ActivityWindow` model should also live in `Hpoll.Core.Models`.
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Consolidated from #0011 and #0056 (closed as subsets of this issue).**
+
+The `ActivitySummaryBuilder` extraction should incorporate:
+
+1. **Typed JSON parsing accessors** (from #0011): Add `ReadingParser` utility methods (`ParseMotion`, `ParseTemperature`, `ParseBattery`) that centralize the duplicated `JsonDocument.Parse()` + try/catch patterns. Currently the motion-parsing lambda appears 4 times, temperature 2 times, and battery 1 time across `EmailRenderer.cs` and `Detail.cshtml.cs`.
+
+2. **Single-pass motion parsing** (from #0056): Each motion reading's JSON is currently parsed twice per window — once for `devicesWithMotion`, once for `totalMotionEvents`. This doubles memory and CPU cost (14 JSON parses where 7 suffice). The shared builder should parse once and derive both metrics from the result.
+
+3. **ReadingType DB filter** (related #0055, consolidated into #0020): The builder's query should filter by ReadingType at the database level rather than loading all reading types into memory.

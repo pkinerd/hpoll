@@ -1,7 +1,7 @@
 ---
 id: 56
 title: "Duplicate JSON parsing of motion readings doubles memory and CPU cost"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [enhancement, performance]
@@ -39,3 +39,7 @@ This is related to issue #0011 (extracting JSON parsing helpers) and will be nat
 **Source:** Efficiency review finding E2
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Closed:** Consolidated into #0009 (Extract shared ActivitySummaryBuilder). As this issue itself noted, the duplicate parsing is naturally resolved when the shared builder parses each reading once.

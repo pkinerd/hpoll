@@ -1,7 +1,7 @@
 ---
 id: 11
 title: "Extract DeviceReading JSON parsing into typed accessor methods"
-status: open
+status: closed
 created: 2026-02-28
 author: claude
 labels: [enhancement, code-quality]
@@ -25,3 +25,7 @@ public static (int? Level, string? State) ParseBattery(string json) { ... }
 This eliminates duplicate parsing, reduces per-window JSON parse count from 14 to 7, and encapsulates the JSON schema in one place.
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Closed:** Consolidated into #0009 (Extract shared ActivitySummaryBuilder). The `ReadingParser` utility methods proposed here will be created as part of the `ActivitySummaryBuilder` extraction, which is the primary consumer of these parsing patterns.

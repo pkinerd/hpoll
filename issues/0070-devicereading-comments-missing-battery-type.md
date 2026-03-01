@@ -1,7 +1,7 @@
 ---
 id: 70
 title: "DeviceReading inline comments outdated — missing battery reading type"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [documentation]
@@ -22,3 +22,7 @@ The inline comments on `DeviceReading` entity properties are outdated:
 *Found during comprehensive review (documentation review).*
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Closed:** Consolidated into #0010 (Introduce string constants or enums for Status, ReadingType, and DeviceType fields). Issue #0010 already identifies the stale `ReadingType` comment as part of its problem description. The enum introduction will replace the inline comment entirely.

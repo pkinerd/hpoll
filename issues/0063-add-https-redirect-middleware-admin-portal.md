@@ -1,7 +1,7 @@
 ---
 id: 63
 title: "Add HTTPS redirect middleware for admin portal in production"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [security]
@@ -26,3 +26,7 @@ This is distinct from issue #0042 (security response headers). `UseHttpsRedirect
 **Source:** Security review finding S4.1
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Closed:** Consolidated into #0048 (Persist Data Protection keys and add Secure flag to session cookie). The HTTPS redirect and HSTS middleware are now item 4 in #0048's implementation checklist as part of the unified admin portal HTTPS hardening task.

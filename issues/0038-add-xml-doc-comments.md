@@ -67,4 +67,14 @@ Out of ~50+ public members across the codebase, only **one** has XML documentati
 - `HealthFailureThreshold`, `HealthMaxSilenceHours` — no units or range docs
 - `SummaryWindowHours`, `SummaryWindowCount` — no docs explaining windowed aggregation
 
-**Overall:** Only 1 XML doc comment exists in the entire `src/` directory, and even that one is inaccurate (see new issue for IEmailRenderer misleading comment).
+**Overall:** Only 1 XML doc comment exists in the entire `src/` directory, and even that one is inaccurate (see below).
+
+### claude — 2026-03-01
+
+**Consolidated from #0068 and #0069 (closed as subsets of this issue).**
+
+Two specific inaccurate comments to fix as part of this documentation effort:
+
+1. **IEmailRenderer XML doc** (from #0068, `IEmailRenderer.cs:5-9`): The only existing XML doc comment hardcodes configurable values — says "28 hours" and "4-hour windows aligned to midnight" but these are configurable via `SummaryWindowHours`/`SummaryWindowCount`. Also lists 6 windows when default config produces 7. Replace with: "Renders the daily summary email. Covers a configurable period (default 28 hours) bucketed into time windows aligned to multiples of SummaryWindowHours in the customer's timezone."
+
+2. **PollingService motion comment** (from #0069, `PollingService.cs:121-125`): Claims the Hue motion boolean "resets quickly" which oversimplifies. Per Hue CLIP v2 docs: `motion_report.motion` reflects current sensor state, `motion_report.changed` is the timestamp of the last state transition, and the sensor holds `true` for a cooldown period (10-30 seconds). Replace with a comment referencing the actual API behavior and explaining why we use the `changed` timestamp instead.

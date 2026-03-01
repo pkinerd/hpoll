@@ -1,7 +1,7 @@
 ---
 id: 55
 title: "Filter DeviceReadings by ReadingType at database level in activity summary queries"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [enhancement, performance]
@@ -36,3 +36,7 @@ This also applies to `EmailRenderer.cs` which has the same pattern. Both should 
 **Source:** Efficiency review finding E3
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Closed:** Consolidated into #0020 (Consolidate sequential ID-gathering queries in EmailRenderer). The `ReadingType` filter is now part of #0020's consolidated query — a natural addition when rewriting the query to use navigation properties.

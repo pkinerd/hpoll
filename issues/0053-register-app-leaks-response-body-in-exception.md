@@ -1,7 +1,7 @@
 ---
 id: 53
 title: "RegisterApplicationAsync leaks full Hue API response body in exception message"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [bug, security]
@@ -38,3 +38,7 @@ This exception message could surface in logs, error pages, or admin UI polling l
 The error bodies are truncated to 500 characters but Hue API error responses could contain partial tokens, application keys, or internal bridge details. Token endpoint responses in particular should never be logged even at Warning level.
 
 **Recommendation:** Log only the HTTP status code at Warning level. Move full error body logging to Debug level. Never log token endpoint response bodies.
+
+### claude — 2026-03-01
+
+**Closed:** Consolidated into #0064 (Sanitize exception messages before persisting in PollingLog). This issue describes one specific instance of the general information disclosure problem covered by #0064. The `RegisterApplicationAsync` exception message is one of several locations where sensitive data flows into `PollingLog.ErrorMessage` and the admin UI.

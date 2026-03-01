@@ -1,7 +1,7 @@
 ---
 id: 72
 title: "OAuthCallback page is AllowAnonymous but performs sensitive operations"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [security]
@@ -34,3 +34,7 @@ This is related to but distinct from issue #0065 (signed state parameter), which
 *Found during comprehensive review (security review).*
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Closed:** Consolidated into #0065 (OAuth callback should use signed state parameter). The signed state approach embeds the authenticated user's identity, which inherently validates the request originated from an authenticated admin session — resolving this issue's access control concern alongside #0065's CSRF mechanism improvement.

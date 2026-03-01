@@ -29,3 +29,15 @@ The OAuth callback endpoint (`OAuthCallback.cshtml.cs`) is `[AllowAnonymous]` an
 **Source:** Comprehensive review -- security review finding
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Consolidated from #0072 (closed as subset of this issue).**
+
+Additional acceptance criteria from #0072's access control analysis:
+
+- **Explicit auth validation:** The signed state parameter should embed the authenticated user's identity (e.g., admin user ID), so the callback inherently validates the request originated from an authenticated session — addressing the `[AllowAnonymous]` concern.
+- **Null CSRF check:** Validate that `expectedCsrf` is non-null before comparing (currently a null session value could pass comparison).
+- **Expired session handling:** If the signed state is expired, redirect to login with a clear error message rather than showing a generic CSRF failure.
+
+The signed state approach resolves both the CSRF mechanism weakness (this issue) and the access control gap (#0072) in a single implementation.

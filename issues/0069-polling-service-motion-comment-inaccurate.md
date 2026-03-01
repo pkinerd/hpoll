@@ -1,7 +1,7 @@
 ---
 id: 69
 title: "PollingService motion detection comment is inaccurate per Hue API docs"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [documentation]
@@ -26,3 +26,7 @@ The comment's claim that the boolean "resets quickly" oversimplifies. The code's
 *Found during comprehensive review (documentation review, cross-referenced with Hue API sensors.md).*
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Closed:** Consolidated into #0038 (Add XML documentation comments to public interfaces and services). This finding was already identified in #0038's existing comments ("PollingService motion comment: States the boolean 'resets quickly' which is imprecise"). The proposed replacement comment text has been incorporated into #0038.

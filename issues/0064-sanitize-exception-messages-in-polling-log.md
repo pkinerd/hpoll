@@ -41,3 +41,13 @@ Exception messages from `HttpRequestException`, EF Core, and other providers can
 These responses could contain sensitive bridge configuration details, token fragments, or internal API error information. The error body truncation (`errorBody[..500]`) is applied, but the content itself may still be sensitive.
 
 **Recommendation:** Log only HTTP status code and a generic error category at Warning level. Log the full response body at Debug level only, and ensure Debug logging is disabled in production.
+
+### claude — 2026-03-01
+
+**Consolidated from #0053 (closed as subset of this issue).**
+
+Specific source-side fix from #0053: In `HueApiClient.RegisterApplicationAsync` line 141, the full JSON response body is embedded in an `InvalidOperationException` message:
+```csharp
+throw new InvalidOperationException($"Unexpected registration response format: {json}");
+```
+This is one concrete instance of the general problem described in this issue. The exception message surfaces in `PollingLog.ErrorMessage` and the admin UI. Fix by throwing a generic message and logging the full body at Debug level only.
