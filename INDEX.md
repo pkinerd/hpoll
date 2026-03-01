@@ -19,7 +19,7 @@
 | [0015](issues/0015-replace-magic-numbers-with-constants.md) | Replace magic numbers and hardcoded color codes with named constants | open | medium | enhancement, code-quality |
 | [0016](issues/0016-extract-shared-service-registration.md) | Extract shared DB/HttpClient bootstrap between Worker and Admin Program.cs | open | low | enhancement, code-quality |
 | [0017](issues/0017-replace-batch-deletion-with-execute-delete.md) | Replace batch deletion with ExecuteDeleteAsync to avoid materializing rows | open | high | enhancement, performance |
-| [0018](issues/0018-fix-unbounded-battery-history-query.md) | Fix unbounded battery history query in EmailRenderer | open | high | bug, performance |
+| [0018](issues/0018-fix-unbounded-battery-history-query.md) | Fix unbounded battery history query in EmailRenderer | closed | high | bug, performance |
 | [0019](issues/0019-batch-device-creation-polling.md) | Batch device creation in GetOrCreateDeviceAsync to reduce DB round-trips | open | medium | enhancement, performance |
 | [0020](issues/0020-consolidate-email-renderer-queries.md) | Consolidate sequential ID-gathering queries in EmailRenderer | open | medium | enhancement, performance |
 | [0021](issues/0021-collapse-sequential-count-queries.md) | Collapse sequential COUNT queries on Dashboard and About pages | open | low | enhancement, performance |
