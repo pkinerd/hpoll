@@ -17,18 +17,22 @@ public class PollingService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<PollingService> _logger;
     private readonly PollingSettings _settings;
+    private readonly ISystemInfoService _systemInfo;
     private readonly TimeProvider _timeProvider;
     private bool _firstCycle = true;
+    private int _totalPollCycles;
 
     public PollingService(
         IServiceScopeFactory scopeFactory,
         ILogger<PollingService> logger,
         IOptions<PollingSettings> settings,
+        ISystemInfoService systemInfo,
         TimeProvider? timeProvider = null)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _settings = settings.Value;
+        _systemInfo = systemInfo;
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
@@ -43,7 +47,21 @@ public class PollingService : BackgroundService
             {
                 await PollAllHubsAsync(_firstCycle, stoppingToken);
                 _firstCycle = false;
+                _totalPollCycles++;
                 await CleanupOldDataAsync(stoppingToken);
+
+                try
+                {
+                    var now = _timeProvider.GetUtcNow().UtcDateTime;
+                    await _systemInfo.SetAsync("Runtime", "runtime.last_poll_completed", now.ToString("O"));
+                    await _systemInfo.SetAsync("Runtime", "runtime.next_poll_due",
+                        now.AddMinutes(_settings.IntervalMinutes).ToString("O"));
+                    await _systemInfo.SetAsync("Runtime", "runtime.total_poll_cycles", _totalPollCycles.ToString());
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to update system info metrics");
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

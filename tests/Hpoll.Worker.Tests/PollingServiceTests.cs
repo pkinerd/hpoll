@@ -87,7 +87,8 @@ public class PollingServiceTests : IDisposable
         return new PollingService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<PollingService>.Instance,
-            Options.Create(settings ?? new PollingSettings { IntervalMinutes = 60 }));
+            Options.Create(settings ?? new PollingSettings { IntervalMinutes = 60 }),
+            new Mock<ISystemInfoService>().Object);
     }
 
     private void SetupSuccessfulHueResponses(string deviceId = "device-001")

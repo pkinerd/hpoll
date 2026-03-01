@@ -1,3 +1,4 @@
+using System.Reflection;
 using Amazon;
 using Amazon.SimpleEmail;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +48,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 // Services
 builder.Services.AddScoped<IEmailRenderer, EmailRenderer>();
 builder.Services.AddScoped<IEmailSender, SesEmailSender>();
+builder.Services.AddSingleton<ISystemInfoService, SystemInfoService>();
 
 // Background services
 builder.Services.AddHostedService<PollingService>();
@@ -61,6 +63,79 @@ using (var scope = host.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     await db.Database.MigrateAsync();
     await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
+}
+
+// Populate system info
+{
+    var systemInfo = host.Services.GetRequiredService<ISystemInfoService>();
+    await systemInfo.ClearAllAsync();
+
+    // System
+    var assembly = Assembly.GetExecutingAssembly();
+    var version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+        ?? assembly.GetName().Version?.ToString() ?? "unknown";
+    await systemInfo.SetBatchAsync("System", new Dictionary<string, string>
+    {
+        ["system.version"] = version,
+        ["system.runtime"] = $".NET {Environment.Version}",
+        ["system.os"] = Environment.OSVersion.ToString(),
+        ["system.machine_name"] = Environment.MachineName,
+        ["system.data_path"] = builder.Configuration.GetValue<string>("DataPath") ?? "data",
+        ["system.worker_start_time"] = DateTime.UtcNow.ToString("O"),
+        ["system.environment"] = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+            ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production",
+        ["system.hostname"] = Environment.GetEnvironmentVariable("HOSTNAME") ?? Environment.MachineName,
+    });
+
+    // Polling settings
+    using var scope = host.Services.CreateScope();
+    var polling = scope.ServiceProvider.GetRequiredService<IOptions<PollingSettings>>().Value;
+    await systemInfo.SetBatchAsync("Polling", new Dictionary<string, string>
+    {
+        ["polling.interval_minutes"] = polling.IntervalMinutes.ToString(),
+        ["polling.battery_poll_interval_hours"] = polling.BatteryPollIntervalHours.ToString(),
+        ["polling.data_retention_hours"] = polling.DataRetentionHours.ToString(),
+        ["polling.http_timeout_seconds"] = polling.HttpTimeoutSeconds.ToString(),
+        ["polling.token_refresh_check_hours"] = polling.TokenRefreshCheckHours.ToString(),
+        ["polling.token_refresh_threshold_hours"] = polling.TokenRefreshThresholdHours.ToString(),
+        ["polling.token_refresh_max_retries"] = polling.TokenRefreshMaxRetries.ToString(),
+    });
+
+    // Email settings
+    var email = scope.ServiceProvider.GetRequiredService<IOptions<EmailSettings>>().Value;
+    await systemInfo.SetBatchAsync("Email", new Dictionary<string, string>
+    {
+        ["email.send_times_utc"] = string.Join(", ", email.SendTimesUtc),
+        ["email.aws_region"] = email.AwsRegion,
+        ["email.from_address"] = email.FromAddress,
+        ["email.battery_level_critical"] = email.BatteryLevelCritical.ToString(),
+        ["email.battery_level_warning"] = email.BatteryLevelWarning.ToString(),
+        ["email.battery_alert_threshold"] = email.BatteryAlertThreshold.ToString(),
+        ["email.summary_window_hours"] = email.SummaryWindowHours.ToString(),
+        ["email.summary_window_count"] = email.SummaryWindowCount.ToString(),
+        ["email.error_retry_delay_minutes"] = email.ErrorRetryDelayMinutes.ToString(),
+    });
+
+    // Hue settings (non-sensitive only)
+    var hueApp = scope.ServiceProvider.GetRequiredService<IOptions<HueAppSettings>>().Value;
+    await systemInfo.SetBatchAsync("Hue", new Dictionary<string, string>
+    {
+        ["hue.app_configured"] = (!string.IsNullOrEmpty(hueApp.ClientId)).ToString(),
+        ["hue.callback_url"] = hueApp.CallbackUrl,
+    });
+
+    // Runtime (initial placeholders)
+    await systemInfo.SetBatchAsync("Runtime", new Dictionary<string, string>
+    {
+        ["runtime.total_poll_cycles"] = "0",
+        ["runtime.last_poll_completed"] = "N/A",
+        ["runtime.next_poll_due"] = "N/A",
+        ["runtime.last_token_check"] = "N/A",
+        ["runtime.next_token_check"] = "N/A",
+        ["runtime.last_email_sent"] = "N/A",
+        ["runtime.next_email_due"] = "N/A",
+        ["runtime.total_emails_sent"] = "0",
+    });
 }
 
 await host.RunAsync();

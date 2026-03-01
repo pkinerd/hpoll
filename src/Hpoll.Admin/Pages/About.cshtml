@@ -21,23 +21,25 @@
     </div>
 </div>
 
-<h2>Build Information</h2>
-<div class="card">
-    <dl>
-        <dt>Version</dt><dd>@Model.Version</dd>
-        <dt>Runtime</dt><dd>@Model.Runtime</dd>
-        <dt>Environment</dt><dd>@Model.Environment</dd>
-        <dt>Data Path</dt><dd>@Model.DatabasePath</dd>
-    </dl>
-</div>
-
-<h2>Hue API</h2>
-<div class="card">
-    <dl>
-        <dt>App Configured</dt><dd>@(Model.HueAppConfigured ? "Yes" : "No")</dd>
-        @if (!string.IsNullOrEmpty(Model.HueCallbackUrl))
-        {
-            <dt>Callback URL</dt><dd>@Model.HueCallbackUrl</dd>
-        }
-    </dl>
-</div>
+@if (Model.Sections.Count == 0)
+{
+    <div class="card">
+        <p style="color:#666;">No system information available. The worker process has not started yet.</p>
+    </div>
+}
+else
+{
+    @foreach (var group in Model.Sections)
+    {
+        <h2>@group.Category</h2>
+        <div class="card">
+            <dl>
+                @foreach (var entry in group.Entries)
+                {
+                    <dt>@entry.Label</dt>
+                    <dd>@entry.Value</dd>
+                }
+            </dl>
+        </div>
+    }
+}

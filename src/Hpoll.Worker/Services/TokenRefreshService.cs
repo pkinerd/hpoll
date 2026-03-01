@@ -14,17 +14,20 @@ public class TokenRefreshService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<TokenRefreshService> _logger;
     private readonly PollingSettings _settings;
+    private readonly ISystemInfoService _systemInfo;
     private readonly TimeProvider _timeProvider;
 
     public TokenRefreshService(
         IServiceScopeFactory scopeFactory,
         ILogger<TokenRefreshService> logger,
         IOptions<PollingSettings> settings,
+        ISystemInfoService systemInfo,
         TimeProvider? timeProvider = null)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _settings = settings.Value;
+        _systemInfo = systemInfo;
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
@@ -42,6 +45,18 @@ public class TokenRefreshService : BackgroundService
             try
             {
                 await RefreshExpiringTokensAsync(stoppingToken);
+
+                try
+                {
+                    var now = _timeProvider.GetUtcNow().UtcDateTime;
+                    await _systemInfo.SetAsync("Runtime", "runtime.last_token_check", now.ToString("O"));
+                    await _systemInfo.SetAsync("Runtime", "runtime.next_token_check",
+                        now.Add(checkInterval).ToString("O"));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to update system info metrics");
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

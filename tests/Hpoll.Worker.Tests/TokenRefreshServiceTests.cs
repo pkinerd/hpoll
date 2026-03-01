@@ -71,7 +71,8 @@ public class TokenRefreshServiceTests : IDisposable
         return new TokenRefreshService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<TokenRefreshService>.Instance,
-            Options.Create(settings ?? new PollingSettings()));
+            Options.Create(settings ?? new PollingSettings()),
+            new Mock<ISystemInfoService>().Object);
     }
 
     [Fact]
