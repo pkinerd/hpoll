@@ -1,11 +1,12 @@
 ---
 id: 42
 title: "Add security response headers (CSP, X-Frame-Options, HSTS)"
-status: open
+status: closed
 created: 2026-02-28
 author: claude
 labels: [security]
 priority: medium
+closed: 2026-03-01
 ---
 
 ## Description

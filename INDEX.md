@@ -43,7 +43,7 @@
 | [0039](issues/0039-add-architecture-overview-to-readme.md) | Add architecture overview and development instructions to README | closed | low | documentation |
 | [0040](issues/0040-expand-env-example.md) | Expand .env.example to cover all configuration options | closed | low | documentation |
 | [0041](issues/0041-add-inline-comments-complex-algorithms.md) | Add inline comments for complex algorithms and design decisions | closed | low | documentation |
-| [0042](issues/0042-add-security-response-headers.md) | Add security response headers (CSP, X-Frame-Options, HSTS) | open | medium | security |
+| [0042](issues/0042-add-security-response-headers.md) | Add security response headers (CSP, X-Frame-Options, HSTS) | closed | medium | security |
 | [0043](issues/0043-hue-api-response-errors-not-checked.md) | Hue API response errors array is never checked after deserialization | open | low | bug |
 | [0044](issues/0044-silent-catch-blocks-in-json-parsing.md) | Silent catch blocks swallow JSON parsing exceptions without logging | closed | high | bug, code-quality |
 | [0045](issues/0045-polling-401-no-immediate-token-refresh.md) | 401 during polling does not trigger immediate token refresh or status change | closed | high | bug |
