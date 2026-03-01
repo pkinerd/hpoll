@@ -540,6 +540,171 @@ public class EmailRendererTests : IDisposable
     }
 
     [Fact]
+    public async Task RenderDailySummaryAsync_InvalidCustomerId_ReturnsValidHtml()
+    {
+        // Customer ID 999 doesn't exist in the DB
+        var html = await _renderer.RenderDailySummaryAsync(999, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("Daily Activity Summary", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_InvalidTimezone_ThrowsTimeZoneNotFoundException()
+    {
+        var (customer, _, _) = await SeedBaseDataAsync();
+
+        await Assert.ThrowsAsync<TimeZoneNotFoundException>(
+            () => _renderer.RenderDailySummaryAsync(customer.Id, "Invalid/Timezone", NowUtc));
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_XssInDeviceName_IsHtmlEncoded()
+    {
+        var (customer, hub, _) = await SeedBaseDataAsync();
+
+        var xssDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-xss",
+            DeviceType = "battery",
+            Name = "<script>alert('xss')</script>"
+        };
+        _db.Devices.Add(xssDevice);
+        await _db.SaveChangesAsync();
+
+        // Add a low battery reading so the battery section appears
+        AddBattery(xssDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 10, "critical");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("Battery Status", html);
+        Assert.DoesNotContain("<script>", html);
+        Assert.Contains("&lt;script&gt;", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_MultipleHubsPerCustomer_AggregatesAcrossHubs()
+    {
+        var (customer, hub1, device1) = await SeedBaseDataAsync();
+
+        var hub2 = new Hub
+        {
+            CustomerId = customer.Id,
+            HueBridgeId = "001788FFFE654321",
+            HueApplicationKey = "testkey2",
+            AccessToken = "token2",
+            RefreshToken = "refresh2",
+            TokenExpiresAt = DateTime.UtcNow.AddDays(7),
+            Status = "active"
+        };
+        _db.Hubs.Add(hub2);
+        await _db.SaveChangesAsync();
+
+        var device2 = new Device
+        {
+            HubId = hub2.Id,
+            HueDeviceId = "device-hub2-001",
+            DeviceType = "motion_sensor",
+            Name = "Hub2 Sensor"
+        };
+        _db.Devices.Add(device2);
+        await _db.SaveChangesAsync();
+
+        // Motion from hub1's device
+        AddMotion(device1.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        // Motion from hub2's device
+        AddMotion(device2.Id, new DateTime(2026, 2, 27, 11, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("Motion Activity", html);
+        // Both devices should be counted in diversity (2 sensors active)
+        Assert.Contains(">2<", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_ReadingAtExactBucketBoundary_IncludedInCorrectWindow()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        // Reading exactly at the boundary of the 12:00 window start (which is also 08:00-12:00 end)
+        // Windows use >= start and < end, so 12:00 exactly falls in the 12:00-16:00 window
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 12, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("Motion Activity", html);
+        // The reading at 12:00 should be counted in the 12:00-16:00 window
+        Assert.Contains("12:00", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_MalformedBatteryJson_GracefullySkipped()
+    {
+        var (customer, hub, _) = await SeedBaseDataAsync();
+
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-bat-bad",
+            DeviceType = "battery",
+            Name = "Bad Battery Sensor"
+        };
+        _db.Devices.Add(batteryDevice);
+        await _db.SaveChangesAsync();
+
+        // Add a malformed battery reading
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = batteryDevice.Id,
+            Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
+            ReadingType = "battery",
+            Value = "not-valid-json"
+        });
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // Should not crash; malformed battery data is silently skipped
+        Assert.DoesNotContain("Battery Status", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_HubExistsButNoDevices_ReturnsValidHtml()
+    {
+        var customer = new Customer { Name = "No Devices User", Email = "nodevices@example.com", TimeZoneId = "UTC" };
+        _db.Customers.Add(customer);
+        await _db.SaveChangesAsync();
+
+        var hub = new Hub
+        {
+            CustomerId = customer.Id,
+            HueBridgeId = "001788FFFE000000",
+            HueApplicationKey = "testkey",
+            AccessToken = "token",
+            RefreshToken = "refresh",
+            TokenExpiresAt = DateTime.UtcNow.AddDays(7),
+            Status = "active"
+        };
+        _db.Hubs.Add(hub);
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("Daily Activity Summary", html);
+        Assert.Contains("Motion Activity", html);
+    }
+
+    [Fact]
     public async Task RenderDailySummaryAsync_WithLowBattery_ShowsBatterySection()
     {
         var (customer, hub, device) = await SeedBaseDataAsync();

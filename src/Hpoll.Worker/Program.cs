@@ -41,6 +41,9 @@ builder.Services.AddSingleton<IAmazonSimpleEmailService>(sp =>
     return new AmazonSimpleEmailServiceClient(region);
 });
 
+// Time provider
+builder.Services.AddSingleton(TimeProvider.System);
+
 // Services
 builder.Services.AddScoped<ConfigSeeder>();
 builder.Services.AddScoped<IEmailRenderer, EmailRenderer>();

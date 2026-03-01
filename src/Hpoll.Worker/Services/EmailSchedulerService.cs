@@ -14,15 +14,18 @@ public class EmailSchedulerService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<EmailSchedulerService> _logger;
     private readonly EmailSettings _settings;
+    private readonly TimeProvider _timeProvider;
 
     public EmailSchedulerService(
         IServiceScopeFactory scopeFactory,
         ILogger<EmailSchedulerService> logger,
-        IOptions<EmailSettings> settings)
+        IOptions<EmailSettings> settings,
+        TimeProvider? timeProvider = null)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _settings = settings.Value;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -32,7 +35,7 @@ public class EmailSchedulerService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var now = DateTime.UtcNow;
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
             var nextSendTime = GetNextSendTime(now);
 
             var delay = nextSendTime - now;
@@ -104,7 +107,7 @@ public class EmailSchedulerService : BackgroundService
         return list.Count > 0 ? list : null;
     }
 
-    private async Task SendAllEmailsAsync(CancellationToken ct)
+    internal async Task SendAllEmailsAsync(CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
@@ -124,7 +127,7 @@ public class EmailSchedulerService : BackgroundService
                 var html = await renderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId, ct: ct);
 
                 var tz = TimeZoneInfo.FindSystemTimeZoneById(customer.TimeZoneId);
-                var localNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+                var localNow = TimeZoneInfo.ConvertTimeFromUtc(_timeProvider.GetUtcNow().UtcDateTime, tz);
                 var subject = $"hpoll Daily Summary - {localNow:d MMM yyyy}";
                 var ccList = ParseEmailList(customer.CcEmails);
                 var bccList = ParseEmailList(customer.BccEmails);

@@ -72,22 +72,11 @@ public class EmailSchedulerServiceTests : IDisposable
         _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var now = DateTime.UtcNow;
-        var sendTime = now.AddSeconds(1).TimeOfDay;
-        var service = CreateService(new EmailSettings
-        {
-            SendTimesUtc = new() { $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}" },
-            FromAddress = "noreply@hpoll.com",
-            AwsRegion = "us-east-1"
-        });
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+        await service.SendAllEmailsAsync(CancellationToken.None);
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        try { await service.StartAsync(cts.Token); await Task.Delay(3000, cts.Token); }
-        catch (OperationCanceledException) { }
-        finally { await service.StopAsync(CancellationToken.None); }
-
-        _mockSender.Verify(s => s.SendEmailAsync("alice@example.com", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
-        _mockSender.Verify(s => s.SendEmailAsync("bob@example.com", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        _mockSender.Verify(s => s.SendEmailAsync("alice@example.com", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockSender.Verify(s => s.SendEmailAsync("bob@example.com", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -101,21 +90,10 @@ public class EmailSchedulerServiceTests : IDisposable
         _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var now = DateTime.UtcNow;
-        var sendTime = now.AddSeconds(1).TimeOfDay;
-        var service = CreateService(new EmailSettings
-        {
-            SendTimesUtc = new() { $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}" },
-            FromAddress = "noreply@hpoll.com",
-            AwsRegion = "us-east-1"
-        });
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+        await service.SendAllEmailsAsync(CancellationToken.None);
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        try { await service.StartAsync(cts.Token); await Task.Delay(3000, cts.Token); }
-        catch (OperationCanceledException) { }
-        finally { await service.StopAsync(CancellationToken.None); }
-
-        _mockSender.Verify(s => s.SendEmailAsync("active@example.com", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        _mockSender.Verify(s => s.SendEmailAsync("active@example.com", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()), Times.Once);
         _mockSender.Verify(s => s.SendEmailAsync("inactive@example.com", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -128,7 +106,6 @@ public class EmailSchedulerServiceTests : IDisposable
         _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("<html>Summary</html>");
 
-        // First call fails, second succeeds
         var callCount = 0;
         _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
             .Returns<string, string, string, List<string>?, List<string>?, CancellationToken>((to, subj, body, cc, bcc, ct) =>
@@ -138,19 +115,8 @@ public class EmailSchedulerServiceTests : IDisposable
                 return Task.CompletedTask;
             });
 
-        var now = DateTime.UtcNow;
-        var sendTime = now.AddSeconds(1).TimeOfDay;
-        var service = CreateService(new EmailSettings
-        {
-            SendTimesUtc = new() { $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}" },
-            FromAddress = "noreply@hpoll.com",
-            AwsRegion = "us-east-1"
-        });
-
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        try { await service.StartAsync(cts.Token); await Task.Delay(3000, cts.Token); }
-        catch (OperationCanceledException) { }
-        finally { await service.StopAsync(CancellationToken.None); }
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+        await service.SendAllEmailsAsync(CancellationToken.None);
 
         // Both customers should have been attempted
         _mockSender.Verify(s => s.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
@@ -167,7 +133,6 @@ public class EmailSchedulerServiceTests : IDisposable
         });
 
         await service.StartAsync(CancellationToken.None);
-        // Stop immediately — should not throw
         await service.StopAsync(CancellationToken.None);
     }
 
@@ -181,22 +146,10 @@ public class EmailSchedulerServiceTests : IDisposable
         _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var now = DateTime.UtcNow;
-        var sendTime = now.AddSeconds(1).TimeOfDay;
-        var service = CreateService(new EmailSettings
-        {
-            SendTimesUtc = new() { $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}" },
-            FromAddress = "noreply@hpoll.com",
-            AwsRegion = "us-east-1"
-        });
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+        await service.SendAllEmailsAsync(CancellationToken.None);
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        try { await service.StartAsync(cts.Token); await Task.Delay(3000, cts.Token); }
-        catch (OperationCanceledException) { }
-        finally { await service.StopAsync(CancellationToken.None); }
-
-        // Email should always be sent, even with no readings
-        _mockSender.Verify(s => s.SendEmailAsync("nodata@example.com", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        _mockSender.Verify(s => s.SendEmailAsync("nodata@example.com", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -224,7 +177,6 @@ public class EmailSchedulerServiceTests : IDisposable
             AwsRegion = "us-east-1"
         });
 
-        // At 10:00, the next send time should be 12:00 today
         var now = new DateTime(2026, 2, 28, 10, 0, 0, DateTimeKind.Utc);
         var next = service.GetNextSendTime(now);
         Assert.Equal(new DateTime(2026, 2, 28, 12, 0, 0), next);
@@ -240,7 +192,6 @@ public class EmailSchedulerServiceTests : IDisposable
             AwsRegion = "us-east-1"
         });
 
-        // At 20:00, all times today have passed — should wrap to 06:00 tomorrow
         var now = new DateTime(2026, 2, 28, 20, 0, 0, DateTimeKind.Utc);
         var next = service.GetNextSendTime(now);
         Assert.Equal(new DateTime(2026, 3, 1, 6, 0, 0), next);
@@ -256,10 +207,24 @@ public class EmailSchedulerServiceTests : IDisposable
             AwsRegion = "us-east-1"
         });
 
-        // At 03:00, the next send time should be 06:00 today (list is unsorted)
         var now = new DateTime(2026, 2, 28, 3, 0, 0, DateTimeKind.Utc);
         var next = service.GetNextSendTime(now);
         Assert.Equal(new DateTime(2026, 2, 28, 6, 0, 0), next);
+    }
+
+    [Fact]
+    public void GetNextSendTime_EmptySendTimesList_DefaultsTo0800()
+    {
+        var service = CreateService(new EmailSettings
+        {
+            SendTimesUtc = new(),
+            FromAddress = "noreply@hpoll.com",
+            AwsRegion = "us-east-1"
+        });
+
+        var now = new DateTime(2026, 2, 28, 3, 0, 0, DateTimeKind.Utc);
+        var next = service.GetNextSendTime(now);
+        Assert.Equal(new DateTime(2026, 2, 28, 8, 0, 0), next);
     }
 
     [Fact]
@@ -272,19 +237,8 @@ public class EmailSchedulerServiceTests : IDisposable
         _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var now = DateTime.UtcNow;
-        var sendTime = now.AddSeconds(1).TimeOfDay;
-        var service = CreateService(new EmailSettings
-        {
-            SendTimesUtc = new() { $"{sendTime.Hours:D2}:{sendTime.Minutes:D2}:{sendTime.Seconds:D2}" },
-            FromAddress = "noreply@hpoll.com",
-            AwsRegion = "us-east-1"
-        });
-
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        try { await service.StartAsync(cts.Token); await Task.Delay(3000, cts.Token); }
-        catch (OperationCanceledException) { }
-        finally { await service.StopAsync(CancellationToken.None); }
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+        await service.SendAllEmailsAsync(CancellationToken.None);
 
         _mockSender.Verify(s => s.SendEmailAsync(
             "main@example.com",
@@ -293,6 +247,6 @@ public class EmailSchedulerServiceTests : IDisposable
             It.Is<List<string>?>(cc => cc != null && cc.Count == 2 && cc.Contains("cc1@example.com") && cc.Contains("cc2@example.com")),
             It.Is<List<string>?>(bcc => bcc != null && bcc.Count == 1 && bcc.Contains("bcc@example.com")),
             It.IsAny<CancellationToken>()),
-            Times.AtLeastOnce);
+            Times.Once);
     }
 }

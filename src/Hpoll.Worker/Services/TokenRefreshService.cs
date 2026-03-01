@@ -14,15 +14,18 @@ public class TokenRefreshService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<TokenRefreshService> _logger;
     private readonly PollingSettings _settings;
+    private readonly TimeProvider _timeProvider;
 
     public TokenRefreshService(
         IServiceScopeFactory scopeFactory,
         ILogger<TokenRefreshService> logger,
-        IOptions<PollingSettings> settings)
+        IOptions<PollingSettings> settings,
+        TimeProvider? timeProvider = null)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _settings = settings.Value;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -60,7 +63,7 @@ public class TokenRefreshService : BackgroundService
         }
     }
 
-    private async Task RefreshExpiringTokensAsync(CancellationToken ct)
+    internal async Task RefreshExpiringTokensAsync(CancellationToken ct)
     {
         var refreshThreshold = TimeSpan.FromHours(_settings.TokenRefreshThresholdHours);
 
@@ -76,7 +79,8 @@ public class TokenRefreshService : BackgroundService
 
         foreach (var hub in hubs)
         {
-            var timeUntilExpiry = hub.TokenExpiresAt - DateTime.UtcNow;
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            var timeUntilExpiry = hub.TokenExpiresAt - now;
             if (timeUntilExpiry > refreshThreshold)
             {
                 _logger.LogDebug(
@@ -101,8 +105,8 @@ public class TokenRefreshService : BackgroundService
                     {
                         hub.RefreshToken = tokenResponse.RefreshToken;
                     }
-                    hub.TokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn);
-                    hub.UpdatedAt = DateTime.UtcNow;
+                    hub.TokenExpiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddSeconds(tokenResponse.ExpiresIn);
+                    hub.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
                     await db.SaveChangesAsync(ct);
 
@@ -132,7 +136,7 @@ public class TokenRefreshService : BackgroundService
                 _logger.LogError("Hub {BridgeId}: token refresh failed after {Max} retries. Marking as needs_reauth",
                     hub.HueBridgeId, _settings.TokenRefreshMaxRetries);
                 hub.Status = "needs_reauth";
-                hub.UpdatedAt = DateTime.UtcNow;
+                hub.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
                 await db.SaveChangesAsync(ct);
             }
         }
