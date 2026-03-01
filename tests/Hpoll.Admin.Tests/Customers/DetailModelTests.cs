@@ -150,21 +150,23 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostUpdateCcBccAsync_ValidData_UpdatesCcBcc()
+    public async Task OnPostUpdateEmailsAsync_ValidData_UpdatesAllEmailFields()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
+        model.EditEmail = "updated@example.com";
         model.EditCcEmails = "cc@example.com";
         model.EditBccEmails = "bcc@example.com";
 
-        var result = await model.OnPostUpdateCcBccAsync(customer.Id);
+        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
-        Assert.Equal("CC/BCC lists updated.", model.SuccessMessage);
+        Assert.Equal("Email addresses updated.", model.SuccessMessage);
 
         var updated = await _db.Customers.FindAsync(customer.Id);
-        Assert.Equal("cc@example.com", updated!.CcEmails);
+        Assert.Equal("updated@example.com", updated!.Email);
+        Assert.Equal("cc@example.com", updated.CcEmails);
         Assert.Equal("bcc@example.com", updated.BccEmails);
     }
 

@@ -87,37 +87,21 @@ public class DetailModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostUpdateEmailAsync(int id)
+    public async Task<IActionResult> OnPostUpdateEmailsAsync(int id)
     {
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
         Customer = customer;
         EditName = customer.Name;
-        EditCcEmails = customer.CcEmails;
-        EditBccEmails = customer.BccEmails;
 
         if (!ModelState.IsValid) return Page();
 
         customer.Email = EditEmail!;
-        customer.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-        SuccessMessage = "Notification email addresses updated.";
-        return Page();
-    }
-
-    public async Task<IActionResult> OnPostUpdateCcBccAsync(int id)
-    {
-        var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
-        if (customer == null) return NotFound();
-        Customer = customer;
-        EditEmail = customer.Email;
-        EditName = customer.Name;
-
         customer.CcEmails = (EditCcEmails ?? string.Empty).Trim();
         customer.BccEmails = (EditBccEmails ?? string.Empty).Trim();
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
-        SuccessMessage = "CC/BCC lists updated.";
+        SuccessMessage = "Email addresses updated.";
         EditCcEmails = customer.CcEmails;
         EditBccEmails = customer.BccEmails;
         return Page();
