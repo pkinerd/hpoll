@@ -81,7 +81,7 @@ public class ConfigurationValidationTests : IDisposable
         Assert.Equal("08:00", settings.SendTimesUtc[0]);
         Assert.Equal(4, settings.SummaryWindowHours);
         Assert.Equal(7, settings.SummaryWindowCount);
-        Assert.Equal(30, settings.BatteryAlertThreshold);
+        Assert.Equal(60, settings.BatteryAlertThreshold);
         Assert.True(settings.BatteryLevelCritical <= settings.BatteryLevelWarning,
             "Critical threshold should be <= warning threshold");
     }
