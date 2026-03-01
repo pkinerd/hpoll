@@ -53,7 +53,7 @@ public class AboutModel : PageModel
                 }).ToList());
 
         // Explicit section ordering (rename "Build" to "Worker Build" for clarity)
-        var categoryOrder = new[] { "Build", "System", "Polling", "Email", "Hue", "Runtime" };
+        var categoryOrder = new[] { "Build", "System", "Polling", "Email", "Hue", "Backup", "Runtime" };
         var categoryDisplayNames = new Dictionary<string, string> { ["Build"] = "Worker Build" };
         foreach (var cat in categoryOrder)
         {

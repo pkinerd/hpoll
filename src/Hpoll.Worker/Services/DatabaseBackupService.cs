@@ -53,6 +53,7 @@ public class DatabaseBackupService : BackgroundService
         else
         {
             _logger.LogInformation("Existing backups found — waiting for next scheduled cycle");
+            await InitializeStatsFromExistingBackupsAsync();
         }
 
         while (!stoppingToken.IsCancellationRequested)
@@ -67,6 +68,39 @@ public class DatabaseBackupService : BackgroundService
             }
 
             await RunBackupCycleAsync(stoppingToken);
+        }
+    }
+
+    private async Task InitializeStatsFromExistingBackupsAsync()
+    {
+        try
+        {
+            var backupFiles = Directory.GetFiles(_backupDirectory, "hpoll-*.db")
+                .OrderByDescending(f => f)
+                .ToList();
+
+            _totalBackups = backupFiles.Count;
+
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            var mostRecent = backupFiles.FirstOrDefault();
+            string lastCompleted = "N/A";
+            if (mostRecent != null)
+            {
+                var fi = new FileInfo(mostRecent);
+                lastCompleted = fi.LastWriteTimeUtc.ToString("O");
+            }
+
+            await _systemInfo.SetAsync("Backup", "backup.last_backup_completed", lastCompleted);
+            await _systemInfo.SetAsync("Backup", "backup.next_backup_due",
+                now.AddHours(_settings.IntervalHours).ToString("O"));
+            await _systemInfo.SetAsync("Backup", "backup.total_backups", _totalBackups.ToString());
+
+            _logger.LogInformation(
+                "Backup stats initialized from existing files: {Count} backups found", _totalBackups);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to initialize backup stats from existing files");
         }
     }
 
@@ -87,10 +121,10 @@ public class DatabaseBackupService : BackgroundService
             try
             {
                 var now = _timeProvider.GetUtcNow().UtcDateTime;
-                await _systemInfo.SetAsync("Runtime", "runtime.last_backup_completed", now.ToString("O"));
-                await _systemInfo.SetAsync("Runtime", "runtime.next_backup_due",
+                await _systemInfo.SetAsync("Backup", "backup.last_backup_completed", now.ToString("O"));
+                await _systemInfo.SetAsync("Backup", "backup.next_backup_due",
                     now.AddHours(_settings.IntervalHours).ToString("O"));
-                await _systemInfo.SetAsync("Runtime", "runtime.total_backups", _totalBackups.ToString());
+                await _systemInfo.SetAsync("Backup", "backup.total_backups", _totalBackups.ToString());
             }
             catch (Exception ex)
             {

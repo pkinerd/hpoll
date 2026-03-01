@@ -47,6 +47,9 @@ variables use `__` (double underscore) as section separators.
 | `Email:ErrorRetryDelayMinutes` | `Email__ErrorRetryDelayMinutes` | `5` | Minutes to wait before retrying after an email scheduler error |
 | `Email:AwsRegion` | `Email__AwsRegion` | `us-east-1` | AWS region for SES |
 | **Hue app** | | | |
+| **Security** | | | |
+| `Security:EnableHsts` | `Security__EnableHsts` | `true` | Emit `Strict-Transport-Security` header. Disable for local/debug environments not behind TLS. |
+| **Hue app** | | | |
 | `HueApp:ClientId` | `HueApp__ClientId` | _(required)_ | Hue Remote API app client ID |
 | `HueApp:ClientSecret` | `HueApp__ClientSecret` | _(required)_ | Hue Remote API app client secret |
 | `HueApp:CallbackUrl` | `HueApp__CallbackUrl` | _(required for admin)_ | OAuth callback URL for hub registration (e.g. `https://admin.example.com/Hubs/OAuthCallback`) |
@@ -82,19 +85,19 @@ sudo chown -R 1000:1000 data
 ```
 
 Alternatively, if your host user's UID is not 1000, you can set the container
-user to match your host UID in `docker-compose.yml`:
+user to match your host UID by setting `PUID` and `PGID`:
 
 ```yaml
 services:
   worker:
-    user: "${UID}:${GID}"
+    user: "${PUID}:${PGID}"
     # ...
   admin:
-    user: "${UID}:${GID}"
+    user: "${PUID}:${PGID}"
     # ...
 ```
 
-Then run with `UID=$(id -u) GID=$(id -g) docker compose up --build`.
+Then run with `PUID=$(id -u) PGID=$(id -g) docker compose up --build`.
 
 ### Docker Compose (recommended)
 
@@ -268,6 +271,12 @@ docker build -t hpoll .
 The admin panel is a web UI for managing customers and hubs. It runs as a
 separate container (`hpoll-admin`) that shares the same SQLite database via a
 bind mount.
+
+> **TLS required:** The admin container listens on plain HTTP and must be
+> deployed behind a TLS-terminating reverse proxy (e.g. nginx, Traefik,
+> Cloudflare Tunnel). HSTS is enabled by default. Set `Security__EnableHsts=false`
+> to disable it in local development or non-critical environments where TLS is
+> not configured.
 
 Through the admin panel you can add customers, edit email addresses, toggle
 active/inactive status, and — most importantly — register new hubs via the

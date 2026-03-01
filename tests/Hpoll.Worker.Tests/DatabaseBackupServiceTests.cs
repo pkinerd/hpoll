@@ -42,7 +42,7 @@ public class DatabaseBackupServiceTests : IDisposable
         try { Directory.Delete(_tempDir, recursive: true); } catch { }
     }
 
-    private DatabaseBackupService CreateService(BackupSettings? settings = null)
+    private DatabaseBackupService CreateService(BackupSettings? settings = null, Mock<ISystemInfoService>? systemInfoMock = null)
     {
         var backupSettings = settings ?? new BackupSettings
         {
@@ -62,7 +62,7 @@ public class DatabaseBackupServiceTests : IDisposable
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<DatabaseBackupService>.Instance,
             Options.Create(backupSettings),
-            new Mock<ISystemInfoService>().Object,
+            (systemInfoMock ?? new Mock<ISystemInfoService>()).Object,
             config);
     }
 
@@ -201,5 +201,27 @@ public class DatabaseBackupServiceTests : IDisposable
         var service = CreateService();
 
         Assert.True(service.HasExistingBackups());
+    }
+
+    [Fact]
+    public async Task InitializeStatsFromExistingBackups_SetsBackupCategoryStats()
+    {
+        Directory.CreateDirectory(_backupDir);
+        File.WriteAllText(Path.Combine(_backupDir, "hpoll-20260101-080000.db"), "dummy");
+        File.WriteAllText(Path.Combine(_backupDir, "hpoll-20260102-080000.db"), "dummy");
+        File.WriteAllText(Path.Combine(_backupDir, "hpoll-20260103-080000.db"), "dummy");
+
+        var systemInfoMock = new Mock<ISystemInfoService>();
+        var service = CreateService(systemInfoMock: systemInfoMock);
+
+        // Use CancellationTokenSource to stop ExecuteAsync after initialization
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        try { await service.StartAsync(cts.Token); await Task.Delay(500, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.total_backups", "3", It.IsAny<CancellationToken>()), Times.Once);
+        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.last_backup_completed", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.next_backup_due", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

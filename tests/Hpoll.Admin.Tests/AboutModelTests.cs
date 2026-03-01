@@ -127,7 +127,8 @@ public class AboutModelTests : IDisposable
             new SystemInfo { Key = "email.aws_region", Value = "us-east-1", Category = "Email" },
             new SystemInfo { Key = "system.version", Value = "1.0.0", Category = "System" },
             new SystemInfo { Key = "polling.interval_minutes", Value = "60", Category = "Polling" },
-            new SystemInfo { Key = "hue.app_configured", Value = "True", Category = "Hue" }
+            new SystemInfo { Key = "hue.app_configured", Value = "True", Category = "Hue" },
+            new SystemInfo { Key = "backup.interval_hours", Value = "24", Category = "Backup" }
         );
         await _db.SaveChangesAsync();
 
@@ -135,7 +136,7 @@ public class AboutModelTests : IDisposable
         await model.OnGetAsync();
 
         var categories = model.Sections.Select(s => s.Category).ToList();
-        Assert.Equal(new[] { "Worker Build", "System", "Polling", "Email", "Hue", "Runtime" }, categories);
+        Assert.Equal(new[] { "Worker Build", "System", "Polling", "Email", "Hue", "Backup", "Runtime" }, categories);
     }
 
     [Fact]

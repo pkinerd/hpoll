@@ -8,6 +8,13 @@ using Hpoll.Data.Entities;
 
 namespace Hpoll.Admin.Pages.Hubs;
 
+/// <summary>
+/// Handles the OAuth redirect from the Hue developer portal during hub registration.
+/// Marked <see cref="AllowAnonymousAttribute"/> because OAuth callbacks cannot carry
+/// the admin session cookie (the redirect originates from an external domain).
+/// CSRF is validated via a random token stored in the session during the initial
+/// registration request and passed through the OAuth <c>state</c> parameter.
+/// </summary>
 [AllowAnonymous]
 public class OAuthCallbackModel : PageModel
 {
