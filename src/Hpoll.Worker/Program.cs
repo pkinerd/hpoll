@@ -132,13 +132,16 @@ using (var scope = host.Services.CreateScope())
         ["email.error_retry_delay_minutes"] = email.ErrorRetryDelayMinutes.ToString(),
     });
 
-    // Backup settings
+    // Backup settings (runtime stats populated by DatabaseBackupService on startup)
     var backup = scope.ServiceProvider.GetRequiredService<IOptions<BackupSettings>>().Value;
     await systemInfo.SetBatchAsync("Backup", new Dictionary<string, string>
     {
         ["backup.interval_hours"] = backup.IntervalHours.ToString(),
         ["backup.retention_count"] = backup.RetentionCount.ToString(),
         ["backup.sub_directory"] = backup.SubDirectory,
+        ["backup.last_backup_completed"] = "N/A",
+        ["backup.next_backup_due"] = "N/A",
+        ["backup.total_backups"] = "0",
     });
 
     // Hue settings (non-sensitive only — callback URL is an Admin concern, not written here)
@@ -159,9 +162,6 @@ using (var scope = host.Services.CreateScope())
         ["runtime.last_email_sent"] = "N/A",
         ["runtime.next_email_due"] = "N/A",
         ["runtime.total_emails_sent"] = "0",
-        ["runtime.last_backup_completed"] = "N/A",
-        ["runtime.next_backup_due"] = "N/A",
-        ["runtime.total_backups"] = "0",
     });
 }
 
