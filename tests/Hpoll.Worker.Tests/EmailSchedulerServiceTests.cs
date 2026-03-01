@@ -391,7 +391,7 @@ public class EmailSchedulerServiceTests : IDisposable
             Name = "Test",
             Email = "",
             TimeZoneId = "UTC",
-            Status = "active"
+            Status = CustomerStatus.Active
         };
 
         var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
@@ -454,7 +454,7 @@ public class EmailSchedulerServiceTests : IDisposable
     public async Task ProcessDueCustomers_EmptyCcBcc_PassesNullLists()
     {
         var pastTime = DateTime.UtcNow.AddMinutes(-5);
-        await SeedCustomerAsync("main@example.com", "active", "", "", nextSendTimeUtc: pastTime);
+        await SeedCustomerAsync("main@example.com", CustomerStatus.Active, "", "", nextSendTimeUtc: pastTime);
 
         _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("<html>Summary</html>");

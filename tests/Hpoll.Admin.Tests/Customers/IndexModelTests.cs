@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Hpoll.Admin.Pages.Customers;
+using Hpoll.Core.Constants;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
@@ -88,7 +89,7 @@ public class IndexModelTests : IDisposable
             AccessToken = "token",
             RefreshToken = "refresh",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active"
+            Status = HubStatus.Active
         });
         _db.Hubs.Add(new Hub
         {
@@ -98,7 +99,7 @@ public class IndexModelTests : IDisposable
             AccessToken = "token2",
             RefreshToken = "refresh2",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active"
+            Status = HubStatus.Active
         });
         await _db.SaveChangesAsync();
 

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Hpoll.Admin.Pages.Hubs;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Models;
 using Hpoll.Data;
@@ -57,7 +58,7 @@ public class OAuthCallbackModelTests : IDisposable
 
     private async Task<Customer> SeedCustomerAsync(string name = "Test User", string email = "test@example.com")
     {
-        var customer = new Customer { Name = name, Email = email, TimeZoneId = "UTC", Status = "active" };
+        var customer = new Customer { Name = name, Email = email, TimeZoneId = "UTC", Status = CustomerStatus.Active };
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync();
         return customer;
@@ -205,7 +206,7 @@ public class OAuthCallbackModelTests : IDisposable
 
         var hub = await _db.Hubs.FirstOrDefaultAsync(h => h.HueBridgeId == "001788FFFE123456");
         Assert.NotNull(hub);
-        Assert.Equal("active", hub.Status);
+        Assert.Equal(HubStatus.Active, hub.Status);
         Assert.Equal("access-tk", hub.AccessToken);
         Assert.Equal("app-key-123", hub.HueApplicationKey);
     }
@@ -225,7 +226,7 @@ public class OAuthCallbackModelTests : IDisposable
             AccessToken = "old-access",
             RefreshToken = "old-refresh",
             TokenExpiresAt = DateTime.UtcNow.AddDays(-1),
-            Status = "needs_reauth",
+            Status = HubStatus.NeedsReauth,
             ConsecutiveFailures = 5
         });
         await _db.SaveChangesAsync();
@@ -250,7 +251,7 @@ public class OAuthCallbackModelTests : IDisposable
         var hub = await _db.Hubs.FirstAsync(h => h.HueBridgeId == "001788FFFE123456");
         Assert.Equal("new-access", hub.AccessToken);
         Assert.Equal("new-refresh", hub.RefreshToken);
-        Assert.Equal("active", hub.Status);
+        Assert.Equal(HubStatus.Active, hub.Status);
         Assert.Equal(0, hub.ConsecutiveFailures);
     }
 

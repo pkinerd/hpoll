@@ -340,7 +340,7 @@ public class TokenRefreshServiceTests : IDisposable
     [Fact]
     public async Task RefreshExpiringTokens_NeedsReauthHub_NotIncluded()
     {
-        await SeedHubAsync(status: "needs_reauth", tokenExpiresAt: DateTime.UtcNow.AddHours(1));
+        await SeedHubAsync(status: HubStatus.NeedsReauth, tokenExpiresAt: DateTime.UtcNow.AddHours(1));
 
         var service = CreateService();
         await service.RefreshExpiringTokensAsync(CancellationToken.None);
