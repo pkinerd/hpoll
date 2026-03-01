@@ -149,8 +149,9 @@ public class DetailModel : PageModel
         }
 
         customer.SendTimesLocal = newSendTimes;
+        var effectiveDefaults = await GetEffectiveDefaultSendTimesUtcAsync();
         customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
-            customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, _emailSettings.SendTimesUtc);
+            customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, effectiveDefaults);
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
@@ -189,8 +190,9 @@ public class DetailModel : PageModel
         }
 
         customer.TimeZoneId = newTzId;
+        var effectiveDefaults = await GetEffectiveDefaultSendTimesUtcAsync();
         customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
-            customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, _emailSettings.SendTimesUtc);
+            customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, effectiveDefaults);
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
@@ -241,13 +243,25 @@ public class DetailModel : PageModel
         return Page();
     }
 
-    private async Task<string> GetDefaultSendTimesDisplayAsync()
+    private async Task<List<string>> GetEffectiveDefaultSendTimesUtcAsync()
     {
         var entry = await _db.SystemInfo
             .FirstOrDefaultAsync(e => e.Key == "email.send_times_utc");
         if (entry != null && !string.IsNullOrWhiteSpace(entry.Value))
-            return entry.Value + " UTC";
-        return string.Join(", ", _emailSettings.SendTimesUtc) + " UTC";
+        {
+            var parsed = entry.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(t => TimeSpan.TryParse(t, out _))
+                .ToList();
+            if (parsed.Count > 0)
+                return parsed;
+        }
+        return _emailSettings.SendTimesUtc;
+    }
+
+    private async Task<string> GetDefaultSendTimesDisplayAsync()
+    {
+        var defaults = await GetEffectiveDefaultSendTimesUtcAsync();
+        return string.Join(", ", defaults) + " UTC";
     }
 
     private async Task LoadActivitySummaryAsync(Customer customer)

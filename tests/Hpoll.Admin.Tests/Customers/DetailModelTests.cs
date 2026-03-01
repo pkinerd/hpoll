@@ -363,4 +363,57 @@ public class DetailModelTests : IDisposable
 
         Assert.Equal("09:00 UTC", model.DefaultSendTimesDisplay);
     }
+
+    [Fact]
+    public async Task OnPostUpdateSendTimesAsync_EmptyTimes_UsesSystemInfoDefaults()
+    {
+        var customer = await SeedCustomerAsync();
+        customer.SendTimesLocal = "19:30";
+        await _db.SaveChangesAsync();
+
+        // SystemInfo has 08:45 (written by the worker), but _emailSettings has default empty list
+        _db.SystemInfo.Add(new SystemInfo
+        {
+            Key = "email.send_times_utc",
+            Value = "08:45",
+            Category = "Email"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        model.EditSendTimesLocal = "";
+
+        await model.OnPostUpdateSendTimesAsync(customer.Id);
+
+        var updated = await _db.Customers.FindAsync(customer.Id);
+        Assert.Equal("", updated!.SendTimesLocal);
+        Assert.NotNull(updated.NextSendTimeUtc);
+        // Should use 08:45 from SystemInfo, not 08:00 hardcoded fallback
+        Assert.Equal(45, updated.NextSendTimeUtc!.Value.Minute);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateTimeZoneAsync_EmptyTimes_UsesSystemInfoDefaults()
+    {
+        var customer = await SeedCustomerAsync();
+        customer.SendTimesLocal = "";
+        await _db.SaveChangesAsync();
+
+        _db.SystemInfo.Add(new SystemInfo
+        {
+            Key = "email.send_times_utc",
+            Value = "08:45",
+            Category = "Email"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        model.EditTimeZoneId = "UTC";
+
+        await model.OnPostUpdateTimeZoneAsync(customer.Id);
+
+        var updated = await _db.Customers.FindAsync(customer.Id);
+        Assert.NotNull(updated!.NextSendTimeUtc);
+        Assert.Equal(45, updated.NextSendTimeUtc!.Value.Minute);
+    }
 }
