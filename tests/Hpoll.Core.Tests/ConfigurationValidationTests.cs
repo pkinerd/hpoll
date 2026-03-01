@@ -77,8 +77,7 @@ public class ConfigurationValidationTests : IDisposable
     {
         var settings = new EmailSettings();
 
-        Assert.Single(settings.SendTimesUtc);
-        Assert.Equal("08:00", settings.SendTimesUtc[0]);
+        Assert.Empty(settings.SendTimesUtc);
         Assert.Equal(4, settings.SummaryWindowHours);
         Assert.Equal(7, settings.SummaryWindowCount);
         Assert.Equal(60, settings.BatteryAlertThreshold);
