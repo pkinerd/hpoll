@@ -116,6 +116,8 @@ public class EmailRenderer : IEmailRenderer
             windows.Add(new WindowSummary
             {
                 Label = $"{windowStartLocal:HH:mm}\u2013{displayEnd:HH:mm}",
+                WindowStartLocal = windowStartLocal,
+                DisplayEndLocal = displayEnd,
                 DevicesWithMotion = devicesWithMotion,
                 TotalMotionSensors = motionSensorCount > 0 ? motionSensorCount : 1,
                 TotalMotionEvents = totalMotionEvents,
@@ -161,6 +163,16 @@ public class EmailRenderer : IEmailRenderer
         batteryStatuses = batteryStatuses.OrderBy(b => b.BatteryLevel).ToList();
 
         windows.Reverse(); // newest window first for readability
+
+        // Omit the newest window if it has less than 60 minutes of data (likely incomplete)
+        if (windows.Count > 0 && (windows[0].DisplayEndLocal - windows[0].WindowStartLocal).TotalMinutes < 60)
+        {
+            _logger.LogInformation(
+                "Omitting newest window {Label} for customer {CustomerId} — only {Minutes:F0} minutes of data",
+                windows[0].Label, customerId, (windows[0].DisplayEndLocal - windows[0].WindowStartLocal).TotalMinutes);
+            windows.RemoveAt(0);
+        }
+
         var displayEndLocal = bucketEndLocal > nowLocal ? nowLocal : bucketEndLocal;
         return BuildHtml(bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, _emailSettings.BatteryAlertThreshold, _emailSettings.BatteryLevelCritical, _emailSettings.BatteryLevelWarning);
     }
@@ -195,13 +207,14 @@ public class EmailRenderer : IEmailRenderer
                       : "#27ae60";
             var barWidth = Math.Max(pct, 10);
             var label = w.TotalMotionEvents >= 5 ? "5+" : w.TotalMotionEvents.ToString();
+            var textColor = (w.DisplayEndLocal - w.WindowStartLocal).TotalHours < 3 ? "#8B0000" : "#777";
 
-            sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;white-space:nowrap;\">{w.Label}</td>");
+            sb.AppendLine($"<tr><td style=\"font-size:12px;color:{textColor};width:90px;white-space:nowrap;\">{w.Label}</td>");
             sb.AppendLine($"<td><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"><tr>");
             sb.AppendLine($"<td style=\"background-color:{color};width:{barWidth}%;height:16px;border-radius:3px;\"></td>");
             sb.AppendLine($"<td style=\"width:{100 - barWidth}%;\"></td>");
             sb.AppendLine("</tr></table></td>");
-            sb.AppendLine($"<td style=\"font-size:11px;color:#777;width:24px;text-align:right;\">{label}</td>");
+            sb.AppendLine($"<td style=\"font-size:11px;color:{textColor};width:24px;text-align:right;\">{label}</td>");
             sb.AppendLine("</tr>");
         }
         sb.AppendLine("</table>");
@@ -218,14 +231,15 @@ public class EmailRenderer : IEmailRenderer
                       : active == 1 ? "#f39c12"
                       : "#27ae60";
             var barWidth = Math.Max(pct, 10);
+            var textColor = (w.DisplayEndLocal - w.WindowStartLocal).TotalHours < 3 ? "#8B0000" : "#777";
 
-            sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;white-space:nowrap;\">{w.Label}</td>");
+            sb.AppendLine($"<tr><td style=\"font-size:12px;color:{textColor};width:90px;white-space:nowrap;\">{w.Label}</td>");
             sb.AppendLine($"<td><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"><tr>");
             sb.AppendLine($"<td style=\"background-color:{color};width:{barWidth}%;height:16px;border-radius:3px;\"></td>");
             sb.AppendLine($"<td style=\"width:{100 - barWidth}%;\"></td>");
             sb.AppendLine("</tr></table></td>");
             var diversityLabel = active >= 5 ? "5+" : active.ToString();
-            sb.AppendLine($"<td style=\"font-size:11px;color:#777;width:24px;text-align:right;\">{diversityLabel}</td>");
+            sb.AppendLine($"<td style=\"font-size:11px;color:{textColor};width:24px;text-align:right;\">{diversityLabel}</td>");
             sb.AppendLine("</tr>");
         }
         sb.AppendLine("</table>");
@@ -236,12 +250,17 @@ public class EmailRenderer : IEmailRenderer
         sb.AppendLine("<tr><td style=\"font-size:11px;color:#999;\"></td><td style=\"font-size:11px;color:#999;text-align:center;\">Low</td><td style=\"font-size:11px;color:#999;text-align:center;\">Med</td><td style=\"font-size:11px;color:#999;text-align:center;\">High</td></tr>");
         foreach (var w in windows)
         {
-            sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;\">{w.Label}</td>");
+            var isShortWindow = (w.DisplayEndLocal - w.WindowStartLocal).TotalHours < 3;
+            var labelColor = isShortWindow ? "#8B0000" : "#777";
+            sb.AppendLine($"<tr><td style=\"font-size:12px;color:{labelColor};width:90px;\">{w.Label}</td>");
             if (w.TemperatureMin.HasValue)
             {
-                sb.AppendLine($"<td style=\"text-align:center;font-size:13px;color:#3498db;\">{w.TemperatureMin:F1}</td>");
-                sb.AppendLine($"<td style=\"text-align:center;font-size:13px;font-weight:bold;color:#2c3e50;\">{w.TemperatureMedian:F1}</td>");
-                sb.AppendLine($"<td style=\"text-align:center;font-size:13px;color:#e74c3c;\">{w.TemperatureMax:F1}</td>");
+                var lowColor = isShortWindow ? "#8B0000" : "#3498db";
+                var medColor = isShortWindow ? "#8B0000" : "#2c3e50";
+                var highColor = isShortWindow ? "#8B0000" : "#e74c3c";
+                sb.AppendLine($"<td style=\"text-align:center;font-size:13px;color:{lowColor};\">{w.TemperatureMin:F1}</td>");
+                sb.AppendLine($"<td style=\"text-align:center;font-size:13px;font-weight:bold;color:{medColor};\">{w.TemperatureMedian:F1}</td>");
+                sb.AppendLine($"<td style=\"text-align:center;font-size:13px;color:{highColor};\">{w.TemperatureMax:F1}</td>");
             }
             else
             {
@@ -291,6 +310,8 @@ public class EmailRenderer : IEmailRenderer
     private class WindowSummary
     {
         public string Label { get; set; } = string.Empty;
+        public DateTime WindowStartLocal { get; set; }
+        public DateTime DisplayEndLocal { get; set; }
         public int DevicesWithMotion { get; set; }
         public int TotalMotionSensors { get; set; }
         public int TotalMotionEvents { get; set; }

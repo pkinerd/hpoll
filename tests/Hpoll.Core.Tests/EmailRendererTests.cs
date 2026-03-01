@@ -157,7 +157,7 @@ public class EmailRendererTests : IDisposable
     }
 
     [Fact]
-    public async Task RenderDailySummaryAsync_ContainsAllSevenWindows()
+    public async Task RenderDailySummaryAsync_ContainsExpectedWindows()
     {
         var (customer, _, device) = await SeedBaseDataAsync();
 
@@ -173,8 +173,8 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        // Seven 4-hour windows (28h) aligned to standard boundaries
-        // With nowUtc at 08:00 UTC: 04:00, 08:00, 12:00, 16:00, 20:00, 00:00, 04:00
+        // NowUtc at 08:00 exactly: newest window (08:00–08:00) has 0 min of data and is omitted.
+        // Remaining 6 windows still contain all expected boundary times.
         Assert.Contains("04:00", html);
         Assert.Contains("08:00", html);
         Assert.Contains("12:00", html);
@@ -860,5 +860,98 @@ public class EmailRendererTests : IDisposable
         Assert.Contains("30%", html);
         // At exactly the critical threshold (30), should show red
         Assert.Contains("#e74c3c", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_NewestWindowUnder60Min_IsOmitted()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        // nowUtc at 00:30 → current window is 00:00–04:00, displayEnd = 00:30, duration = 30 min < 60 min → omitted
+        var nowUtc = new DateTime(2026, 2, 28, 0, 30, 0, DateTimeKind.Utc);
+
+        AddMotion(device.Id, new DateTime(2026, 2, 28, 0, 10, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, nowUtc);
+
+        Assert.NotNull(html);
+        // The newest window label "00:00–00:30" should NOT appear (omitted)
+        Assert.DoesNotContain("00:00\u201300:30", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_NewestWindowAtExactly60Min_IsKept()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        // nowUtc at 01:00 → current window is 00:00–04:00, displayEnd = 01:00, duration = 60 min → kept
+        var nowUtc = new DateTime(2026, 2, 28, 1, 0, 0, DateTimeKind.Utc);
+
+        AddMotion(device.Id, new DateTime(2026, 2, 28, 0, 10, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, nowUtc);
+
+        Assert.NotNull(html);
+        // The newest window label "00:00–01:00" should appear (exactly 60 min, not omitted)
+        Assert.Contains("00:00\u201301:00", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_ShortWindow_UsesDarkRedText()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        // nowUtc at 02:00 → current window is 00:00–04:00, displayEnd = 02:00, duration = 2h < 3h → dark red
+        var nowUtc = new DateTime(2026, 2, 28, 2, 0, 0, DateTimeKind.Utc);
+
+        AddMotion(device.Id, new DateTime(2026, 2, 28, 0, 30, 0, DateTimeKind.Utc));
+        AddTemp(device.Id, new DateTime(2026, 2, 28, 0, 30, 0, DateTimeKind.Utc), 20.0);
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, nowUtc);
+
+        Assert.NotNull(html);
+        // Dark red color (#8B0000) should appear for the short window
+        Assert.Contains("#8B0000", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_FullWindow_DoesNotUseDarkRedText()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        // All windows are full 4-hour windows when nowUtc is exactly on a boundary
+        // nowUtc = 04:00 → current window 04:00–04:00 is omitted (0 min),
+        // remaining windows are all full 4-hour spans → no dark red
+        var nowUtc = new DateTime(2026, 2, 28, 4, 0, 0, DateTimeKind.Utc);
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, nowUtc);
+
+        Assert.NotNull(html);
+        // No dark red — all remaining windows are full 4-hour spans
+        Assert.DoesNotContain("#8B0000", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_WindowAtExactly3Hours_NoDarkRed()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        // nowUtc at 03:00 → current window is 00:00–04:00, displayEnd = 03:00, duration = 3h → NOT dark red
+        var nowUtc = new DateTime(2026, 2, 28, 3, 0, 0, DateTimeKind.Utc);
+
+        AddMotion(device.Id, new DateTime(2026, 2, 28, 0, 30, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, nowUtc);
+
+        Assert.NotNull(html);
+        // Exactly 3 hours — should NOT be dark red
+        Assert.DoesNotContain("#8B0000", html);
     }
 }
