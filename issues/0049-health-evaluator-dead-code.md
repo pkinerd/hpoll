@@ -1,7 +1,8 @@
 ---
 id: 49
 title: "HealthEvaluator class is dead code — never registered or used"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [code-quality]

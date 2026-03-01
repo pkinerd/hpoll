@@ -50,8 +50,8 @@
 | [0046](issues/0046-disabled-sensors-not-filtered-during-polling.md) | Disabled sensors are not filtered during polling | open | medium | bug |
 | [0047](issues/0047-invalid-timezoneid-crashes-email-batch.md) | Invalid TimeZoneId crashes email sending for all subsequent customers | open | medium | bug |
 | [0048](issues/0048-persist-data-protection-keys-secure-session-cookie.md) | Persist Data Protection keys and add Secure flag to session cookie | open | medium | security |
-| [0049](issues/0049-health-evaluator-dead-code.md) | HealthEvaluator class is dead code — never registered or used | open | low | code-quality |
-| [0050](issues/0050-remove-orphaned-entrypoint-sh.md) | Remove or fix orphaned entrypoint.sh | open | low | bug |
+| [0049](issues/0049-health-evaluator-dead-code.md) | HealthEvaluator class is dead code — never registered or used | closed | low | code-quality |
+| [0050](issues/0050-remove-orphaned-entrypoint-sh.md) | Remove or fix orphaned entrypoint.sh | closed | low | bug |
 | [0051](issues/0051-battery-threshold-boundary-condition.md) | BatteryAlertThreshold boundary condition — device at exactly threshold level is neither shown nor alerted | open | medium | bug |
 | [0052](issues/0052-pin-dependency-versions-reproducible-builds.md) | Pin NuGet and Docker dependency versions for reproducible builds | open | low | security, enhancement |
 | [0053](issues/0053-register-app-leaks-response-body-in-exception.md) | RegisterApplicationAsync leaks full Hue API response body in exception message | closed | medium | bug, security |
@@ -67,7 +67,7 @@
 | [0063](issues/0063-add-https-redirect-middleware-admin-portal.md) | Add HTTPS redirect middleware for admin portal in production | closed | medium | security |
 | [0064](issues/0064-sanitize-exception-messages-in-polling-log.md) | Sanitize exception messages before persisting in PollingLog | open | medium | security |
 | [0065](issues/0065-oauth-callback-signed-state-parameter.md) | OAuth callback should use signed state parameter instead of session-based CSRF | open | medium | security, enhancement |
-| [0066](issues/0066-fix-claude-md-inaccuracies.md) | Fix CLAUDE.md inaccuracies: CI trigger pattern and missing battery mention | open | low | documentation |
+| [0066](issues/0066-fix-claude-md-inaccuracies.md) | Fix CLAUDE.md inaccuracies: CI trigger pattern and missing battery mention | closed | low | documentation |
 | [0067](issues/0067-entity-defaults-use-datetime-utcnow-at-instantiation.md) | Entity default values use DateTime.UtcNow at instantiation, not persistence time | open | medium | enhancement, code-quality |
 | [0068](issues/0068-iemailrenderer-xml-doc-comment-misleading.md) | IEmailRenderer XML doc comment is misleading — hardcodes configurable values | closed | medium | documentation |
 | [0069](issues/0069-polling-service-motion-comment-inaccurate.md) | PollingService motion detection comment is inaccurate per Hue API docs | closed | medium | documentation |

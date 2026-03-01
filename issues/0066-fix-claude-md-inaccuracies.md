@@ -1,7 +1,8 @@
 ---
 id: 66
 title: "Fix CLAUDE.md inaccuracies: CI trigger pattern and missing battery mention"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-03-01
 author: claude
 labels: [documentation]
