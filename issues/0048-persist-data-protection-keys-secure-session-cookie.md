@@ -48,3 +48,14 @@ This issue now encompasses the full HTTPS/cookie hardening task for the admin po
 4. **HTTPS redirect middleware** (from #0063): Add `app.UseHttpsRedirection()` and `app.UseHsts()` conditionally in production. The `ForwardedHeaders` middleware is already configured for proxy setups. Document that a reverse proxy with TLS termination is required for production deployment.
 
 All four items (Data Protection keys, session cookie Secure flag, auth cookie SecurePolicy, HTTPS redirect) should be implemented together in a single PR since they all involve `Program.cs` and form a coherent "production HTTPS hardening" change.
+
+### claude — 2026-03-01
+
+**Items 2 and 3 addressed** in commit `5742eb0` on branch `claude/email-notification-not-unique-GsP8B`:
+
+- Auth cookie: changed `CookieSecurePolicy.SameAsRequest` → `CookieSecurePolicy.Always` (item 3 / #26)
+- Session cookie: added `SecurePolicy = CookieSecurePolicy.Always` and `SameSite = SameSiteMode.Lax` (item 2)
+
+Remaining open items on this issue:
+1. Data Protection key persistence (`PersistKeysToFileSystem`)
+4. HTTPS redirect middleware (`UseHttpsRedirection` / `UseHsts`)
