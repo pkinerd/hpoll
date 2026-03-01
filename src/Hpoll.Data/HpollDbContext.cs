@@ -17,7 +17,7 @@ public class HpollDbContext : DbContext
     {
         modelBuilder.Entity<Customer>(entity =>
         {
-            entity.HasIndex(e => e.Email).IsUnique();
+            entity.HasIndex(e => e.Email);
         });
 
         modelBuilder.Entity<Hub>(entity =>

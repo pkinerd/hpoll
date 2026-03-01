@@ -25,7 +25,7 @@ public class DetailModel : PageModel
 
     public Customer Customer { get; set; } = null!;
 
-    [BindProperty, EmailAddress]
+    [BindProperty]
     public string? EditEmail { get; set; }
 
     [BindProperty, StringLength(100)]
@@ -101,7 +101,7 @@ public class DetailModel : PageModel
         customer.Email = EditEmail!;
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
-        SuccessMessage = "Email updated.";
+        SuccessMessage = "Notification email addresses updated.";
         return Page();
     }
 

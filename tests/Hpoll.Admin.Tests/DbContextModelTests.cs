@@ -37,13 +37,14 @@ public class DbContextModelTests : IDisposable
     }
 
     [Fact]
-    public async Task Customer_DuplicateEmail_ThrowsUniqueConstraintViolation()
+    public async Task Customer_DuplicateEmail_IsAllowed()
     {
-        await SeedCustomerAsync("duplicate@example.com");
+        await SeedCustomerAsync("shared@example.com");
 
-        _db.Customers.Add(new Customer { Name = "Another", Email = "duplicate@example.com", TimeZoneId = "UTC" });
+        _db.Customers.Add(new Customer { Name = "Another", Email = "shared@example.com", TimeZoneId = "UTC" });
+        await _db.SaveChangesAsync();
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => _db.SaveChangesAsync());
+        Assert.Equal(2, await _db.Customers.CountAsync(c => c.Email == "shared@example.com"));
     }
 
     [Fact]

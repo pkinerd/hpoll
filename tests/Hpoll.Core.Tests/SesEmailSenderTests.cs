@@ -30,7 +30,7 @@ public class SesEmailSenderTests
         _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SendEmailResponse { MessageId = "msg-001" });
 
-        await _sender.SendEmailAsync("user@example.com", "Test Subject", "<html>Body</html>");
+        await _sender.SendEmailAsync(new List<string> { "user@example.com" }, "Test Subject", "<html>Body</html>");
 
         _mockSes.Verify(s => s.SendEmailAsync(
             It.Is<SendEmailRequest>(r =>
@@ -50,7 +50,7 @@ public class SesEmailSenderTests
             .ThrowsAsync(new MessageRejectedException("Bad content"));
 
         await Assert.ThrowsAsync<MessageRejectedException>(
-            () => _sender.SendEmailAsync("user@example.com", "Test", "<html>Bad</html>"));
+            () => _sender.SendEmailAsync(new List<string> { "user@example.com" }, "Test", "<html>Bad</html>"));
     }
 
     [Fact]
@@ -60,9 +60,28 @@ public class SesEmailSenderTests
         _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), cts.Token))
             .ReturnsAsync(new SendEmailResponse { MessageId = "msg-002" });
 
-        await _sender.SendEmailAsync("user@example.com", "Test", "<html>Body</html>", cts.Token);
+        await _sender.SendEmailAsync(new List<string> { "user@example.com" }, "Test", "<html>Body</html>", cts.Token);
 
         _mockSes.Verify(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), cts.Token), Times.Once);
+    }
+
+    [Fact]
+    public async Task SendEmailAsync_WithMultipleToAddresses_SetsAllRecipients()
+    {
+        _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SendEmailResponse { MessageId = "msg-006" });
+
+        var to = new List<string> { "user1@example.com", "user2@example.com" };
+
+        await _sender.SendEmailAsync(to, "Test", "<html>Body</html>");
+
+        _mockSes.Verify(s => s.SendEmailAsync(
+            It.Is<SendEmailRequest>(r =>
+                r.Destination.ToAddresses.Count == 2 &&
+                r.Destination.ToAddresses.Contains("user1@example.com") &&
+                r.Destination.ToAddresses.Contains("user2@example.com")),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -71,10 +90,11 @@ public class SesEmailSenderTests
         _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SendEmailResponse { MessageId = "msg-003" });
 
+        var to = new List<string> { "user@example.com" };
         var cc = new List<string> { "cc1@example.com", "cc2@example.com" };
         var bcc = new List<string> { "bcc@example.com" };
 
-        await _sender.SendEmailAsync("user@example.com", "Test", "<html>Body</html>", cc, bcc);
+        await _sender.SendEmailAsync(to, "Test", "<html>Body</html>", cc, bcc);
 
         _mockSes.Verify(s => s.SendEmailAsync(
             It.Is<SendEmailRequest>(r =>
@@ -94,7 +114,7 @@ public class SesEmailSenderTests
         _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SendEmailResponse { MessageId = "msg-004" });
 
-        await _sender.SendEmailAsync("user@example.com", "Test", "<html>Body</html>", null, null);
+        await _sender.SendEmailAsync(new List<string> { "user@example.com" }, "Test", "<html>Body</html>", null, null);
 
         _mockSes.Verify(s => s.SendEmailAsync(
             It.Is<SendEmailRequest>(r =>
@@ -111,7 +131,7 @@ public class SesEmailSenderTests
         _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SendEmailResponse { MessageId = "msg-005" });
 
-        await _sender.SendEmailAsync("user@example.com", "Test", "<html>Body</html>", new List<string>(), new List<string>());
+        await _sender.SendEmailAsync(new List<string> { "user@example.com" }, "Test", "<html>Body</html>", new List<string>(), new List<string>());
 
         _mockSes.Verify(s => s.SendEmailAsync(
             It.Is<SendEmailRequest>(r =>

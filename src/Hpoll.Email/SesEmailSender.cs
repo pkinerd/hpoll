@@ -23,14 +23,14 @@ public class SesEmailSender : IEmailSender
         _logger = logger;
     }
 
-    public Task SendEmailAsync(string toAddress, string subject, string htmlBody, CancellationToken ct = default)
+    public Task SendEmailAsync(List<string> toAddresses, string subject, string htmlBody, CancellationToken ct = default)
     {
-        return SendEmailAsync(toAddress, subject, htmlBody, null, null, ct);
+        return SendEmailAsync(toAddresses, subject, htmlBody, null, null, ct);
     }
 
-    public async Task SendEmailAsync(string toAddress, string subject, string htmlBody, List<string>? ccAddresses, List<string>? bccAddresses, CancellationToken ct = default)
+    public async Task SendEmailAsync(List<string> toAddresses, string subject, string htmlBody, List<string>? ccAddresses, List<string>? bccAddresses, CancellationToken ct = default)
     {
-        var destination = new Destination { ToAddresses = new List<string> { toAddress } };
+        var destination = new Destination { ToAddresses = toAddresses };
 
         if (ccAddresses?.Count > 0)
             destination.CcAddresses = ccAddresses;
@@ -52,14 +52,15 @@ public class SesEmailSender : IEmailSender
             }
         };
 
+        var toDisplay = string.Join(", ", toAddresses);
         try
         {
             var response = await _sesClient.SendEmailAsync(sendRequest, ct);
-            _logger.LogInformation("Email sent to {To}, MessageId: {MessageId}", toAddress, response.MessageId);
+            _logger.LogInformation("Email sent to {To}, MessageId: {MessageId}", toDisplay, response.MessageId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send email to {To}", toAddress);
+            _logger.LogError(ex, "Failed to send email to {To}", toDisplay);
             throw;
         }
     }
