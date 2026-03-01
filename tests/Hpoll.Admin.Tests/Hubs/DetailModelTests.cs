@@ -118,10 +118,10 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostDeleteAsync_InactiveOver24Hours_DeletesHub()
+    public async Task OnPostDeleteAsync_InactiveOver10Minutes_DeletesHub()
     {
         var (customer, hub) = await SeedDataAsync("inactive");
-        hub.DeactivatedAt = DateTime.UtcNow.AddHours(-25);
+        hub.DeactivatedAt = DateTime.UtcNow.AddMinutes(-11);
         await _db.SaveChangesAsync();
 
         var model = CreatePageModel();
@@ -134,10 +134,10 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostDeleteAsync_InactiveUnder24Hours_DoesNotDelete()
+    public async Task OnPostDeleteAsync_InactiveUnder10Minutes_DoesNotDelete()
     {
         var (_, hub) = await SeedDataAsync("inactive");
-        hub.DeactivatedAt = DateTime.UtcNow.AddHours(-12);
+        hub.DeactivatedAt = DateTime.UtcNow.AddMinutes(-5);
         await _db.SaveChangesAsync();
 
         var model = CreatePageModel();

@@ -50,67 +50,8 @@ variables use `__` (double underscore) as section separators.
 | `HueApp:ClientId` | `HueApp__ClientId` | _(required)_ | Hue Remote API app client ID |
 | `HueApp:ClientSecret` | `HueApp__ClientSecret` | _(required)_ | Hue Remote API app client secret |
 | `HueApp:CallbackUrl` | `HueApp__CallbackUrl` | _(required for admin)_ | OAuth callback URL for hub registration (e.g. `https://admin.example.com/Hubs/OAuthCallback`) |
-| `Customers` | _(see below)_ | `[]` | Array of customer/hub definitions |
 
-### Customer and hub configuration
-
-Customers and their linked hubs are defined as a JSON array. Each customer has a
-name, email address (for daily reports), a timezone (for email bucketing), and
-one or more hubs.
-
-The `bridgeId` is the unique hardware identifier of the Hue Bridge (the serial
-number printed on the device, also visible in the Hue app). It is not sent to
-the Hue API — hpoll uses it internally as a unique key to match configuration
-entries to database records and to identify hubs in log messages.
-
-The `hueApplicationKey` is the `username` you receive when pressing the bridge
-link button and creating a new API user (sometimes shown as a 40+ character hex
-string). In the v1 CLIP API this was passed as a URL path segment; in the v2
-Remote API hpoll sends it as the `hue-application-key` HTTP header alongside the
-OAuth Bearer token.
-
-```json
-{
-  "Customers": [
-    {
-      "name": "Jane Doe",
-      "email": "jane@example.com",
-      "timeZoneId": "Australia/Sydney",
-      "hubs": [
-        {
-          "bridgeId": "001788FFFE123ABC",
-          "hueApplicationKey": "your-hue-application-key",
-          "accessToken": "initial-access-token",
-          "refreshToken": "initial-refresh-token",
-          "tokenExpiresAt": "2026-04-01T00:00:00Z"
-        }
-      ]
-    }
-  ]
-}
-```
-
-The `timeZoneId` controls how readings are bucketed in the daily email. It
-accepts any IANA timezone identifier (e.g. `Australia/Sydney`, `America/New_York`,
-`Europe/London`). Defaults to `Australia/Sydney` if omitted. All data is stored
-in UTC — the timezone is only used for email presentation.
-
-When using environment variables, array elements are indexed with `__0__`,
-`__1__`, etc.:
-
-```
-Customers__0__Name=Jane Doe
-Customers__0__Email=jane@example.com
-Customers__0__TimeZoneId=Australia/Sydney
-Customers__0__Hubs__0__BridgeId=001788FFFE123ABC
-Customers__0__Hubs__0__HueApplicationKey=your-hue-application-key
-Customers__0__Hubs__0__AccessToken=initial-access-token
-Customers__0__Hubs__0__RefreshToken=initial-refresh-token
-Customers__0__Hubs__0__TokenExpiresAt=2026-04-01T00:00:00Z
-```
-
-On startup the service seeds customers and hubs from configuration into the
-database. Token refresh is handled automatically after that.
+Customers and hubs are managed through the [web admin console](#web-admin-console).
 
 ## Running with Docker
 
@@ -164,21 +105,8 @@ docker compose up --build
 ```
 
 The included `docker-compose.yml` builds the image from source and reads
-configuration from `.env`. To add customer/hub config, either set environment
-variables in `.env` or mount an `appsettings.Production.json` file.
-
-To add customer configuration via environment variables, append to `.env`:
-
-```
-Customers__0__Name=Jane Doe
-Customers__0__Email=jane@example.com
-Customers__0__TimeZoneId=Australia/Sydney
-Customers__0__Hubs__0__BridgeId=001788FFFE123ABC
-Customers__0__Hubs__0__HueApplicationKey=your-hue-application-key
-Customers__0__Hubs__0__AccessToken=initial-access-token
-Customers__0__Hubs__0__RefreshToken=initial-refresh-token
-Customers__0__Hubs__0__TokenExpiresAt=2026-04-01T00:00:00Z
-```
+configuration from `.env`. You can also mount an `appsettings.Production.json`
+file for additional settings.
 
 For multiple send times via environment variables:
 
@@ -224,23 +152,7 @@ Where `appsettings.Production.json` contains:
     "TokenRefreshMaxRetries": 3,
     "HealthFailureThreshold": 3,
     "HealthMaxSilenceHours": 6
-  },
-  "Customers": [
-    {
-      "name": "Jane Doe",
-      "email": "jane@example.com",
-      "timeZoneId": "Australia/Sydney",
-      "hubs": [
-        {
-          "bridgeId": "001788FFFE123ABC",
-          "hueApplicationKey": "your-hue-application-key",
-          "accessToken": "initial-access-token",
-          "refreshToken": "initial-refresh-token",
-          "tokenExpiresAt": "2026-04-01T00:00:00Z"
-        }
-      ]
-    }
-  ]
+  }
 }
 ```
 
@@ -290,26 +202,6 @@ services:
       AWS_ACCESS_KEY_ID: ""
       AWS_SECRET_ACCESS_KEY: ""
 
-      # ── Customer 1 ──────────────────────────────────────
-      Customers__0__Name: "Jane Doe"
-      Customers__0__Email: "jane@example.com"
-      Customers__0__TimeZoneId: "Australia/Sydney"
-      Customers__0__Hubs__0__BridgeId: "001788FFFE123ABC"
-      Customers__0__Hubs__0__HueApplicationKey: "your-hue-application-key"
-      Customers__0__Hubs__0__AccessToken: "initial-access-token"
-      Customers__0__Hubs__0__RefreshToken: "initial-refresh-token"
-      Customers__0__Hubs__0__TokenExpiresAt: "2026-04-01T00:00:00Z"
-
-      # ── Customer 2 (optional) ───────────────────────────
-      # Customers__1__Name: "John Smith"
-      # Customers__1__Email: "john@example.com"
-      # Customers__1__TimeZoneId: "America/New_York"
-      # Customers__1__Hubs__0__BridgeId: "001788FFFE456DEF"
-      # Customers__1__Hubs__0__HueApplicationKey: "..."
-      # Customers__1__Hubs__0__AccessToken: "..."
-      # Customers__1__Hubs__0__RefreshToken: "..."
-      # Customers__1__Hubs__0__TokenExpiresAt: "..."
-
   admin:
     image: pkinerd/hpoll-admin:latest
     container_name: hpoll-admin
@@ -340,14 +232,6 @@ docker run -d \
   -e Email__AwsRegion=ap-southeast-2 \
   -e Email__SendTimesUtc__0=06:00 \
   -e Email__SendTimesUtc__1=18:00 \
-  -e Customers__0__Name=Jane\ Doe \
-  -e Customers__0__Email=jane@example.com \
-  -e Customers__0__TimeZoneId=Australia/Sydney \
-  -e Customers__0__Hubs__0__BridgeId=001788FFFE123ABC \
-  -e Customers__0__Hubs__0__HueApplicationKey=your-hue-application-key \
-  -e Customers__0__Hubs__0__AccessToken=initial-access-token \
-  -e Customers__0__Hubs__0__RefreshToken=initial-refresh-token \
-  -e Customers__0__Hubs__0__TokenExpiresAt=2026-04-01T00:00:00Z \
   pkinerd/hpoll:latest
 ```
 
@@ -381,9 +265,9 @@ docker build -t hpoll .
 
 ## Web admin console
 
-The admin panel is a web UI for managing customers and hubs without editing
-configuration files or restarting the worker. It runs as a separate container
-(`hpoll-admin`) that shares the same SQLite database via a bind mount.
+The admin panel is a web UI for managing customers and hubs. It runs as a
+separate container (`hpoll-admin`) that shares the same SQLite database via a
+bind mount.
 
 Through the admin panel you can add customers, edit email addresses, toggle
 active/inactive status, and — most importantly — register new hubs via the

@@ -55,7 +55,7 @@
     @{
         var canDelete = Model.Hub.Status == "inactive"
             && Model.Hub.DeactivatedAt.HasValue
-            && (DateTime.UtcNow - Model.Hub.DeactivatedAt.Value).TotalHours >= 24;
+            && (DateTime.UtcNow - Model.Hub.DeactivatedAt.Value).TotalMinutes >= 10;
     }
     <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Hub.Id" style="display:inline;"
           onsubmit="return confirm('Delete this hub and all its data? This cannot be undone.');">
@@ -63,8 +63,8 @@
     </form>
     @if (Model.Hub.Status == "inactive" && Model.Hub.DeactivatedAt.HasValue && !canDelete)
     {
-        var hoursRemaining = 24 - (DateTime.UtcNow - Model.Hub.DeactivatedAt.Value).TotalHours;
-        <span style="font-size: 0.8rem; color: #666; margin-left: 0.5rem;">Available in @($"{hoursRemaining:F0}h")</span>
+        var minutesRemaining = 10 - (DateTime.UtcNow - Model.Hub.DeactivatedAt.Value).TotalMinutes;
+        <span style="font-size: 0.8rem; color: #666; margin-left: 0.5rem;">Available in @($"{minutesRemaining:F0}m")</span>
     }
 </div>
 
