@@ -247,7 +247,7 @@ public class DetailModel : PageModel
             .FirstOrDefaultAsync(e => e.Key == "email.send_times_utc");
         if (entry != null && !string.IsNullOrWhiteSpace(entry.Value))
             return entry.Value + " UTC";
-        return string.Join(", ", _emailSettings.SendTimesUtc.Select(t => t + " UTC"));
+        return string.Join(", ", _emailSettings.SendTimesUtc) + " UTC";
     }
 
     private async Task LoadActivitySummaryAsync(Customer customer)

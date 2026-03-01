@@ -54,7 +54,7 @@ public class EmailSchedulerService : BackgroundService
                     sentAny = await ProcessDueCustomersAsync(stoppingToken);
                 } while (sentAny && !stoppingToken.IsCancellationRequested);
 
-                // Calculate sleep duration: min(10 minutes, time until next due customer)
+                // Calculate sleep duration: min(1 minute, time until next due customer)
                 var delay = await GetSleepDurationAsync(stoppingToken);
                 _logger.LogInformation("Next email check in {Delay}", delay);
 
@@ -125,6 +125,17 @@ public class EmailSchedulerService : BackgroundService
             {
                 await SendCustomerEmailAsync(customer, renderer, sender, ct);
                 _totalEmailsSent++;
+
+                try
+                {
+                    var metricTime = _timeProvider.GetUtcNow().UtcDateTime;
+                    await _systemInfo.SetAsync("Runtime", "runtime.last_email_sent", metricTime.ToString("O"));
+                    await _systemInfo.SetAsync("Runtime", "runtime.total_emails_sent", _totalEmailsSent.ToString());
+                }
+                catch (Exception mex)
+                {
+                    _logger.LogWarning(mex, "Failed to update system info metrics");
+                }
             }
             catch (Exception ex)
             {
@@ -136,24 +147,20 @@ public class EmailSchedulerService : BackgroundService
             var sendNow = _timeProvider.GetUtcNow().UtcDateTime;
             customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
                 customer.SendTimesLocal, customer.TimeZoneId, sendNow, _settings.SendTimesUtc);
-            customer.UpdatedAt = DateTime.UtcNow;
+            customer.UpdatedAt = sendNow;
         }
 
         await db.SaveChangesAsync(ct);
 
         try
         {
-            var metricTime = _timeProvider.GetUtcNow().UtcDateTime;
-            await _systemInfo.SetAsync("Runtime", "runtime.last_email_sent", metricTime.ToString("O"));
-            await _systemInfo.SetAsync("Runtime", "runtime.total_emails_sent", _totalEmailsSent.ToString());
-
             var nextDue = await GetNextDueTimeAsync(ct);
             await _systemInfo.SetAsync("Runtime", "runtime.next_email_due",
                 nextDue?.ToString("O") ?? "N/A");
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to update system info metrics");
+            _logger.LogWarning(ex, "Failed to update next_email_due metric");
         }
 
         return true;
