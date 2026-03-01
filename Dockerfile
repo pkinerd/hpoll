@@ -15,9 +15,21 @@ COPY tests/Hpoll.Admin.Tests/Hpoll.Admin.Tests.csproj tests/Hpoll.Admin.Tests/
 
 RUN dotnet restore
 
+# Build metadata args (passed from CI)
+ARG BUILD_BRANCH=local
+ARG BUILD_COMMIT=
+ARG BUILD_NUMBER=
+ARG BUILD_RUN_ID=
+ARG PULL_REQUEST_NUMBER=
+
 # Copy everything else and build
 COPY . .
-RUN dotnet publish src/Hpoll.Worker/Hpoll.Worker.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish src/Hpoll.Worker/Hpoll.Worker.csproj -c Release -o /app/publish --no-restore \
+    -p:BuildBranch="${BUILD_BRANCH}" \
+    -p:BuildCommit="${BUILD_COMMIT}" \
+    -p:BuildNumber="${BUILD_NUMBER}" \
+    -p:BuildRunId="${BUILD_RUN_ID}" \
+    -p:PullRequestNumber="${PULL_REQUEST_NUMBER}"
 
 # Runtime stage (worker service, no HTTP -- use smaller runtime image)
 FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
