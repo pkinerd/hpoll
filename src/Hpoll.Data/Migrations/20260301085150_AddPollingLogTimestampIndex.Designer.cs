@@ -3,6 +3,7 @@ using System;
 using Hpoll.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Hpoll.Data.Migrations
 {
     [DbContext(typeof(HpollDbContext))]
-    partial class HpollDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260301085150_AddPollingLogTimestampIndex")]
+    partial class AddPollingLogTimestampIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.24");
@@ -55,7 +58,8 @@ namespace Hpoll.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Email");
+                    b.HasIndex("Email")
+                        .IsUnique();
 
                     b.ToTable("Customers");
                 });
@@ -147,9 +151,6 @@ namespace Hpoll.Data.Migrations
                     b.Property<int>("CustomerId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime?>("DeactivatedAt")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("HueApplicationKey")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -219,30 +220,6 @@ namespace Hpoll.Data.Migrations
                     b.HasIndex("HubId", "Timestamp");
 
                     b.ToTable("PollingLogs");
-                });
-
-            modelBuilder.Entity("Hpoll.Data.Entities.SystemInfo", b =>
-                {
-                    b.Property<string>("Key")
-                        .HasMaxLength(128)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Key");
-
-                    b.HasIndex("Category");
-
-                    b.ToTable("SystemInfo");
                 });
 
             modelBuilder.Entity("Hpoll.Data.Entities.Device", b =>

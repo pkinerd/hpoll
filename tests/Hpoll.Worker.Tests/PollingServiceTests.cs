@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -17,25 +18,33 @@ public class PollingServiceTests : IDisposable
 {
     private readonly ServiceProvider _serviceProvider;
     private readonly Mock<IHueApiClient> _mockHueClient;
-    private readonly string _dbName;
+    private readonly SqliteConnection _connection;
 
     public PollingServiceTests()
     {
-        _dbName = Guid.NewGuid().ToString();
         _mockHueClient = new Mock<IHueApiClient>();
+
+        // Use SQLite in-memory so ExecuteDeleteAsync works (requires relational provider)
+        _connection = new SqliteConnection("DataSource=:memory:");
+        _connection.Open();
 
         var services = new ServiceCollection();
         services.AddDbContext<HpollDbContext>(options =>
-            options.UseInMemoryDatabase(_dbName));
+            options.UseSqlite(_connection));
         services.AddScoped<IHueApiClient>(_ => _mockHueClient.Object);
         services.AddLogging(b => b.AddProvider(NullLoggerProvider.Instance));
 
         _serviceProvider = services.BuildServiceProvider();
+
+        // Create the schema
+        using var db = CreateDb();
+        db.Database.EnsureCreated();
     }
 
     public void Dispose()
     {
         _serviceProvider.Dispose();
+        _connection.Dispose();
     }
 
     private HpollDbContext CreateDb()
@@ -258,12 +267,54 @@ public class PollingServiceTests : IDisposable
 
         _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("Unauthorized", null, System.Net.HttpStatusCode.Unauthorized));
+        // Refresh succeeds but consecutive failures should still increment
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueTokenResponse { AccessToken = "new-token", RefreshToken = "new-refresh", ExpiresIn = 86400 });
 
         var service = CreateService();
         await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.True(updatedHub.ConsecutiveFailures > 0);
+    }
+
+    [Fact]
+    public async Task PollHub_On401_RefreshSucceeds_UpdatesTokens()
+    {
+        var hub = await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Unauthorized", null, System.Net.HttpStatusCode.Unauthorized));
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueTokenResponse { AccessToken = "refreshed-token", RefreshToken = "refreshed-refresh", ExpiresIn = 86400 });
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.Equal("active", updatedHub.Status);
+        Assert.Equal("refreshed-token", updatedHub.AccessToken);
+        Assert.Equal("refreshed-refresh", updatedHub.RefreshToken);
+    }
+
+    [Fact]
+    public async Task PollHub_On401_RefreshFails_SetsNeedsReauth()
+    {
+        var hub = await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Unauthorized", null, System.Net.HttpStatusCode.Unauthorized));
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Refresh failed"));
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.Equal("needs_reauth", updatedHub.Status);
         Assert.True(updatedHub.ConsecutiveFailures > 0);
     }
 
@@ -393,6 +444,86 @@ public class PollingServiceTests : IDisposable
         using var db = CreateDb();
         var readings = await db.DeviceReadings.ToListAsync();
         Assert.DoesNotContain(readings, r => r.ReadingType == "motion");
+    }
+
+    [Fact]
+    public async Task PollHub_SkipsDisabledMotionSensors()
+    {
+        await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource>
+            {
+                Data = new List<HueMotionResource>
+                {
+                    new()
+                    {
+                        Id = "motion-001", Type = "motion",
+                        Owner = new HueResourceRef { Rid = "device-001", Rtype = "device" },
+                        Enabled = false,
+                        Motion = new HueMotionData { MotionReport = new HueMotionReport { Motion = true, Changed = DateTime.UtcNow } }
+                    }
+                }
+            });
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource> { Data = new List<HueTemperatureResource>() });
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource>
+            {
+                Data = new List<HueDeviceResource>
+                {
+                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "a" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } }
+                }
+            });
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var readings = await db.DeviceReadings.ToListAsync();
+        Assert.DoesNotContain(readings, r => r.ReadingType == "motion");
+    }
+
+    [Fact]
+    public async Task PollHub_SkipsDisabledTemperatureSensors()
+    {
+        await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource> { Data = new List<HueMotionResource>() });
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource>
+            {
+                Data = new List<HueTemperatureResource>
+                {
+                    new()
+                    {
+                        Id = "temp-001", Type = "temperature",
+                        Owner = new HueResourceRef { Rid = "device-001", Rtype = "device" },
+                        Enabled = false,
+                        Temperature = new HueTemperatureData { TemperatureReport = new HueTemperatureReport { Temperature = 21.5, Changed = DateTime.UtcNow } }
+                    }
+                }
+            });
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource>
+            {
+                Data = new List<HueDeviceResource>
+                {
+                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "a" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "temp-001", Rtype = "temperature" } } }
+                }
+            });
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var readings = await db.DeviceReadings.ToListAsync();
+        Assert.DoesNotContain(readings, r => r.ReadingType == "temperature");
     }
 
     [Fact]

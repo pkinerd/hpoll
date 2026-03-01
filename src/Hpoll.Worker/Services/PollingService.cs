@@ -152,7 +152,7 @@ public class PollingService : BackgroundService
             // Process motion readings
             foreach (var motion in motionResponse.Data)
             {
-                if (motion.Motion.MotionReport == null) continue;
+                if (!motion.Enabled || motion.Motion.MotionReport == null) continue;
 
                 // owner.rid is the parent device ID
                 var deviceName = deviceById.TryGetValue(motion.Owner.Rid, out var ownerDevice)
@@ -179,7 +179,7 @@ public class PollingService : BackgroundService
             // Process temperature readings
             foreach (var temp in tempResponse.Data)
             {
-                if (temp.Temperature.TemperatureReport == null) continue;
+                if (!temp.Enabled || temp.Temperature.TemperatureReport == null) continue;
 
                 // owner.rid is the parent device ID
                 var deviceName = deviceById.TryGetValue(temp.Owner.Rid, out var ownerDevice)
@@ -244,10 +244,28 @@ public class PollingService : BackgroundService
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
-            _logger.LogWarning("Hub {BridgeId}: unauthorized (401). Token may be expired", hub.HueBridgeId);
+            _logger.LogWarning("Hub {BridgeId}: unauthorized (401). Attempting immediate token refresh", hub.HueBridgeId);
             hub.ConsecutiveFailures++;
             log.Success = false;
-            log.ErrorMessage = "Unauthorized (401) - token may be expired";
+
+            try
+            {
+                var tokenResponse = await hueClient.RefreshTokenAsync(hub.RefreshToken, ct);
+                hub.AccessToken = tokenResponse.AccessToken;
+                if (!string.IsNullOrEmpty(tokenResponse.RefreshToken))
+                {
+                    hub.RefreshToken = tokenResponse.RefreshToken;
+                }
+                hub.TokenExpiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddSeconds(tokenResponse.ExpiresIn);
+                log.ErrorMessage = "Unauthorized (401) - token refreshed successfully, will retry next cycle";
+                _logger.LogInformation("Hub {BridgeId}: token refreshed after 401. Expires at {Expiry}", hub.HueBridgeId, hub.TokenExpiresAt);
+            }
+            catch (Exception refreshEx)
+            {
+                _logger.LogError(refreshEx, "Hub {BridgeId}: token refresh failed after 401. Marking as needs_reauth", hub.HueBridgeId);
+                hub.Status = "needs_reauth";
+                log.ErrorMessage = "Unauthorized (401) - token refresh failed, hub marked as needs_reauth";
+            }
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
         {
@@ -295,40 +313,13 @@ public class PollingService : BackgroundService
             var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
             var cutoff = _timeProvider.GetUtcNow().UtcDateTime.AddHours(-_settings.DataRetentionHours);
 
-            // Delete in batches to avoid loading excessive rows into memory at once
-            const int batchSize = 1000;
-            int totalReadings = 0, totalLogs = 0;
+            var totalReadings = await db.DeviceReadings
+                .Where(r => r.Timestamp < cutoff)
+                .ExecuteDeleteAsync(ct);
 
-            int deleted;
-            do
-            {
-                var batch = await db.DeviceReadings
-                    .Where(r => r.Timestamp < cutoff)
-                    .Take(batchSize)
-                    .ToListAsync(ct);
-                deleted = batch.Count;
-                if (deleted > 0)
-                {
-                    db.DeviceReadings.RemoveRange(batch);
-                    await db.SaveChangesAsync(ct);
-                    totalReadings += deleted;
-                }
-            } while (deleted == batchSize);
-
-            do
-            {
-                var batch = await db.PollingLogs
-                    .Where(l => l.Timestamp < cutoff)
-                    .Take(batchSize)
-                    .ToListAsync(ct);
-                deleted = batch.Count;
-                if (deleted > 0)
-                {
-                    db.PollingLogs.RemoveRange(batch);
-                    await db.SaveChangesAsync(ct);
-                    totalLogs += deleted;
-                }
-            } while (deleted == batchSize);
+            var totalLogs = await db.PollingLogs
+                .Where(l => l.Timestamp < cutoff)
+                .ExecuteDeleteAsync(ct);
 
             if (totalReadings > 0 || totalLogs > 0)
             {

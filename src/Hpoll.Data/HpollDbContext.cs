@@ -52,6 +52,7 @@ public class HpollDbContext : DbContext
         modelBuilder.Entity<PollingLog>(entity =>
         {
             entity.HasIndex(e => new { e.HubId, e.Timestamp });
+            entity.HasIndex(e => e.Timestamp);
             entity.HasOne(e => e.Hub)
                 .WithMany(h => h.PollingLogs)
                 .HasForeignKey(e => e.HubId)

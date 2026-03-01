@@ -832,4 +832,33 @@ public class EmailRendererTests : IDisposable
         Assert.Contains("Battery Status", html);
         Assert.Contains("20%", html);
     }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_BatteryAtExactThreshold_ShowsBatterySection()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-bat-boundary",
+            DeviceType = "battery",
+            Name = "Hallway Sensor"
+        };
+        _db.Devices.Add(batteryDevice);
+        await _db.SaveChangesAsync();
+
+        // Battery at exactly the default threshold (30) should be included
+        AddBattery(batteryDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 30);
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("Battery Status", html);
+        Assert.Contains("Hallway Sensor", html);
+        Assert.Contains("30%", html);
+        // At exactly the critical threshold (30), should show red
+        Assert.Contains("#e74c3c", html);
+    }
 }
