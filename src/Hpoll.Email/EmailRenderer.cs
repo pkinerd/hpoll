@@ -86,7 +86,7 @@ public class EmailRenderer : IEmailRenderer
             var devicesWithMotion = motionReadings
                 .Where(r => {
                     try { using var j = JsonDocument.Parse(r.Value); return j.RootElement.GetProperty("motion").GetBoolean(); }
-                    catch { return false; }
+                    catch (JsonException ex) { _logger.LogWarning(ex, "Failed to parse motion reading value for DeviceId {DeviceId}", r.DeviceId); return false; }
                 })
                 .Select(r => r.DeviceId)
                 .Distinct()
@@ -95,14 +95,14 @@ public class EmailRenderer : IEmailRenderer
             var totalMotionEvents = motionReadings
                 .Count(r => {
                     try { using var j = JsonDocument.Parse(r.Value); return j.RootElement.GetProperty("motion").GetBoolean(); }
-                    catch { return false; }
+                    catch (JsonException ex) { _logger.LogWarning(ex, "Failed to parse motion reading value for DeviceId {DeviceId}", r.DeviceId); return false; }
                 });
 
             // Temperature stats
             var temperatures = tempReadings
                 .Select(r => {
                     try { using var j = JsonDocument.Parse(r.Value); return (double?)j.RootElement.GetProperty("temperature").GetDouble(); }
-                    catch { return null; }
+                    catch (JsonException ex) { _logger.LogWarning(ex, "Failed to parse temperature reading value for DeviceId {DeviceId}", r.DeviceId); return null; }
                 })
                 .Where(t => t.HasValue)
                 .Select(t => t!.Value)
@@ -149,7 +149,10 @@ public class EmailRenderer : IEmailRenderer
                     BatteryLevel = level
                 });
             }
-            catch { }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse battery reading value for DeviceId {DeviceId}", reading.DeviceId);
+            }
         }
 
         batteryStatuses = batteryStatuses.OrderBy(b => b.BatteryLevel).ToList();

@@ -226,10 +226,28 @@ public class PollingService : BackgroundService
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
-            _logger.LogWarning("Hub {BridgeId}: unauthorized (401). Token may be expired", hub.HueBridgeId);
+            _logger.LogWarning("Hub {BridgeId}: unauthorized (401). Attempting immediate token refresh", hub.HueBridgeId);
             hub.ConsecutiveFailures++;
             log.Success = false;
-            log.ErrorMessage = "Unauthorized (401) - token may be expired";
+
+            try
+            {
+                var tokenResponse = await hueClient.RefreshTokenAsync(hub.RefreshToken, ct);
+                hub.AccessToken = tokenResponse.AccessToken;
+                if (!string.IsNullOrEmpty(tokenResponse.RefreshToken))
+                {
+                    hub.RefreshToken = tokenResponse.RefreshToken;
+                }
+                hub.TokenExpiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddSeconds(tokenResponse.ExpiresIn);
+                log.ErrorMessage = "Unauthorized (401) - token refreshed successfully, will retry next cycle";
+                _logger.LogInformation("Hub {BridgeId}: token refreshed after 401. Expires at {Expiry}", hub.HueBridgeId, hub.TokenExpiresAt);
+            }
+            catch (Exception refreshEx)
+            {
+                _logger.LogError(refreshEx, "Hub {BridgeId}: token refresh failed after 401. Marking as needs_reauth", hub.HueBridgeId);
+                hub.Status = "needs_reauth";
+                log.ErrorMessage = "Unauthorized (401) - token refresh failed, hub marked as needs_reauth";
+            }
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
         {

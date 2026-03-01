@@ -257,12 +257,54 @@ public class PollingServiceTests : IDisposable
 
         _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("Unauthorized", null, System.Net.HttpStatusCode.Unauthorized));
+        // Refresh succeeds but consecutive failures should still increment
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueTokenResponse { AccessToken = "new-token", RefreshToken = "new-refresh", ExpiresIn = 86400 });
 
         var service = CreateService();
         await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.True(updatedHub.ConsecutiveFailures > 0);
+    }
+
+    [Fact]
+    public async Task PollHub_On401_RefreshSucceeds_UpdatesTokens()
+    {
+        var hub = await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Unauthorized", null, System.Net.HttpStatusCode.Unauthorized));
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueTokenResponse { AccessToken = "refreshed-token", RefreshToken = "refreshed-refresh", ExpiresIn = 86400 });
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.Equal("active", updatedHub.Status);
+        Assert.Equal("refreshed-token", updatedHub.AccessToken);
+        Assert.Equal("refreshed-refresh", updatedHub.RefreshToken);
+    }
+
+    [Fact]
+    public async Task PollHub_On401_RefreshFails_SetsNeedsReauth()
+    {
+        var hub = await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Unauthorized", null, System.Net.HttpStatusCode.Unauthorized));
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Refresh failed"));
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.Equal("needs_reauth", updatedHub.Status);
         Assert.True(updatedHub.ConsecutiveFailures > 0);
     }
 

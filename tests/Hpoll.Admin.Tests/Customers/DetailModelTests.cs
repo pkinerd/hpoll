@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Hpoll.Admin.Pages.Customers;
 using Hpoll.Core.Configuration;
@@ -30,7 +31,7 @@ public class DetailModelTests : IDisposable
     {
         var hueApp = Options.Create(new HueAppSettings());
         var emailSettings = Options.Create(new EmailSettings());
-        var model = new DetailModel(_db, hueApp, emailSettings);
+        var model = new DetailModel(_db, hueApp, emailSettings, NullLogger<DetailModel>.Instance);
         model.PageContext = new PageContext
         {
             ActionDescriptor = new CompiledPageActionDescriptor(),

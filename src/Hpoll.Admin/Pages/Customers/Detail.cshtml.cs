@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
 using Hpoll.Data;
@@ -15,12 +16,14 @@ public class DetailModel : PageModel
     private readonly HpollDbContext _db;
     private readonly HueAppSettings _hueApp;
     private readonly EmailSettings _emailSettings;
+    private readonly ILogger<DetailModel> _logger;
 
-    public DetailModel(HpollDbContext db, IOptions<HueAppSettings> hueApp, IOptions<EmailSettings> emailSettings)
+    public DetailModel(HpollDbContext db, IOptions<HueAppSettings> hueApp, IOptions<EmailSettings> emailSettings, ILogger<DetailModel> logger)
     {
         _db = db;
         _hueApp = hueApp.Value;
         _emailSettings = emailSettings.Value;
+        _logger = logger;
     }
 
     public Customer Customer { get; set; } = null!;
@@ -213,7 +216,7 @@ public class DetailModel : PageModel
             var devicesWithMotion = motionReadings
                 .Where(r => {
                     try { using var j = JsonDocument.Parse(r.Value); return j.RootElement.GetProperty("motion").GetBoolean(); }
-                    catch { return false; }
+                    catch (JsonException ex) { _logger.LogWarning(ex, "Failed to parse motion reading value for DeviceId {DeviceId}", r.DeviceId); return false; }
                 })
                 .Select(r => r.DeviceId)
                 .Distinct()
@@ -222,13 +225,13 @@ public class DetailModel : PageModel
             var totalMotionEvents = motionReadings
                 .Count(r => {
                     try { using var j = JsonDocument.Parse(r.Value); return j.RootElement.GetProperty("motion").GetBoolean(); }
-                    catch { return false; }
+                    catch (JsonException ex) { _logger.LogWarning(ex, "Failed to parse motion reading value for DeviceId {DeviceId}", r.DeviceId); return false; }
                 });
 
             var temperatures = tempReadings
                 .Select(r => {
                     try { using var j = JsonDocument.Parse(r.Value); return (double?)j.RootElement.GetProperty("temperature").GetDouble(); }
-                    catch { return null; }
+                    catch (JsonException ex) { _logger.LogWarning(ex, "Failed to parse temperature reading value for DeviceId {DeviceId}", r.DeviceId); return null; }
                 })
                 .Where(t => t.HasValue)
                 .Select(t => t!.Value)
