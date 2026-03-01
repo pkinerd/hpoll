@@ -36,6 +36,7 @@ public class AboutModel : PageModel
 
         // Build info (baked into assembly at compile time)
         PopulateBuildInfo();
+        BuildEntries.Sort((a, b) => string.Compare(a.Label, b.Label, StringComparison.Ordinal));
 
         var entries = await _db.SystemInfo
             .OrderBy(e => e.Category)
@@ -79,18 +80,6 @@ public class AboutModel : PageModel
         ComputeBuildDiffs();
     }
 
-    // Maps Admin Build labels to the corresponding Worker Build labels (after FormatLabel)
-    private static readonly Dictionary<string, string> AdminToWorkerLabel = new()
-    {
-        ["Branch"] = "Branch",
-        ["Commit"] = "Commit",
-        ["Build Number"] = "Number",
-        ["Run ID"] = "Run Id",
-        ["Pull Request"] = "Pull Request",
-        ["Built At"] = "Timestamp",
-        ["Source"] = "Source",
-    };
-
     private void ComputeBuildDiffs()
     {
         var workerBuild = Sections.FirstOrDefault(s => s.Category == "Worker Build");
@@ -98,17 +87,11 @@ public class AboutModel : PageModel
             return;
 
         var workerByLabel = workerBuild.Entries.ToDictionary(e => e.Label, e => e.Value);
-        var reverseMap = AdminToWorkerLabel.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
+        var adminLabels = BuildEntries.Select(e => e.Label).ToHashSet();
 
         foreach (var admin in BuildEntries)
         {
-            if (!AdminToWorkerLabel.TryGetValue(admin.Label, out var workerLabel))
-            {
-                AdminBuildDiffLabels.Add(admin.Label);
-                continue;
-            }
-
-            if (!workerByLabel.TryGetValue(workerLabel, out var workerValue))
+            if (!workerByLabel.TryGetValue(admin.Label, out var workerValue))
             {
                 AdminBuildDiffLabels.Add(admin.Label);
                 continue;
@@ -117,19 +100,14 @@ public class AboutModel : PageModel
             if (!ValuesMatch(admin.Value, workerValue))
             {
                 AdminBuildDiffLabels.Add(admin.Label);
-                WorkerBuildDiffLabels.Add(workerLabel);
+                WorkerBuildDiffLabels.Add(admin.Label);
             }
         }
 
         // Worker entries with no corresponding admin entry
         foreach (var worker in workerBuild.Entries)
         {
-            if (!reverseMap.TryGetValue(worker.Label, out var adminLabel))
-            {
-                WorkerBuildDiffLabels.Add(worker.Label);
-                continue;
-            }
-            if (!BuildEntries.Any(e => e.Label == adminLabel))
+            if (!adminLabels.Contains(worker.Label))
                 WorkerBuildDiffLabels.Add(worker.Label);
         }
     }
@@ -199,14 +177,20 @@ public class AboutModel : PageModel
         Add("Source", BuildInfo.IsCI ? "CI" : "Local");
     }
 
+    private static readonly Dictionary<string, string> LabelOverrides = new()
+    {
+        ["Run Id"] = "Run ID",
+    };
+
     private static string FormatLabel(string key)
     {
         var label = key;
         var dotIndex = label.IndexOf('.');
         if (dotIndex >= 0)
             label = label[(dotIndex + 1)..];
-        return string.Join(' ', label.Split('_')
+        var formatted = string.Join(' ', label.Split('_')
             .Select(w => w.Length > 0 ? char.ToUpper(w[0]) + w[1..] : w));
+        return LabelOverrides.GetValueOrDefault(formatted, formatted);
     }
 
     private static string FormatValue(string value)
