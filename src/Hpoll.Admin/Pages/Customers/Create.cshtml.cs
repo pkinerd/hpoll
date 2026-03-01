@@ -15,7 +15,7 @@ public class CreateModel : PageModel
     [BindProperty, Required, StringLength(100)]
     public string Name { get; set; } = string.Empty;
 
-    [BindProperty, Required, EmailAddress, StringLength(200)]
+    [BindProperty, Required, StringLength(500)]
     public string Email { get; set; } = string.Empty;
 
     [BindProperty]

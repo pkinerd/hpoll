@@ -52,6 +52,20 @@
             <button type="submit" class="btn btn-success">Clear Needs Re-auth</button>
         </form>
     }
+    @{
+        var canDelete = Model.Hub.Status == "inactive"
+            && Model.Hub.DeactivatedAt.HasValue
+            && (DateTime.UtcNow - Model.Hub.DeactivatedAt.Value).TotalHours >= 24;
+    }
+    <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Hub.Id" style="display:inline;"
+          onsubmit="return confirm('Delete this hub and all its data? This cannot be undone.');">
+        <button type="submit" class="btn btn-danger" @(canDelete ? "" : "disabled")>Delete Hub</button>
+    </form>
+    @if (Model.Hub.Status == "inactive" && Model.Hub.DeactivatedAt.HasValue && !canDelete)
+    {
+        var hoursRemaining = 24 - (DateTime.UtcNow - Model.Hub.DeactivatedAt.Value).TotalHours;
+        <span style="font-size: 0.8rem; color: #666; margin-left: 0.5rem;">Available in @($"{hoursRemaining:F0}h")</span>
+    }
 </div>
 
 @if (!string.IsNullOrEmpty(Model.Hub.AccessToken))
@@ -132,27 +146,57 @@ else
 
 <script>
     var tokenData = {
-        appkey: { value: '@Html.Raw(System.Net.WebUtility.HtmlEncode(Model.Hub.HueApplicationKey).Replace("'", "\\'"))', revealed: false },
-        access: { value: '@Html.Raw(System.Net.WebUtility.HtmlEncode(Model.Hub.AccessToken).Replace("'", "\\'"))', revealed: false },
-        refresh: { value: '@Html.Raw(System.Net.WebUtility.HtmlEncode(Model.Hub.RefreshToken).Replace("'", "\\'"))', revealed: false }
+        appkey: { value: null, revealed: false },
+        access: { value: null, revealed: false },
+        refresh: { value: null, revealed: false }
     };
+    var tokenUrl = '@Url.Page("/Hubs/Detail", "Token", new { id = Model.Hub.Id })';
+
+    function fetchToken(type) {
+        var data = tokenData[type];
+        if (data.value !== null) return Promise.resolve(data.value);
+        return fetch(tokenUrl + '&type=' + encodeURIComponent(type))
+            .then(function(r) {
+                if (!r.ok) throw new Error('Failed to fetch token');
+                return r.json();
+            })
+            .then(function(json) {
+                data.value = json.value;
+                return json.value;
+            });
+    }
 
     function toggleToken(type) {
         var display = document.getElementById(type + '-token-display');
         var toggle = document.getElementById(type + '-token-toggle');
         var data = tokenData[type];
-        data.revealed = !data.revealed;
-        display.textContent = data.revealed ? data.value : '\u2022'.repeat(24);
-        toggle.textContent = data.revealed ? 'Hide' : 'Show';
+        if (data.revealed) {
+            data.revealed = false;
+            display.textContent = '\u2022'.repeat(24);
+            toggle.textContent = 'Show';
+        } else {
+            toggle.textContent = 'Loading\u2026';
+            fetchToken(type).then(function(value) {
+                data.revealed = true;
+                display.textContent = value;
+                toggle.textContent = 'Hide';
+            }).catch(function() {
+                toggle.textContent = 'Show';
+            });
+        }
     }
 
     function copyToken(type) {
-        var data = tokenData[type];
-        navigator.clipboard.writeText(data.value).then(function() {
-            var btn = event.target;
-            var orig = btn.textContent;
+        var btn = event.target;
+        var orig = btn.textContent;
+        btn.textContent = 'Loading\u2026';
+        fetchToken(type).then(function(value) {
+            return navigator.clipboard.writeText(value);
+        }).then(function() {
             btn.textContent = 'Copied';
             setTimeout(function() { btn.textContent = orig; }, 1500);
+        }).catch(function() {
+            btn.textContent = orig;
         });
     }
 </script>
