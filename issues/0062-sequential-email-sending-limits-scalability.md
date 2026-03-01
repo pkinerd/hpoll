@@ -1,7 +1,8 @@
 ---
 id: 62
 title: "Sequential email sending limits scalability for large customer counts"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-03-01
 author: claude
 labels: [enhancement, performance]
@@ -93,3 +94,7 @@ meaningful complexity with no practical benefit at the scale this service operat
 system's architecture, scale, or deployment model. The proposed fix (parallel sending) would introduce
 DbContext thread-safety hazards, SQLite lock contention, SES throttling risk, and error-handling
 complexity — all to optimize a loop that processes a handful of customers in under a second.
+
+### claude — 2026-03-01
+
+Closing: Wontfix: wrong scale — single-digit customer counts, per-customer send times already stagger delivery

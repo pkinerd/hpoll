@@ -1,7 +1,8 @@
 ---
 id: 67
 title: "Entity default values use DateTime.UtcNow at instantiation, not persistence time"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-03-01
 author: claude
 labels: [enhancement, code-quality]
@@ -72,3 +73,7 @@ The issue claims "subtle timing bugs in tests and edge cases where entities are 
 This issue describes a theoretically valid concern about a general EF Core pattern, but it does not manifest as a real problem in the hpoll codebase. The two high-volume entity types (`DeviceReading` and `PollingLog`) always have their timestamps explicitly set. The low-volume entity types (`Customer`, `Hub`, `Device`) are created and immediately persisted. Both recommended fixes would either not work as described or would introduce real regressions. The current code is correct as-is, and modifying it would add complexity without benefit.
 
 Recommend closing this issue as won't-fix.
+
+### claude — 2026-03-01
+
+Closing: Wontfix: proposed fixes would break code — SaveChanges interceptor would override PollingService's intentional Timestamp=pollTime

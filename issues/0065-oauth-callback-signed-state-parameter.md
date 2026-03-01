@@ -1,7 +1,8 @@
 ---
 id: 65
 title: "OAuth callback should use signed state parameter instead of session-based CSRF"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-03-01
 author: claude
 labels: [security, enhancement]
@@ -80,3 +81,7 @@ After reviewing the full OAuth flow across `Detail.cshtml.cs` (state generation 
 The previous critical reviewer already noted the null CSRF check claim is wrong — the code does check `expectedCsrf == null` before comparison. The suggestion to "embed the authenticated user's identity" to address the `[AllowAnonymous]` concern is self-contradictory: the callback must be `[AllowAnonymous]` precisely because authentication state may not be available during the OAuth redirect, so there is no user identity to embed.
 
 **Recommendation:** Close this issue as Won't Fix. The current session-based CSRF protection follows RFC 6749 and OWASP guidelines, uses properly hardened session cookies, and is appropriate for the application's deployment model. If multi-instance deployment becomes a requirement in the future, session infrastructure should be addressed as a whole (e.g., switching to Redis-backed sessions), not by piecemeal changes to individual flows.
+
+### claude — 2026-03-01
+
+Closing: Wontfix: session-based CSRF state is fine — current implementation is textbook correct (128-bit GUID), not a vulnerability

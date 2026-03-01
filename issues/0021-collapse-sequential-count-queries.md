@@ -1,7 +1,8 @@
 ---
 id: 21
 title: "Collapse sequential COUNT queries on Dashboard and About pages"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [enhancement, performance]
@@ -150,3 +151,7 @@ I re-examined `src/Hpoll.Admin/Pages/Index.cshtml.cs` and `src/Hpoll.Admin/Pages
 #### Conclusion
 
 All three existing reviews reach the same conclusion and I concur: this issue should be closed as wontfix. The issue describes a real pattern (sequential COUNT queries) but the proposed optimization is a net negative due to increased code complexity, the impossibility of combining cross-table counts in EF Core LINQ, and the unmeasurable performance impact on an admin-only page backed by in-process SQLite.
+
+### claude — 2026-03-01
+
+Closing: Wontfix: premature optimization — SQLite is in-process with no network round-trip, savings would be microseconds

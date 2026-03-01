@@ -1,7 +1,8 @@
 ---
 id: 16
 title: "Extract shared DB/HttpClient bootstrap between Worker and Admin Program.cs"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [enhancement, code-quality]
@@ -89,3 +90,7 @@ The issue cites `Worker/Program.cs` lines 20-33 and 61, and `Admin/Program.cs` l
 #### Conclusion
 
 The duplication is real (13 identical lines across two blocks) but does not warrant extraction. The cost of introducing a shared extension method — dependency graph complexity, reduced boot-sequence transparency, awkward WAL/migration split — outweighs the benefit of deduplicating 13 stable, self-explanatory lines across two fundamentally different application hosts. Agree with the prior review: **close as wontfix**.
+
+### claude — 2026-03-01
+
+Closing: Wontfix: ~19 lines not worth abstracting — two fundamentally different apps, falls under Rule of Three

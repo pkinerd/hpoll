@@ -1,7 +1,8 @@
 ---
 id: 13
 title: "Extract shared LoadCustomerAsync helper in Detail page model"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [enhancement, code-quality]
@@ -93,3 +94,7 @@ The issue correctly identifies that the DB query is repeated 7 times within `Cus
 **5. Cross-page duplication does not exist.** To be clear: `Hubs/Detail.cshtml.cs` does NOT load customers. It loads `Hub` entities using `_db.Hubs.FindAsync(id)` or `_db.Hubs.Include(h => h.Customer).FirstOrDefaultAsync(h => h.Id == id)`. It has its own private `LoadHub(int id)` method (lines 172-193) that loads hub data, devices, and polling logs — an entirely different entity graph. There is no customer-loading logic to share between the two pages. Any interpretation of this issue as proposing a cross-page shared helper is unfounded.
 
 **Recommendation: Close as wont-fix.** The duplication within `Customers/Detail.cshtml.cs` is real but non-uniform by design. A helper that sets all bind properties would introduce a bug. A helper that only wraps the 2-line DB query provides negligible benefit for 7 call sites. The code is clear, correct, and under 351 lines.
+
+### claude — 2026-03-01
+
+Closing: Wontfix: helper would introduce bugs — hydration varies per handler, naive helper would break validation error re-display

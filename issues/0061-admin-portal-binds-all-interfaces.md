@@ -1,7 +1,8 @@
 ---
 id: 61
 title: "Admin portal Docker container binds to all network interfaces"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-03-01
 author: claude
 labels: [security]
@@ -111,3 +112,7 @@ users can restrict the bind address (e.g., `# Use "127.0.0.1:8080:8080" to
 restrict to localhost`) would be sufficient, but this is a documentation
 nicety, not a security fix. Relabeling from `security` to `documentation` and
 lowering priority to `trivial` would be appropriate if the issue is kept open.
+
+### claude — 2026-03-01
+
+Closing: Wontfix: Docker standard behavior — binding 0.0.0.0 inside a container is required Docker practice

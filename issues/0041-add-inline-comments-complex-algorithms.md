@@ -1,7 +1,8 @@
 ---
 id: 41
 title: "Add inline comments for complex algorithms and design decisions"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [documentation]
@@ -103,3 +104,7 @@ Inline comment counts per non-migration source file on `main`: `SendTimeHelper.c
 - The title references "complex algorithms" but none of the cited examples are algorithmically complex
 
 **Recommendation:** Close as wontfix. No action required.
+
+### claude — 2026-03-01
+
+Closing: Wontfix: already commented — most items have inline comments or are self-documenting patterns

@@ -14,15 +14,15 @@
 | [0010](issues/0010-introduce-status-readingtype-devicetype-constants.md) | Introduce string constants or enums for Status, ReadingType, and DeviceType fields | open | medium | enhancement, code-quality |
 | [0011](issues/0011-extract-device-reading-json-parsing.md) | Extract DeviceReading JSON parsing into typed accessor methods | closed | medium | enhancement, code-quality |
 | [0012](issues/0012-extract-hub-apply-token-response.md) | Extract Hub.ApplyTokenResponse to eliminate 3-location token update duplication | open | high | enhancement, code-quality |
-| [0013](issues/0013-extract-load-customer-helper-detail-page.md) | Extract shared LoadCustomerAsync helper in Detail page model | open | low | enhancement, code-quality |
+| [0013](issues/0013-extract-load-customer-helper-detail-page.md) | Extract shared LoadCustomerAsync helper in Detail page model | closed | low | enhancement, code-quality |
 | [0014](issues/0014-extract-http-error-formatting-helper.md) | Extract HttpRequestException error formatting helper | open | low | enhancement, code-quality |
 | [0015](issues/0015-replace-magic-numbers-with-constants.md) | Replace magic numbers and hardcoded color codes with named constants | open | low | enhancement, code-quality |
-| [0016](issues/0016-extract-shared-service-registration.md) | Extract shared DB/HttpClient bootstrap between Worker and Admin Program.cs | open | low | enhancement, code-quality |
+| [0016](issues/0016-extract-shared-service-registration.md) | Extract shared DB/HttpClient bootstrap between Worker and Admin Program.cs | closed | low | enhancement, code-quality |
 | [0017](issues/0017-replace-batch-deletion-with-execute-delete.md) | Replace batch deletion with ExecuteDeleteAsync to avoid materializing rows | closed | high | enhancement, performance |
 | [0018](issues/0018-fix-unbounded-battery-history-query.md) | Fix unbounded battery history query in EmailRenderer | closed | high | bug, performance |
 | [0019](issues/0019-batch-device-creation-polling.md) | Batch device creation in GetOrCreateDeviceAsync to reduce DB round-trips | closed | medium | enhancement, performance |
 | [0020](issues/0020-consolidate-email-renderer-queries.md) | Consolidate sequential ID-gathering queries in EmailRenderer | closed | medium | enhancement, performance |
-| [0021](issues/0021-collapse-sequential-count-queries.md) | Collapse sequential COUNT queries on Dashboard and About pages | open | low | enhancement, performance |
+| [0021](issues/0021-collapse-sequential-count-queries.md) | Collapse sequential COUNT queries on Dashboard and About pages | closed | low | enhancement, performance |
 | [0022](issues/0022-add-polling-log-timestamp-index.md) | Add standalone Timestamp index on PollingLog for cleanup queries | closed | medium | enhancement, performance |
 | [0023](issues/0023-cache-parsed-send-times.md) | Cache parsed SendTimesUtc in EmailSchedulerService constructor | closed | low | enhancement, performance |
 | [0024](issues/0024-tokens-in-html-page-source.md) | Tokens embedded in HTML page source on Hub detail page | closed | high | security |
@@ -42,7 +42,7 @@
 | [0038](issues/0038-add-xml-doc-comments.md) | Add XML documentation comments to public interfaces and services | open | medium | documentation |
 | [0039](issues/0039-add-architecture-overview-to-readme.md) | Add architecture overview and development instructions to README | open | low | documentation |
 | [0040](issues/0040-expand-env-example.md) | Expand .env.example to cover all configuration options | open | low | documentation |
-| [0041](issues/0041-add-inline-comments-complex-algorithms.md) | Add inline comments for complex algorithms and design decisions | open | low | documentation |
+| [0041](issues/0041-add-inline-comments-complex-algorithms.md) | Add inline comments for complex algorithms and design decisions | closed | low | documentation |
 | [0042](issues/0042-add-security-response-headers.md) | Add security response headers (CSP, X-Frame-Options, HSTS) | open | medium | security |
 | [0043](issues/0043-hue-api-response-errors-not-checked.md) | Hue API response errors array is never checked after deserialization | open | low | bug |
 | [0044](issues/0044-silent-catch-blocks-in-json-parsing.md) | Silent catch blocks swallow JSON parsing exceptions without logging | closed | high | bug, code-quality |
@@ -62,13 +62,13 @@
 | [0058](issues/0058-add-ci-coverage-thresholds-codecov-yml.md) | Add CI coverage thresholds and codecov.yml configuration | closed | medium | enhancement, testing |
 | [0059](issues/0059-add-hueapiclient-error-path-tests.md) | Add missing HueApiClient error path tests | closed | medium | testing |
 | [0060](issues/0060-consolidate-docker-ci-tag-building-script.md) | Consolidate Docker CI tag-building script into reusable action or shared script | open | low | enhancement |
-| [0061](issues/0061-admin-portal-binds-all-interfaces.md) | Admin portal Docker container binds to all network interfaces | open | low | security |
-| [0062](issues/0062-sequential-email-sending-limits-scalability.md) | Sequential email sending limits scalability for large customer counts | open | low | enhancement, performance |
+| [0061](issues/0061-admin-portal-binds-all-interfaces.md) | Admin portal Docker container binds to all network interfaces | closed | low | security |
+| [0062](issues/0062-sequential-email-sending-limits-scalability.md) | Sequential email sending limits scalability for large customer counts | closed | low | enhancement, performance |
 | [0063](issues/0063-add-https-redirect-middleware-admin-portal.md) | Add HTTPS redirect middleware for admin portal in production | closed | medium | security |
 | [0064](issues/0064-sanitize-exception-messages-in-polling-log.md) | Sanitize exception messages before persisting in PollingLog | open | low | security |
-| [0065](issues/0065-oauth-callback-signed-state-parameter.md) | OAuth callback should use signed state parameter instead of session-based CSRF | open | low | security, enhancement |
+| [0065](issues/0065-oauth-callback-signed-state-parameter.md) | OAuth callback should use signed state parameter instead of session-based CSRF | closed | low | security, enhancement |
 | [0066](issues/0066-fix-claude-md-inaccuracies.md) | Fix CLAUDE.md inaccuracies: CI trigger pattern and missing battery mention | closed | low | documentation |
-| [0067](issues/0067-entity-defaults-use-datetime-utcnow-at-instantiation.md) | Entity default values use DateTime.UtcNow at instantiation, not persistence time | open | low | enhancement, code-quality |
+| [0067](issues/0067-entity-defaults-use-datetime-utcnow-at-instantiation.md) | Entity default values use DateTime.UtcNow at instantiation, not persistence time | closed | low | enhancement, code-quality |
 | [0068](issues/0068-iemailrenderer-xml-doc-comment-misleading.md) | IEmailRenderer XML doc comment is misleading — hardcodes configurable values | closed | medium | documentation |
 | [0069](issues/0069-polling-service-motion-comment-inaccurate.md) | PollingService motion detection comment is inaccurate per Hue API docs | closed | medium | documentation |
 | [0070](issues/0070-devicereading-comments-missing-battery-type.md) | DeviceReading inline comments outdated — missing battery reading type | closed | medium | documentation |
