@@ -82,19 +82,19 @@ sudo chown -R 1000:1000 data
 ```
 
 Alternatively, if your host user's UID is not 1000, you can set the container
-user to match your host UID in `docker-compose.yml`:
+user to match your host UID by setting `PUID` and `PGID`:
 
 ```yaml
 services:
   worker:
-    user: "${UID}:${GID}"
+    user: "${PUID}:${PGID}"
     # ...
   admin:
-    user: "${UID}:${GID}"
+    user: "${PUID}:${PGID}"
     # ...
 ```
 
-Then run with `UID=$(id -u) GID=$(id -g) docker compose up --build`.
+Then run with `PUID=$(id -u) PGID=$(id -g) docker compose up --build`.
 
 ### Docker Compose (recommended)
 
