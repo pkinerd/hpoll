@@ -1,7 +1,8 @@
 ---
 id: 24
 title: "Tokens embedded in HTML page source on Hub detail page"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [security]
