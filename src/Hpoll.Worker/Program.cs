@@ -96,7 +96,7 @@ using (var scope = host.Services.CreateScope())
     AddBuild("build.run_id", Hpoll.Core.BuildInfo.RunId);
     if (!string.IsNullOrEmpty(Hpoll.Core.BuildInfo.PullRequest))
         AddBuild("build.pull_request", $"#{Hpoll.Core.BuildInfo.PullRequest}");
-    AddBuild("build.built_at", Hpoll.Core.BuildInfo.Timestamp);
+    AddBuild("build.timestamp", Hpoll.Core.BuildInfo.Timestamp);
     AddBuild("build.source", Hpoll.Core.BuildInfo.IsCI ? "CI" : "Local");
     if (buildEntries.Count > 0)
         await systemInfo.SetBatchAsync("Build", buildEntries);

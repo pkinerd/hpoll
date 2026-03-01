@@ -25,8 +25,6 @@ public class AboutModel : PageModel
 
     public List<BuildInfoEntry> BuildEntries { get; set; } = new();
     public List<(string Category, List<SystemInfoEntry> Entries)> Sections { get; set; } = new();
-    public HashSet<string> AdminBuildDiffLabels { get; set; } = new();
-    public HashSet<string> WorkerBuildDiffLabels { get; set; } = new();
 
     public async Task OnGetAsync()
     {
@@ -76,60 +74,6 @@ public class AboutModel : PageModel
         // Always surface the Admin's own Hue callback URL from config
         EnsureAdminCallbackUrl();
 
-        // Highlight differences between Admin and Worker build info
-        ComputeBuildDiffs();
-    }
-
-    private void ComputeBuildDiffs()
-    {
-        var workerBuild = Sections.FirstOrDefault(s => s.Category == "Worker Build");
-        if (workerBuild.Entries == null || BuildEntries.Count == 0)
-            return;
-
-        var workerByLabel = workerBuild.Entries.ToDictionary(e => e.Label, e => e.Value);
-        var adminLabels = BuildEntries.Select(e => e.Label).ToHashSet();
-
-        foreach (var admin in BuildEntries)
-        {
-            if (!workerByLabel.TryGetValue(admin.Label, out var workerValue))
-            {
-                AdminBuildDiffLabels.Add(admin.Label);
-                continue;
-            }
-
-            if (!ValuesMatch(admin.Value, workerValue))
-            {
-                AdminBuildDiffLabels.Add(admin.Label);
-                WorkerBuildDiffLabels.Add(admin.Label);
-            }
-        }
-
-        // Worker entries with no corresponding admin entry
-        foreach (var worker in workerBuild.Entries)
-        {
-            if (!adminLabels.Contains(worker.Label))
-                WorkerBuildDiffLabels.Add(worker.Label);
-        }
-    }
-
-    private static bool ValuesMatch(string adminValue, string workerValue)
-    {
-        if (string.Equals(adminValue, workerValue, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        // Handle date format differences (raw ISO vs "yyyy-MM-dd HH:mm:ss UTC")
-        var normWorker = workerValue.EndsWith(" UTC", StringComparison.Ordinal)
-            ? workerValue[..^4] : workerValue;
-
-        if (DateTime.TryParse(adminValue, null,
-                System.Globalization.DateTimeStyles.RoundtripKind, out var adminDt) &&
-            DateTime.TryParse(normWorker, null,
-                System.Globalization.DateTimeStyles.RoundtripKind, out var workerDt))
-        {
-            return Math.Abs((adminDt - workerDt).TotalSeconds) < 1;
-        }
-
-        return false;
     }
 
     private void EnsureAdminCallbackUrl()
@@ -173,7 +117,7 @@ public class AboutModel : PageModel
         Add("Run ID", BuildInfo.RunId);
         if (!string.IsNullOrEmpty(BuildInfo.PullRequest))
             Add("Pull Request", $"#{BuildInfo.PullRequest}");
-        Add("Built At", BuildInfo.Timestamp);
+        Add("Timestamp", BuildInfo.Timestamp);
         Add("Source", BuildInfo.IsCI ? "CI" : "Local");
     }
 

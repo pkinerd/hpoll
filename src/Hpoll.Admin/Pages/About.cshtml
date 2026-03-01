@@ -4,8 +4,6 @@
     ViewData["Title"] = "About";
 }
 
-<style>.build-diff { color: darkred; }</style>
-
 <h1>About hpoll</h1>
 
 <div class="cards">
@@ -31,7 +29,7 @@
             @foreach (var entry in Model.BuildEntries)
             {
                 <dt>@entry.Label</dt>
-                <dd class="@(Model.AdminBuildDiffLabels.Contains(entry.Label) ? "build-diff" : "")">@entry.Value</dd>
+                <dd>@entry.Value</dd>
             }
         </dl>
     </div>
@@ -53,7 +51,7 @@ else
                 @foreach (var entry in group.Entries)
                 {
                     <dt>@entry.Label</dt>
-                    <dd class="@(group.Category == "Worker Build" && Model.WorkerBuildDiffLabels.Contains(entry.Label) ? "build-diff" : "")">@entry.Value</dd>
+                    <dd>@entry.Value</dd>
                 }
             </dl>
         </div>
