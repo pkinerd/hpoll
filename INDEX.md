@@ -82,7 +82,7 @@
 | [0078](issues/0078-xml-doc-gaps-worker-services-config.md) | XML doc gaps remain on Worker services and configuration classes | open | medium | documentation |
 | [0079](issues/0079-vacuum-into-sql-injection-risk.md) | VACUUM INTO uses string interpolation creating SQL injection risk | open | medium | security |
 | [0080](issues/0080-claude-md-project-structure-inaccuracies.md) | CLAUDE.md project structure has multiple inaccuracies | open | medium | documentation |
-| [0081](issues/0081-login-rate-limiting-lockout-untested.md) | Login rate-limiting lockout path is untested (security-critical) | open | medium | testing, security |
+| [0081](issues/0081-login-rate-limiting-lockout-untested.md) | Login rate-limiting lockout path is untested (security-critical) | open | high | testing, security |
 | [0082](issues/0082-register-hub-handler-uncovered.md) | OnPostRegisterHubAsync OAuth handler entirely uncovered by tests | open | medium | testing, security |
 | [0083](issues/0083-misleading-motion-report-changed-comment.md) | Misleading HueMotionReport.Changed XML doc comment | open | medium | documentation |
 | [0084](issues/0084-loginmodel-tests-global-env-isolation.md) | LoginModel tests use global Environment creating test isolation risk | open | medium | testing, code-quality |
