@@ -71,3 +71,46 @@ Confirmed: `docker-compose.yml` uses `${PUID:-1000}:${PGID:-1000}` but the READM
 1. **Close this issue.**
 2. **Create a new bug issue** for the PUID/PGID vs UID/GID mismatch in the README (item #6). This is a concrete fix: change `UID` to `PUID` and `GID` to `PGID` in the README's docker-compose user override instructions.
 3. Optionally, add a single line to the README's "Building from source" section: "For development setup, testing, and code conventions, see `CLAUDE.md`." This bridges the two documents without duplicating content.
+
+### claude (critical review) — 2026-03-01
+
+**Verdict: PARTIALLY_VALID but significantly overstated, contains factual errors, and should be decomposed.**
+
+Both prior reviews reached the right general conclusion (partially valid, should be split) but I want to correct factual claims in the issue itself and provide a more nuanced assessment.
+
+#### Factual Errors in the Issue
+
+- **README line count is wrong.** The issue states "The README (446 lines)" but `README.md` on `main` is 329 lines.
+- **Background service count is wrong.** Item 2 claims "3 concurrent services (`PollingService`, `TokenRefreshService`, `EmailSchedulerService`)" but `src/Hpoll.Worker/Program.cs` lines 55-58 register **4** hosted services. The issue omits `DatabaseBackupService`. This undermines the issue's credibility as a documentation accuracy review when it itself contains inaccurate claims about the codebase.
+
+#### Item-by-Item Assessment Against the Codebase
+
+**1. Architecture overview -- Low value, redundant with CLAUDE.md.**
+`CLAUDE.md` lines 22-31 already provide the project structure tree with annotations for all 5 projects. The README is structured as an operator/deployment guide (prerequisites, configuration table, Docker instructions, admin panel usage). Architecture internals serve developers, who should be looking at `CLAUDE.md`. Duplicating architecture content into the README creates a maintenance burden and drift risk. The prior critical-review comment is correct on this point.
+
+**2. Background services -- Low value, factually wrong in the issue.**
+Beyond the wrong service count (3 claimed, 4 actual), this is implementation detail that operators do not need. The README already documents the *observable behavior* through configuration settings (`Polling__IntervalMinutes`, `Polling__TokenRefreshCheckHours`, `Email__SendTimesUtc`, etc.) in the settings reference table (README lines 25-51). `CLAUDE.md` line 46 mentions the `BackgroundService` pattern in Code Conventions. Adding class names to the README adds no operational value.
+
+**3. Development setup -- Genuinely valid, most actionable item.**
+The README's "Building from source" section (lines 252-258) contains only `dotnet restore`, `dotnet build -c Release`, and `dotnet run --project src/Hpoll.Worker`. There is no `dotnet test`, no mention of the test projects (`Hpoll.Core.Tests`, `Hpoll.Worker.Tests`), and no coverage instructions. `CLAUDE.md` covers this thoroughly at lines 35-47, but `CLAUDE.md` is a Claude-agent-specific configuration file, not a general developer guide. Its name and structure (including Claude-specific skills/slash-commands) signal that it is tooling for AI coding agents, not the conventional place a human contributor would look for "how do I run the tests." A minimal test command in the README's build section, or at minimum a cross-reference ("See CLAUDE.md for full build, test, and development instructions"), would help human developers. This should be filed as a standalone low-priority improvement.
+
+**4. Troubleshooting -- Speculative, no demonstrated need.**
+The suggested failure modes are plausible but speculative. Troubleshooting documentation is most valuable when driven by actual user-reported issues. Filing this as an issue without evidence of user confusion is premature. Drop or defer.
+
+**5. Battery reading type comment -- Valid but is a source code bug, not a README issue.**
+`src/Hpoll.Data/Entities/DeviceReading.cs` line 9: `public string ReadingType { get; set; } = string.Empty; // "motion" or "temperature"` -- the comment omits "battery", but `src/Hpoll.Worker/Services/PollingService.cs` line 221 stores `ReadingType = "battery"`. This is a one-line code comment fix. It has nothing to do with the README or architecture documentation. It should be its own issue (or just a one-line PR).
+
+**6. PUID/PGID naming mismatch -- Valid, genuine documentation bug.**
+Confirmed: `docker-compose.yml` lines 4 and 15 use `${PUID:-1000}:${PGID:-1000}`. README lines 90 and 93 suggest `user: "${UID}:${GID}"` and line 97 instructs `UID=$(id -u) GID=$(id -g) docker compose up --build`. Because the actual compose file reads `PUID`/`PGID` (not `UID`/`GID`), a user following the README instructions would set environment variables that the compose file ignores, and the container would silently fall back to UID 1000. This is a real, user-facing bug. It should be its own standalone issue with a concrete fix: update the README to use `PUID`/`PGID`.
+
+#### Structural Problems
+
+This issue bundles 6 unrelated items with different types (code bug, doc bug, feature requests, speculative enhancements) and different priorities into one ticket. The title "Add architecture overview and development instructions to README" does not describe half the items (battery comment, PUID mismatch, troubleshooting). This makes the issue difficult to act on, assign, or close meaningfully.
+
+#### Recommendation
+
+1. **Close this issue** as overly broad and partially inaccurate.
+2. **File a standalone bug** for the PUID/PGID mismatch (item 6) -- concrete, actionable, user-facing.
+3. **File a standalone bug** for the DeviceReading comment (item 5) -- one-line code fix.
+4. **Optionally file a low-priority issue** to add `dotnet test` and a CLAUDE.md cross-reference to the README's "Building from source" section (item 3).
+5. **Drop items 1, 2, and 4** -- they either duplicate CLAUDE.md or are speculative.
