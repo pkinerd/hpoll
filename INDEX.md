@@ -78,7 +78,7 @@
 | [0074](issues/0074-refactor-inline-js-css-and-add-csp.md) | Refactor inline JS/CSS out of Razor pages and add Content-Security-Policy header | open | low | security, enhancement |
 | [0075](issues/0075-activity-window-duplication-persists.md) | Activity window duplication persists — ActivitySummaryBuilder never extracted | open | low | enhancement, code-quality |
 | [0076](issues/0076-inconsistent-timeprovider-usage.md) | Inconsistent TimeProvider vs DateTime.UtcNow usage across codebase | open | high | enhancement, code-quality |
-| [0077](issues/0077-oauthcallback-razor-view-zero-coverage.md) | OAuthCallback Razor view has 0% test coverage | open | high | testing |
+| [0077](issues/0077-oauthcallback-razor-view-zero-coverage.md) | OAuthCallback Razor view has 0% test coverage | open | low | testing |
 | [0078](issues/0078-xml-doc-gaps-worker-services-config.md) | XML doc gaps remain on Worker services and configuration classes | open | medium | documentation |
 | [0079](issues/0079-vacuum-into-sql-injection-risk.md) | VACUUM INTO uses string interpolation creating SQL injection risk | open | medium | security |
 | [0080](issues/0080-claude-md-project-structure-inaccuracies.md) | CLAUDE.md project structure has multiple inaccuracies | open | medium | documentation |
