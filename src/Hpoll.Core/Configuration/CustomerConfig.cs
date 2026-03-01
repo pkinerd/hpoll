@@ -55,3 +55,10 @@ public class HueAppSettings
     public string ClientSecret { get; set; } = string.Empty;
     public string CallbackUrl { get; set; } = string.Empty;
 }
+
+public class BackupSettings
+{
+    public int IntervalHours { get; set; } = 24;
+    public int RetentionCount { get; set; } = 7;
+    public string SubDirectory { get; set; } = "backups";
+}
