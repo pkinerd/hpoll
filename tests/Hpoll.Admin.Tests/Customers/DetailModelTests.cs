@@ -267,4 +267,100 @@ public class DetailModelTests : IDisposable
 
         Assert.IsType<NotFoundResult>(result);
     }
+
+    [Fact]
+    public async Task OnPostUpdateTimeZoneAsync_ValidTimezone_UpdatesCustomer()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditTimeZoneId = "America/New_York";
+
+        var result = await model.OnPostUpdateTimeZoneAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal("Timezone updated.", model.SuccessMessage);
+
+        var updated = await _db.Customers.FindAsync(customer.Id);
+        Assert.Equal("America/New_York", updated!.TimeZoneId);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateTimeZoneAsync_InvalidTimezone_ReturnsError()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditTimeZoneId = "Invalid/Timezone";
+
+        var result = await model.OnPostUpdateTimeZoneAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("EditTimeZoneId"));
+    }
+
+    [Fact]
+    public async Task OnPostUpdateTimeZoneAsync_InvalidCustomer_ReturnsNotFound()
+    {
+        var model = CreatePageModel();
+        model.EditTimeZoneId = "UTC";
+
+        var result = await model.OnPostUpdateTimeZoneAsync(999);
+
+        Assert.IsType<NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateTimeZoneAsync_RecomputesNextSendTime()
+    {
+        var customer = await SeedCustomerAsync();
+        customer.SendTimesLocal = "19:30";
+        customer.NextSendTimeUtc = DateTime.UtcNow.AddDays(1);
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        model.EditTimeZoneId = "America/New_York";
+
+        await model.OnPostUpdateTimeZoneAsync(customer.Id);
+
+        var updated = await _db.Customers.FindAsync(customer.Id);
+        Assert.NotNull(updated!.NextSendTimeUtc);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_DefaultSendTimesFromSystemInfo_WhenAvailable()
+    {
+        var customer = await SeedCustomerAsync();
+        _db.SystemInfo.Add(new SystemInfo
+        {
+            Key = "email.send_times_utc",
+            Value = "08:00, 20:00",
+            Category = "Email"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Equal("08:00, 20:00 UTC", model.DefaultSendTimesDisplay);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_DefaultSendTimesFallback_WhenNoSystemInfo()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var emailSettings = Options.Create(new EmailSettings { SendTimesUtc = new List<string> { "09:00" } });
+        var model = new DetailModel(_db, Options.Create(new HueAppSettings()), emailSettings, NullLogger<DetailModel>.Instance);
+        model.PageContext = new PageContext
+        {
+            ActionDescriptor = new CompiledPageActionDescriptor(),
+            HttpContext = new DefaultHttpContext(),
+            RouteData = new RouteData()
+        };
+
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Equal("09:00 UTC", model.DefaultSendTimesDisplay);
+    }
 }

@@ -44,6 +44,9 @@ public class DetailModel : PageModel
     [BindProperty]
     public string? EditSendTimesLocal { get; set; }
 
+    [BindProperty]
+    public string? EditTimeZoneId { get; set; }
+
     public string? SuccessMessage { get; set; }
     public string DefaultSendTimesDisplay { get; set; } = string.Empty;
     public string? OAuthUrl { get; set; }
@@ -64,7 +67,8 @@ public class DetailModel : PageModel
         EditCcEmails = customer.CcEmails;
         EditBccEmails = customer.BccEmails;
         EditSendTimesLocal = customer.SendTimesLocal;
-        DefaultSendTimesDisplay = string.Join(", ", _emailSettings.SendTimesUtc.Select(t => t + " UTC"));
+        EditTimeZoneId = customer.TimeZoneId;
+        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
 
         if (activity == true)
         {
@@ -126,7 +130,7 @@ public class DetailModel : PageModel
         EditName = customer.Name;
         EditCcEmails = customer.CcEmails;
         EditBccEmails = customer.BccEmails;
-        DefaultSendTimesDisplay = string.Join(", ", _emailSettings.SendTimesUtc.Select(t => t + " UTC"));
+        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
 
         var newSendTimes = (EditSendTimesLocal ?? string.Empty).Trim();
 
@@ -152,6 +156,45 @@ public class DetailModel : PageModel
 
         EditSendTimesLocal = customer.SendTimesLocal;
         SuccessMessage = $"Send times updated. Next email: {customer.NextSendTimeUtc:yyyy-MM-dd HH:mm} UTC.";
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostUpdateTimeZoneAsync(int id)
+    {
+        var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
+        if (customer == null) return NotFound();
+        Customer = customer;
+        EditEmail = customer.Email;
+        EditName = customer.Name;
+        EditCcEmails = customer.CcEmails;
+        EditBccEmails = customer.BccEmails;
+        EditSendTimesLocal = customer.SendTimesLocal;
+        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
+
+        var newTzId = (EditTimeZoneId ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(newTzId))
+        {
+            ModelState.AddModelError(nameof(EditTimeZoneId), "Timezone is required.");
+            return Page();
+        }
+
+        try
+        {
+            TimeZoneInfo.FindSystemTimeZoneById(newTzId);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            ModelState.AddModelError(nameof(EditTimeZoneId), "Invalid timezone.");
+            return Page();
+        }
+
+        customer.TimeZoneId = newTzId;
+        customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
+            customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, _emailSettings.SendTimesUtc);
+        customer.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        SuccessMessage = "Timezone updated.";
         return Page();
     }
 
@@ -196,6 +239,15 @@ public class DetailModel : PageModel
             $"&redirect_uri={Uri.EscapeDataString(_hueApp.CallbackUrl)}";
 
         return Page();
+    }
+
+    private async Task<string> GetDefaultSendTimesDisplayAsync()
+    {
+        var entry = await _db.SystemInfo
+            .FirstOrDefaultAsync(e => e.Key == "email.send_times_utc");
+        if (entry != null && !string.IsNullOrWhiteSpace(entry.Value))
+            return entry.Value + " UTC";
+        return string.Join(", ", _emailSettings.SendTimesUtc.Select(t => t + " UTC"));
     }
 
     private async Task LoadActivitySummaryAsync(Customer customer)

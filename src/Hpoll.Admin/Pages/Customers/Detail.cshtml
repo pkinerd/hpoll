@@ -14,7 +14,7 @@
 <div class="card">
     <dl>
         <dt>Status</dt><dd><span class="status status-@Model.Customer.Status">@Model.Customer.Status</span></dd>
-        <dt>Timezone</dt><dd>@Model.Customer.TimeZoneId</dd>
+        <dt>Timezone</dt><dd>@(TimeZoneInfo.FindSystemTimeZoneById(Model.Customer.TimeZoneId).DisplayName)</dd>
         <dt>Email Send Times</dt>
         <dd>
             @if (!string.IsNullOrWhiteSpace(Model.Customer.SendTimesLocal))
@@ -49,6 +49,22 @@
             <span asp-validation-for="EditName" style="color: #dc2626; font-size: 0.85rem;"></span>
         </div>
         <button type="submit" class="btn">Update Name</button>
+    </form>
+</div>
+
+<div class="card" style="max-width: 500px;">
+    <form method="post" asp-page-handler="UpdateTimeZone" asp-route-id="@Model.Customer.Id">
+        <div class="form-group">
+            <label asp-for="EditTimeZoneId">Timezone</label>
+            <select asp-for="EditTimeZoneId">
+                @foreach (var tz in TimeZoneInfo.GetSystemTimeZones().OrderBy(t => t.BaseUtcOffset))
+                {
+                    <option value="@tz.Id">@tz.DisplayName</option>
+                }
+            </select>
+            <span asp-validation-for="EditTimeZoneId" style="color: #dc2626; font-size: 0.85rem;"></span>
+        </div>
+        <button type="submit" class="btn">Update Timezone</button>
     </form>
 </div>
 
