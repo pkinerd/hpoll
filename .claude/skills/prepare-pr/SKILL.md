@@ -33,8 +33,11 @@ Generate pull request information for the current branch and present it as copya
 
 Based on the changes, generate:
 
-1. **PR URL** — the GitHub "new pull request" URL:
-   `https://github.com/<org>/<repo>/compare/<target-branch>...<current-branch>?expand=1`
+1. **PR URL** — the GitHub "new pull request" URL with pre-filled title and description:
+   `https://github.com/<org>/<repo>/compare/<target-branch>...<current-branch>?expand=1&title=<URL-encoded-title>&body=<URL-encoded-description>`
+   - The `title` parameter must be URL-encoded (e.g. spaces → `%20`, `&` → `%26`).
+   - The `body` parameter must be URL-encoded (the full PR description markdown).
+   - Use a script to URL-encode these values — do NOT encode by hand. For example, use `python3 -c "import urllib.parse; print(urllib.parse.quote(text, safe=''))"` to encode each value.
    IMPORTANT: Use the real `github.com` domain. Do NOT use any local proxy URL.
 
 2. **PR Title** — a concise title (under 72 characters) summarizing the change. Use imperative mood (e.g. "Add offline sync resolver" not "Added offline sync resolver").
@@ -52,7 +55,7 @@ Here is a concrete example showing the expected output (replace values with the 
 
 ---
 
-**PR URL:** [Open PR on GitHub](https://github.com/example-org/example-repo/compare/main...feature-branch?expand=1)
+**PR URL:** [Open PR on GitHub](https://github.com/example-org/example-repo/compare/main...feature-branch?expand=1&title=Add%20offline%20sync%20resolver&body=%23%23%20Summary%0A...)
 
 **Title** (copyable):
 ```
