@@ -1,7 +1,8 @@
 ---
 id: 10
 title: "Introduce string constants or enums for Status, ReadingType, and DeviceType fields"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [enhancement, code-quality]
@@ -79,3 +80,16 @@ The issue correctly proposes separate `CustomerStatus` and `HubStatus` types, si
 #### 6. Priority assessment
 
 Medium priority is appropriate. There is no active bug — the risk is typo-based errors in future development. The codebase has been consistent with its string values so far. The benefit is purely preventive: compile-time safety, IDE autocompletion, and elimination of the stale comment problem. The scope of change (13 source files + 10 test files = 23 files) is substantial but mechanical.
+
+### claude — 2026-03-01
+
+**Resolved** in branch `claude/review-issue-10-54v8b` (commit d785fc9).
+
+Implemented as static string constant classes in `Hpoll.Core.Constants` (the pragmatic approach recommended by the critical review — no EF Core changes needed):
+
+- `CustomerStatus` (Active, Inactive)
+- `HubStatus` (Active, Inactive, NeedsReauth)
+- `ReadingTypes` (Motion, Temperature, Battery)
+- `DeviceTypes` (MotionSensor, TemperatureSensor, Battery)
+
+Updated 15 source files + 10 test files (29 total). Added `@using Hpoll.Core.Constants` to `_ViewImports.cshtml` for Razor views. Fixed stale comment on `DeviceReading.cs`. All 240 tests pass.
