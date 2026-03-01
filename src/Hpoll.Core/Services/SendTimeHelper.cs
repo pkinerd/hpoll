@@ -27,7 +27,8 @@ public static class SendTimeHelper
             return ComputeFromUtcTimes(defaultSendTimesUtc, nowUtc);
         }
 
-        return null;
+        // Last resort: default to 08:00 UTC
+        return ComputeFromUtcTimes(new List<string> { "08:00" }, nowUtc);
     }
 
     /// <summary>

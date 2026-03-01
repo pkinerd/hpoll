@@ -38,7 +38,7 @@ public class PollingSettings
 
 public class EmailSettings
 {
-    public List<string> SendTimesUtc { get; set; } = new() { "08:00" };
+    public List<string> SendTimesUtc { get; set; } = new();
     public string FromAddress { get; set; } = string.Empty;
     public string AwsRegion { get; set; } = "us-east-1";
     public int BatteryAlertThreshold { get; set; } = 60;
@@ -54,4 +54,11 @@ public class HueAppSettings
     public string ClientId { get; set; } = string.Empty;
     public string ClientSecret { get; set; } = string.Empty;
     public string CallbackUrl { get; set; } = string.Empty;
+}
+
+public class BackupSettings
+{
+    public int IntervalHours { get; set; } = 24;
+    public int RetentionCount { get; set; } = 7;
+    public string SubDirectory { get; set; } = "backups";
 }
