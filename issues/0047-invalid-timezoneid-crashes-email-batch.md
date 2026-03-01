@@ -1,7 +1,8 @@
 ---
 id: 47
 title: "Invalid TimeZoneId crashes email sending for all subsequent customers"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [bug]
@@ -21,3 +22,7 @@ However, the error message logged at line 137 (`"Failed to send email to {Email}
 **Remediation:** Add specific handling for `TimeZoneNotFoundException` with a clear log message, or validate timezone IDs at data entry time in the admin portal's customer create/edit pages.
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Closed — not a bug.** Review confirmed the exception IS caught by the per-customer try-catch block (line 135), so invalid timezones do NOT crash the batch. Timezone is validated at customer creation time. The only real gap is the generic log message, which is a minor observability improvement, not a bug.

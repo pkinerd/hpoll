@@ -1,7 +1,8 @@
 ---
 id: 19
 title: "Batch device creation in GetOrCreateDeviceAsync to reduce DB round-trips"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [enhancement, performance]
@@ -17,3 +18,7 @@ Additionally, the same physical Hue device can appear as both a motion sensor an
 **Recommendation:** Collect all new devices and batch-insert them before processing readings, or save once at the end of the device-discovery phase.
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Closed — not a bug.** Review found this is a premature optimization concern, not a correctness issue. The in-memory lookup via `hub.Devices` already prevents duplicate device creation. The extra `SaveChangesAsync` calls only occur on first poll (~3 round-trips per hub) and are negligible in practice.

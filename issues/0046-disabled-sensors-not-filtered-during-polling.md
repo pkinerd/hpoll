@@ -1,7 +1,8 @@
 ---
 id: 46
 title: "Disabled sensors are not filtered during polling"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [bug]
@@ -21,3 +22,7 @@ Per the Hue CLIP API documentation: `enabled` indicates "true when sensor is act
 **Remediation:** Add `if (!motion.Enabled) continue;` and `if (!temp.Enabled) continue;` checks before processing sensor data.
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Fixed.** Added `!motion.Enabled` and `!temp.Enabled` checks before processing sensor data in `PollingService.PollHubAsync`. Added tests for both disabled motion and disabled temperature sensors.

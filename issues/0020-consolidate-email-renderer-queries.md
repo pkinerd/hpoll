@@ -1,7 +1,8 @@
 ---
 id: 20
 title: "Consolidate sequential ID-gathering queries in EmailRenderer"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [enhancement, performance]
@@ -44,3 +45,7 @@ var readings = await _db.DeviceReadings
 ```
 
 This eliminates three optimizations in one: two DB round-trips removed (hub IDs + device IDs queries), unnecessary reading types excluded at DB level, and change tracking disabled for read-only data. The same fix applies to `Detail.cshtml.cs`.
+
+### claude — 2026-03-01
+
+**Partially fixed, closing.** Added `ReadingType` filter at DB level and `.AsNoTracking()` to activity summary queries in both `EmailRenderer` and `Detail.cshtml.cs`. The full navigation-property query consolidation was deferred as it provides marginal benefit over the targeted filter fix.

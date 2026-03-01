@@ -1,7 +1,8 @@
 ---
 id: 51
 title: "BatteryAlertThreshold boundary condition — device at exactly threshold level is neither shown nor alerted"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [bug]
@@ -31,3 +32,7 @@ This boundary condition likely does not match the intended behavior — a device
 **Remediation:** Change `<` to `<=` for the alert threshold check: `b.BatteryLevel <= batteryAlertThreshold`. Also review whether `BatteryAlertThreshold` and `BatteryLevelCritical` should be consolidated into a single setting since they serve overlapping purposes with identical defaults.
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Fixed.** Changed `<` to `<=` for both `batteryAlertThreshold` and `batteryLevelCritical`/`batteryLevelWarning` comparisons. Devices at exactly the threshold are now shown and colored correctly. Added boundary condition test at exactly 30%.

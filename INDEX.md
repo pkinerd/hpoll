@@ -18,12 +18,12 @@
 | [0014](issues/0014-extract-http-error-formatting-helper.md) | Extract HttpRequestException error formatting helper | open | low | enhancement, code-quality |
 | [0015](issues/0015-replace-magic-numbers-with-constants.md) | Replace magic numbers and hardcoded color codes with named constants | open | medium | enhancement, code-quality |
 | [0016](issues/0016-extract-shared-service-registration.md) | Extract shared DB/HttpClient bootstrap between Worker and Admin Program.cs | open | low | enhancement, code-quality |
-| [0017](issues/0017-replace-batch-deletion-with-execute-delete.md) | Replace batch deletion with ExecuteDeleteAsync to avoid materializing rows | open | high | enhancement, performance |
+| [0017](issues/0017-replace-batch-deletion-with-execute-delete.md) | Replace batch deletion with ExecuteDeleteAsync to avoid materializing rows | closed | high | enhancement, performance |
 | [0018](issues/0018-fix-unbounded-battery-history-query.md) | Fix unbounded battery history query in EmailRenderer | closed | high | bug, performance |
-| [0019](issues/0019-batch-device-creation-polling.md) | Batch device creation in GetOrCreateDeviceAsync to reduce DB round-trips | open | medium | enhancement, performance |
-| [0020](issues/0020-consolidate-email-renderer-queries.md) | Consolidate sequential ID-gathering queries in EmailRenderer | open | medium | enhancement, performance |
+| [0019](issues/0019-batch-device-creation-polling.md) | Batch device creation in GetOrCreateDeviceAsync to reduce DB round-trips | closed | medium | enhancement, performance |
+| [0020](issues/0020-consolidate-email-renderer-queries.md) | Consolidate sequential ID-gathering queries in EmailRenderer | closed | medium | enhancement, performance |
 | [0021](issues/0021-collapse-sequential-count-queries.md) | Collapse sequential COUNT queries on Dashboard and About pages | open | low | enhancement, performance |
-| [0022](issues/0022-add-polling-log-timestamp-index.md) | Add standalone Timestamp index on PollingLog for cleanup queries | open | medium | enhancement, performance |
+| [0022](issues/0022-add-polling-log-timestamp-index.md) | Add standalone Timestamp index on PollingLog for cleanup queries | closed | medium | enhancement, performance |
 | [0023](issues/0023-cache-parsed-send-times.md) | Cache parsed SendTimesUtc in EmailSchedulerService constructor | open | low | enhancement, performance |
 | [0024](issues/0024-tokens-in-html-page-source.md) | Tokens embedded in HTML page source on Hub detail page | closed | high | security |
 | [0025](issues/0025-logout-csrf-antiforgery.md) | Logout endpoint lacks antiforgery validation (CSRF logout) | open | medium | security |
@@ -47,12 +47,12 @@
 | [0043](issues/0043-hue-api-response-errors-not-checked.md) | Hue API response errors array is never checked after deserialization | open | medium | bug |
 | [0044](issues/0044-silent-catch-blocks-in-json-parsing.md) | Silent catch blocks swallow JSON parsing exceptions without logging | closed | high | bug, code-quality |
 | [0045](issues/0045-polling-401-no-immediate-token-refresh.md) | 401 during polling does not trigger immediate token refresh or status change | closed | high | bug |
-| [0046](issues/0046-disabled-sensors-not-filtered-during-polling.md) | Disabled sensors are not filtered during polling | open | medium | bug |
-| [0047](issues/0047-invalid-timezoneid-crashes-email-batch.md) | Invalid TimeZoneId crashes email sending for all subsequent customers | open | medium | bug |
+| [0046](issues/0046-disabled-sensors-not-filtered-during-polling.md) | Disabled sensors are not filtered during polling | closed | medium | bug |
+| [0047](issues/0047-invalid-timezoneid-crashes-email-batch.md) | Invalid TimeZoneId crashes email sending for all subsequent customers | closed | medium | bug |
 | [0048](issues/0048-persist-data-protection-keys-secure-session-cookie.md) | Persist Data Protection keys and add Secure flag to session cookie | open | medium | security |
 | [0049](issues/0049-health-evaluator-dead-code.md) | HealthEvaluator class is dead code — never registered or used | closed | low | code-quality |
 | [0050](issues/0050-remove-orphaned-entrypoint-sh.md) | Remove or fix orphaned entrypoint.sh | closed | low | bug |
-| [0051](issues/0051-battery-threshold-boundary-condition.md) | BatteryAlertThreshold boundary condition — device at exactly threshold level is neither shown nor alerted | open | medium | bug |
+| [0051](issues/0051-battery-threshold-boundary-condition.md) | BatteryAlertThreshold boundary condition — device at exactly threshold level is neither shown nor alerted | closed | medium | bug |
 | [0052](issues/0052-pin-dependency-versions-reproducible-builds.md) | Pin NuGet and Docker dependency versions for reproducible builds | open | low | security, enhancement |
 | [0053](issues/0053-register-app-leaks-response-body-in-exception.md) | RegisterApplicationAsync leaks full Hue API response body in exception message | closed | medium | bug, security |
 | [0054](issues/0054-email-message-model-simplify-sender-interface.md) | Introduce EmailMessage model to simplify IEmailSender interface | open | medium | enhancement, code-quality |
