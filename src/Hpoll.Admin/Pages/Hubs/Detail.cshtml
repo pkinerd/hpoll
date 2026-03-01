@@ -31,11 +31,11 @@
 
 <div class="actions">
     <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@Model.Hub.Id" style="display:inline;">
-        @if (Model.Hub.Status == "active")
+        @if (Model.Hub.Status == HubStatus.Active)
         {
             <button type="submit" class="btn btn-danger">Deactivate</button>
         }
-        else if (Model.Hub.Status == "inactive")
+        else if (Model.Hub.Status == HubStatus.Inactive)
         {
             <button type="submit" class="btn btn-success">Reactivate</button>
         }
@@ -46,14 +46,14 @@
     <form method="post" asp-page-handler="TestConnection" asp-route-id="@Model.Hub.Id" style="display:inline;">
         <button type="submit" class="btn btn-primary">Test Connection</button>
     </form>
-    @if (Model.Hub.Status == "needs_reauth")
+    @if (Model.Hub.Status == HubStatus.NeedsReauth)
     {
         <form method="post" asp-page-handler="ClearReauth" asp-route-id="@Model.Hub.Id" style="display:inline;">
             <button type="submit" class="btn btn-success">Clear Needs Re-auth</button>
         </form>
     }
     @{
-        var canDelete = Model.Hub.Status == "inactive"
+        var canDelete = Model.Hub.Status == HubStatus.Inactive
             && Model.Hub.DeactivatedAt.HasValue
             && (DateTime.UtcNow - Model.Hub.DeactivatedAt.Value).TotalMinutes >= 10;
     }
@@ -61,7 +61,7 @@
           onsubmit="return confirm('Delete this hub and all its data? This cannot be undone.');">
         <button type="submit" class="btn btn-danger" @(canDelete ? "" : "disabled")>Delete Hub</button>
     </form>
-    @if (Model.Hub.Status == "inactive" && Model.Hub.DeactivatedAt.HasValue && !canDelete)
+    @if (Model.Hub.Status == HubStatus.Inactive && Model.Hub.DeactivatedAt.HasValue && !canDelete)
     {
         var minutesRemaining = 10 - (DateTime.UtcNow - Model.Hub.DeactivatedAt.Value).TotalMinutes;
         <span style="font-size: 0.8rem; color: #666; margin-left: 0.5rem;">Available in @($"{minutesRemaining:F0}m")</span>

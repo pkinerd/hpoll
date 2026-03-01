@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Services;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
@@ -51,10 +52,11 @@ public class DetailModel : PageModel
     public string DefaultSendTimesDisplay { get; set; } = string.Empty;
     public string? OAuthUrl { get; set; }
     public bool ShowActivitySummary { get; set; }
+    public bool EditingTimeZone { get; set; }
     public List<ActivityWindow> ActivityWindows { get; set; } = new();
     public int MotionSensorCount { get; set; }
 
-    public async Task<IActionResult> OnGetAsync(int id, bool? activity = null)
+    public async Task<IActionResult> OnGetAsync(int id, bool? activity = null, bool editTz = false)
     {
         var customer = await _db.Customers
             .Include(c => c.Hubs)
@@ -68,6 +70,7 @@ public class DetailModel : PageModel
         EditBccEmails = customer.BccEmails;
         EditSendTimesLocal = customer.SendTimesLocal;
         EditTimeZoneId = customer.TimeZoneId;
+        EditingTimeZone = editTz;
         DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
 
         if (activity == true)
@@ -175,6 +178,7 @@ public class DetailModel : PageModel
         var newTzId = (EditTimeZoneId ?? string.Empty).Trim();
         if (string.IsNullOrEmpty(newTzId))
         {
+            EditingTimeZone = true;
             ModelState.AddModelError(nameof(EditTimeZoneId), "Timezone is required.");
             return Page();
         }
@@ -185,6 +189,7 @@ public class DetailModel : PageModel
         }
         catch (TimeZoneNotFoundException)
         {
+            EditingTimeZone = true;
             ModelState.AddModelError(nameof(EditTimeZoneId), "Invalid timezone.");
             return Page();
         }
@@ -205,7 +210,7 @@ public class DetailModel : PageModel
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
 
-        customer.Status = customer.Status == "active" ? "inactive" : "active";
+        customer.Status = customer.Status == CustomerStatus.Active ? CustomerStatus.Inactive : CustomerStatus.Active;
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
@@ -280,7 +285,7 @@ public class DetailModel : PageModel
         var bucketStartLocal = bucketEndLocal.AddHours(-totalHours);
 
         var hubIds = await _db.Hubs
-            .Where(h => h.CustomerId == customer.Id && h.Status == "active")
+            .Where(h => h.CustomerId == customer.Id && h.Status == HubStatus.Active)
             .Select(h => h.Id)
             .ToListAsync();
 
@@ -290,13 +295,13 @@ public class DetailModel : PageModel
             .ToListAsync();
 
         MotionSensorCount = await _db.Devices
-            .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == "motion_sensor")
+            .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == DeviceTypes.MotionSensor)
             .CountAsync();
 
         var readings = await _db.DeviceReadings
             .Where(r => deviceIds.Contains(r.DeviceId)
                 && r.Timestamp >= startUtc && r.Timestamp < nowUtc
-                && (r.ReadingType == "motion" || r.ReadingType == "temperature"))
+                && (r.ReadingType == ReadingTypes.Motion || r.ReadingType == ReadingTypes.Temperature))
             .AsNoTracking()
             .ToListAsync();
 
@@ -308,8 +313,8 @@ public class DetailModel : PageModel
             var windowEndUtc = TimeZoneInfo.ConvertTimeToUtc(windowEndLocal, tz);
 
             var windowReadings = readings.Where(r => r.Timestamp >= windowStartUtc && r.Timestamp < windowEndUtc).ToList();
-            var motionReadings = windowReadings.Where(r => r.ReadingType == "motion").ToList();
-            var tempReadings = windowReadings.Where(r => r.ReadingType == "temperature").ToList();
+            var motionReadings = windowReadings.Where(r => r.ReadingType == ReadingTypes.Motion).ToList();
+            var tempReadings = windowReadings.Where(r => r.ReadingType == ReadingTypes.Temperature).ToList();
 
             var devicesWithMotion = motionReadings
                 .Where(r => {

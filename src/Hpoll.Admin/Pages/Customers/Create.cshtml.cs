@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Services;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
@@ -67,7 +68,7 @@ public class CreateModel : PageModel
             Email = Email,
             TimeZoneId = TimeZoneId,
             SendTimesLocal = sendTimes,
-            Status = "active"
+            Status = CustomerStatus.Active
         };
 
         customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(

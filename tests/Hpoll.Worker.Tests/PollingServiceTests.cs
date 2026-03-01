@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Models;
 using Hpoll.Data;
@@ -74,7 +75,7 @@ public class PollingServiceTests : IDisposable
             AccessToken = "access-token",
             RefreshToken = "refresh-token",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active",
+            Status = HubStatus.Active,
             LastBatteryPollUtc = lastBatteryPollUtc
         };
         db.Hubs.Add(hub);
@@ -190,7 +191,7 @@ public class PollingServiceTests : IDisposable
         await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
 
         using var db = CreateDb();
-        var motionReadings = await db.DeviceReadings.Where(r => r.ReadingType == "motion").ToListAsync();
+        var motionReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Motion).ToListAsync();
         Assert.NotEmpty(motionReadings);
     }
 
@@ -204,7 +205,7 @@ public class PollingServiceTests : IDisposable
         await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
 
         using var db = CreateDb();
-        var tempReadings = await db.DeviceReadings.Where(r => r.ReadingType == "temperature").ToListAsync();
+        var tempReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Temperature).ToListAsync();
         Assert.NotEmpty(tempReadings);
     }
 
@@ -294,7 +295,7 @@ public class PollingServiceTests : IDisposable
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
-        Assert.Equal("active", updatedHub.Status);
+        Assert.Equal(HubStatus.Active, updatedHub.Status);
         Assert.Equal("refreshed-token", updatedHub.AccessToken);
         Assert.Equal("refreshed-refresh", updatedHub.RefreshToken);
     }
@@ -314,7 +315,7 @@ public class PollingServiceTests : IDisposable
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
-        Assert.Equal("needs_reauth", updatedHub.Status);
+        Assert.Equal(HubStatus.NeedsReauth, updatedHub.Status);
         Assert.True(updatedHub.ConsecutiveFailures > 0);
     }
 
@@ -379,7 +380,7 @@ public class PollingServiceTests : IDisposable
             {
                 HubId = hub.Id,
                 HueDeviceId = "device-001",
-                DeviceType = "motion_sensor",
+                DeviceType = DeviceTypes.MotionSensor,
                 Name = "Old Name"
             });
             await db.SaveChangesAsync();
@@ -443,7 +444,7 @@ public class PollingServiceTests : IDisposable
 
         using var db = CreateDb();
         var readings = await db.DeviceReadings.ToListAsync();
-        Assert.DoesNotContain(readings, r => r.ReadingType == "motion");
+        Assert.DoesNotContain(readings, r => r.ReadingType == ReadingTypes.Motion);
     }
 
     [Fact]
@@ -483,7 +484,7 @@ public class PollingServiceTests : IDisposable
 
         using var db = CreateDb();
         var readings = await db.DeviceReadings.ToListAsync();
-        Assert.DoesNotContain(readings, r => r.ReadingType == "motion");
+        Assert.DoesNotContain(readings, r => r.ReadingType == ReadingTypes.Motion);
     }
 
     [Fact]
@@ -523,7 +524,7 @@ public class PollingServiceTests : IDisposable
 
         using var db = CreateDb();
         var readings = await db.DeviceReadings.ToListAsync();
-        Assert.DoesNotContain(readings, r => r.ReadingType == "temperature");
+        Assert.DoesNotContain(readings, r => r.ReadingType == ReadingTypes.Temperature);
     }
 
     [Fact]
@@ -543,7 +544,7 @@ public class PollingServiceTests : IDisposable
                 AccessToken = "expired-token",
                 RefreshToken = "refresh",
                 TokenExpiresAt = DateTime.UtcNow.AddHours(-1),
-                Status = "active"
+                Status = HubStatus.Active
             });
             await db.SaveChangesAsync();
         }
@@ -571,7 +572,7 @@ public class PollingServiceTests : IDisposable
                 AccessToken = "token",
                 RefreshToken = "refresh",
                 TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-                Status = "needs_reauth"
+                Status = HubStatus.NeedsReauth
             });
             await db.SaveChangesAsync();
         }
@@ -620,7 +621,7 @@ public class PollingServiceTests : IDisposable
         await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
 
         using var db = CreateDb();
-        var reading = await db.DeviceReadings.FirstAsync(r => r.ReadingType == "motion");
+        var reading = await db.DeviceReadings.FirstAsync(r => r.ReadingType == ReadingTypes.Motion);
         Assert.Contains("\"motion\":true", reading.Value);
     }
 
@@ -659,7 +660,7 @@ public class PollingServiceTests : IDisposable
         await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
 
         using var db2 = CreateDb();
-        var reading = await db2.DeviceReadings.FirstAsync(r => r.ReadingType == "motion");
+        var reading = await db2.DeviceReadings.FirstAsync(r => r.ReadingType == ReadingTypes.Motion);
         Assert.Contains("\"motion\":false", reading.Value);
     }
 
@@ -670,12 +671,12 @@ public class PollingServiceTests : IDisposable
 
         using (var db = CreateDb())
         {
-            var device = new Device { HubId = hub.Id, HueDeviceId = "device-001", DeviceType = "motion_sensor", Name = "Sensor" };
+            var device = new Device { HubId = hub.Id, HueDeviceId = "device-001", DeviceType = DeviceTypes.MotionSensor, Name = "Sensor" };
             db.Devices.Add(device);
             await db.SaveChangesAsync();
 
-            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddDays(-8), ReadingType = "motion", Value = "{\"motion\":true}" });
-            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddHours(-1), ReadingType = "motion", Value = "{\"motion\":false}" });
+            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddDays(-8), ReadingType = ReadingTypes.Motion, Value = "{\"motion\":true}" });
+            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddHours(-1), ReadingType = ReadingTypes.Motion, Value = "{\"motion\":false}" });
             db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow.AddDays(-8), Success = true, ApiCallsMade = 3 });
             db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow.AddHours(-1), Success = true, ApiCallsMade = 3 });
             await db.SaveChangesAsync();
@@ -704,7 +705,7 @@ public class PollingServiceTests : IDisposable
         await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
 
         using var db = CreateDb();
-        var batteryReadings = await db.DeviceReadings.Where(r => r.ReadingType == "battery").ToListAsync();
+        var batteryReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Battery).ToListAsync();
         Assert.NotEmpty(batteryReadings);
         Assert.Contains("\"battery_level\":85", batteryReadings.First().Value);
     }
@@ -721,7 +722,7 @@ public class PollingServiceTests : IDisposable
         _mockHueClient.Verify(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
 
         using var db2 = CreateDb();
-        var batteryReadings = await db2.DeviceReadings.Where(r => r.ReadingType == "battery").ToListAsync();
+        var batteryReadings = await db2.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Battery).ToListAsync();
         Assert.NotEmpty(batteryReadings);
     }
 
@@ -819,7 +820,7 @@ public class PollingServiceTests : IDisposable
         await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
 
         using var db = CreateDb();
-        var batteryReadings = await db.DeviceReadings.Where(r => r.ReadingType == "battery").ToListAsync();
+        var batteryReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Battery).ToListAsync();
         Assert.Empty(batteryReadings);
     }
 
@@ -848,5 +849,298 @@ public class PollingServiceTests : IDisposable
         var service = CreateService();
         // This should not throw
         await service.CleanupOldDataAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task PollHub_On401_EmptyRefreshToken_KeepsExistingRefreshToken()
+    {
+        var hub = await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Unauthorized", null, System.Net.HttpStatusCode.Unauthorized));
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueTokenResponse { AccessToken = "new-access", RefreshToken = "", ExpiresIn = 86400 });
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.Equal("new-access", updatedHub.AccessToken);
+        Assert.Equal("refresh-token", updatedHub.RefreshToken); // Original kept
+    }
+
+    [Fact]
+    public async Task PollHub_SkipsBattery_WhenRecentlyPolledAndNotForced()
+    {
+        await SeedHubAsync(lastBatteryPollUtc: DateTime.UtcNow.AddHours(-1));
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService(new PollingSettings { IntervalMinutes = 60, BatteryPollIntervalHours = 84 });
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var batteryReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Battery).ToListAsync();
+        Assert.Empty(batteryReadings);
+    }
+
+    [Fact]
+    public async Task PollHub_PollsBattery_WhenLastPollIsNull()
+    {
+        await SeedHubAsync(lastBatteryPollUtc: null);
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService(new PollingSettings { IntervalMinutes = 60, BatteryPollIntervalHours = 84 });
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var batteryReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Battery).ToListAsync();
+        Assert.NotEmpty(batteryReadings);
+    }
+
+    [Fact]
+    public async Task PollHub_PollsBattery_WhenIntervalElapsed()
+    {
+        await SeedHubAsync(lastBatteryPollUtc: DateTime.UtcNow.AddHours(-85));
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService(new PollingSettings { IntervalMinutes = 60, BatteryPollIntervalHours = 84 });
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var batteryReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Battery).ToListAsync();
+        Assert.NotEmpty(batteryReadings);
+    }
+
+    [Fact]
+    public async Task PollHub_SuccessfulPoll_UpdatesLastSuccessAt()
+    {
+        var hub = await SeedHubAsync();
+        SetupSuccessfulHueResponses();
+
+        var before = DateTime.UtcNow;
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db = CreateDb();
+        var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.NotNull(updatedHub.LastSuccessAt);
+        Assert.True(updatedHub.LastSuccessAt >= before);
+    }
+
+    [Fact]
+    public async Task PollHub_SetsApiCallsCountOnPollingLog()
+    {
+        await SeedHubAsync();
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db = CreateDb();
+        var log = await db.PollingLogs.FirstAsync();
+        Assert.Equal(4, log.ApiCallsMade); // motion + temp + devices + battery
+    }
+
+    [Fact]
+    public async Task PollHub_WithoutBatteryPoll_SetsApiCallsTo3()
+    {
+        await SeedHubAsync(lastBatteryPollUtc: DateTime.UtcNow.AddHours(-1));
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService(new PollingSettings { IntervalMinutes = 60, BatteryPollIntervalHours = 84 });
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var log = await db.PollingLogs.FirstAsync();
+        Assert.Equal(3, log.ApiCallsMade);
+    }
+
+    [Fact]
+    public async Task PollHub_On503_CreatesFailureLog()
+    {
+        var hub = await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Service Unavailable", null, System.Net.HttpStatusCode.ServiceUnavailable));
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var log = await db.PollingLogs.FirstAsync(l => l.HubId == hub.Id);
+        Assert.False(log.Success);
+        Assert.Contains("503", log.ErrorMessage!);
+    }
+
+    [Fact]
+    public async Task PollHub_On429_CreatesFailureLog()
+    {
+        var hub = await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Rate limited", null, System.Net.HttpStatusCode.TooManyRequests));
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var log = await db.PollingLogs.FirstAsync(l => l.HubId == hub.Id);
+        Assert.False(log.Success);
+        Assert.Contains("429", log.ErrorMessage!);
+    }
+
+    [Fact]
+    public async Task PollHub_TemperatureWithUnknownOwner_UsesUnknownName()
+    {
+        await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource> { Data = new List<HueMotionResource>() });
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource>
+            {
+                Data = new List<HueTemperatureResource>
+                {
+                    new()
+                    {
+                        Id = "temp-001", Type = "temperature",
+                        Owner = new HueResourceRef { Rid = "nonexistent-device", Rtype = "device" },
+                        Enabled = true,
+                        Temperature = new HueTemperatureData
+                        {
+                            TemperatureReport = new HueTemperatureReport { Temperature = 22.5, Changed = DateTime.UtcNow }
+                        }
+                    }
+                }
+            });
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource> { Data = new List<HueDeviceResource>() });
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var device = await db.Devices.FirstAsync(d => d.HueDeviceId == "nonexistent-device");
+        Assert.Equal("Unknown", device.Name);
+        Assert.Equal(DeviceTypes.TemperatureSensor, device.DeviceType);
+    }
+
+    [Fact]
+    public async Task PollHub_BatteryWithUnknownOwner_UsesUnknownName()
+    {
+        await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource> { Data = new List<HueMotionResource>() });
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource> { Data = new List<HueTemperatureResource>() });
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource> { Data = new List<HueDeviceResource>() });
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>
+            {
+                Data = new List<HueDevicePowerResource>
+                {
+                    new()
+                    {
+                        Id = "power-001", Type = "device_power",
+                        Owner = new HueResourceRef { Rid = "unknown-battery-device", Rtype = "device" },
+                        PowerState = new HuePowerState { BatteryLevel = 50, BatteryState = "normal" }
+                    }
+                }
+            });
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db = CreateDb();
+        var device = await db.Devices.FirstAsync(d => d.HueDeviceId == "unknown-battery-device");
+        Assert.Equal("Unknown", device.Name);
+        Assert.Equal(DeviceTypes.Battery, device.DeviceType);
+    }
+
+    [Fact]
+    public async Task PollHub_SkipsNullTemperatureReport()
+    {
+        await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource> { Data = new List<HueMotionResource>() });
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource>
+            {
+                Data = new List<HueTemperatureResource>
+                {
+                    new()
+                    {
+                        Id = "temp-001", Type = "temperature",
+                        Owner = new HueResourceRef { Rid = "device-001", Rtype = "device" },
+                        Enabled = true,
+                        Temperature = new HueTemperatureData { TemperatureReport = null }
+                    }
+                }
+            });
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource>
+            {
+                Data = new List<HueDeviceResource>
+                {
+                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "a" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef>() }
+                }
+            });
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var readings = await db.DeviceReadings.ToListAsync();
+        Assert.DoesNotContain(readings, r => r.ReadingType == ReadingTypes.Temperature);
+    }
+
+    [Fact]
+    public async Task PollHub_UpdatesLastPolledAt()
+    {
+        var hub = await SeedHubAsync();
+        SetupSuccessfulHueResponses();
+
+        var before = DateTime.UtcNow;
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db = CreateDb();
+        var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.NotNull(updatedHub.LastPolledAt);
+        Assert.True(updatedHub.LastPolledAt >= before);
+    }
+
+    [Fact]
+    public async Task CleanupOldData_KeepsRecentData()
+    {
+        var hub = await SeedHubAsync();
+
+        using (var db = CreateDb())
+        {
+            var device = new Device { HubId = hub.Id, HueDeviceId = "device-001", DeviceType = DeviceTypes.MotionSensor, Name = "Sensor" };
+            db.Devices.Add(device);
+            await db.SaveChangesAsync();
+
+            // Only recent data — should all be kept
+            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddHours(-1), ReadingType = ReadingTypes.Motion, Value = "{\"motion\":true}" });
+            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddHours(-2), ReadingType = ReadingTypes.Temperature, Value = "{\"temperature\":21.5}" });
+            db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow.AddHours(-1), Success = true, ApiCallsMade = 3 });
+            await db.SaveChangesAsync();
+        }
+
+        var service = CreateService();
+        await service.CleanupOldDataAsync(CancellationToken.None);
+
+        using var db2 = CreateDb();
+        Assert.Equal(2, await db2.DeviceReadings.CountAsync());
+        Assert.Equal(1, await db2.PollingLogs.CountAsync());
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
@@ -54,14 +55,14 @@ public class DetailModel : PageModel
         var hub = await _db.Hubs.FindAsync(id);
         if (hub == null) return NotFound();
 
-        if (hub.Status == "active")
+        if (hub.Status == HubStatus.Active)
         {
-            hub.Status = "inactive";
+            hub.Status = HubStatus.Inactive;
             hub.DeactivatedAt = DateTime.UtcNow;
         }
         else
         {
-            hub.Status = "active";
+            hub.Status = HubStatus.Active;
             hub.DeactivatedAt = null;
         }
         hub.UpdatedAt = DateTime.UtcNow;
@@ -75,9 +76,9 @@ public class DetailModel : PageModel
         var hub = await _db.Hubs.FindAsync(id);
         if (hub == null) return NotFound();
 
-        if (hub.Status == "needs_reauth")
+        if (hub.Status == HubStatus.NeedsReauth)
         {
-            hub.Status = "active";
+            hub.Status = HubStatus.Active;
             hub.DeactivatedAt = null;
             hub.ConsecutiveFailures = 0;
             hub.UpdatedAt = DateTime.UtcNow;
@@ -92,7 +93,7 @@ public class DetailModel : PageModel
         var hub = await _db.Hubs.FindAsync(id);
         if (hub == null) return NotFound();
 
-        if (hub.Status != "inactive" || hub.DeactivatedAt == null ||
+        if (hub.Status != HubStatus.Inactive || hub.DeactivatedAt == null ||
             (DateTime.UtcNow - hub.DeactivatedAt.Value).TotalMinutes < 10)
         {
             return RedirectToPage(new { id });
@@ -114,11 +115,7 @@ public class DetailModel : PageModel
         {
             var tokenResponse = await _hueClient.RefreshTokenAsync(hub.RefreshToken);
 
-            hub.AccessToken = tokenResponse.AccessToken;
-            if (!string.IsNullOrEmpty(tokenResponse.RefreshToken))
-                hub.RefreshToken = tokenResponse.RefreshToken;
-            hub.TokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn);
-            hub.UpdatedAt = DateTime.UtcNow;
+            hub.ApplyTokenResponse(tokenResponse, DateTime.UtcNow);
             await _db.SaveChangesAsync();
 
             _logger.LogInformation("Manual token refresh for hub {BridgeId}: new expiry {Expiry}",

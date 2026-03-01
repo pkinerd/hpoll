@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
@@ -105,13 +106,10 @@ public class OAuthCallbackModel : PageModel
             if (existingHub != null)
             {
                 // Update existing hub's tokens
-                existingHub.AccessToken = tokenResponse.AccessToken;
-                existingHub.RefreshToken = tokenResponse.RefreshToken;
-                existingHub.TokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn);
+                existingHub.ApplyTokenResponse(tokenResponse, DateTime.UtcNow);
                 existingHub.HueApplicationKey = applicationKey;
-                existingHub.Status = "active";
+                existingHub.Status = HubStatus.Active;
                 existingHub.ConsecutiveFailures = 0;
-                existingHub.UpdatedAt = DateTime.UtcNow;
                 await _db.SaveChangesAsync();
 
                 HubId = existingHub.Id;
@@ -129,7 +127,7 @@ public class OAuthCallbackModel : PageModel
                     AccessToken = tokenResponse.AccessToken,
                     RefreshToken = tokenResponse.RefreshToken,
                     TokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
-                    Status = "active"
+                    Status = HubStatus.Active
                 };
                 _db.Hubs.Add(hub);
                 await _db.SaveChangesAsync();

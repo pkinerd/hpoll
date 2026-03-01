@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
@@ -44,7 +45,7 @@ public class EmailRenderer : IEmailRenderer
 
         // Get all devices for this customer's hubs
         var hubIds = await _db.Hubs
-            .Where(h => h.CustomerId == customerId && h.Status == "active")
+            .Where(h => h.CustomerId == customerId && h.Status == HubStatus.Active)
             .Select(h => h.Id)
             .ToListAsync(ct);
 
@@ -56,7 +57,7 @@ public class EmailRenderer : IEmailRenderer
         var readings = await _db.DeviceReadings
             .Where(r => deviceIds.Contains(r.DeviceId)
                 && r.Timestamp >= startUtc && r.Timestamp < endUtc
-                && (r.ReadingType == "motion" || r.ReadingType == "temperature"))
+                && (r.ReadingType == ReadingTypes.Motion || r.ReadingType == ReadingTypes.Temperature))
             .AsNoTracking()
             .ToListAsync(ct);
 
@@ -69,7 +70,7 @@ public class EmailRenderer : IEmailRenderer
 
         // Count motion sensors specifically (not all devices)
         var motionSensorCount = await _db.Devices
-            .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == "motion_sensor")
+            .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == DeviceTypes.MotionSensor)
             .CountAsync(ct);
 
         var windows = new List<WindowSummary>();
@@ -82,8 +83,8 @@ public class EmailRenderer : IEmailRenderer
 
             var windowReadings = readings.Where(r => r.Timestamp >= windowStartUtc && r.Timestamp < windowEndUtc).ToList();
 
-            var motionReadings = windowReadings.Where(r => r.ReadingType == "motion").ToList();
-            var tempReadings = windowReadings.Where(r => r.ReadingType == "temperature").ToList();
+            var motionReadings = windowReadings.Where(r => r.ReadingType == ReadingTypes.Motion).ToList();
+            var tempReadings = windowReadings.Where(r => r.ReadingType == ReadingTypes.Temperature).ToList();
 
             // Count distinct devices with motion detected
             var devicesWithMotion = motionReadings
@@ -133,7 +134,7 @@ public class EmailRenderer : IEmailRenderer
         // Query latest battery reading per device (most recent "battery" reading for each device)
         var allBatteryReadings = await _db.DeviceReadings
             .Include(r => r.Device)
-            .Where(r => deviceIds.Contains(r.DeviceId) && r.ReadingType == "battery")
+            .Where(r => deviceIds.Contains(r.DeviceId) && r.ReadingType == ReadingTypes.Battery)
             .ToListAsync(ct);
 
         var batteryReadings = allBatteryReadings

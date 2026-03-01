@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Hpoll.Admin.Pages.Customers;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
@@ -43,7 +44,7 @@ public class DetailModelTests : IDisposable
 
     private async Task<Customer> SeedCustomerAsync(string name = "Test User", string email = "test@example.com")
     {
-        var customer = new Customer { Name = name, Email = email, TimeZoneId = "UTC", Status = "active" };
+        var customer = new Customer { Name = name, Email = email, TimeZoneId = "UTC", Status = CustomerStatus.Active };
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync();
         return customer;
@@ -59,7 +60,7 @@ public class DetailModelTests : IDisposable
             AccessToken = "token",
             RefreshToken = "refresh",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active"
+            Status = HubStatus.Active
         };
         _db.Hubs.Add(hub);
         await _db.SaveChangesAsync();
@@ -131,14 +132,14 @@ public class DetailModelTests : IDisposable
         Assert.IsType<RedirectToPageResult>(result);
 
         var updated = await _db.Customers.FindAsync(customer.Id);
-        Assert.Equal("inactive", updated!.Status);
+        Assert.Equal(CustomerStatus.Inactive, updated!.Status);
     }
 
     [Fact]
     public async Task OnPostToggleStatusAsync_InactiveToActive_TogglesBack()
     {
         var customer = await SeedCustomerAsync();
-        customer.Status = "inactive";
+        customer.Status = CustomerStatus.Inactive;
         await _db.SaveChangesAsync();
 
         var model = CreatePageModel();
@@ -147,7 +148,7 @@ public class DetailModelTests : IDisposable
         Assert.IsType<RedirectToPageResult>(result);
 
         var updated = await _db.Customers.FindAsync(customer.Id);
-        Assert.Equal("active", updated!.Status);
+        Assert.Equal(CustomerStatus.Active, updated!.Status);
     }
 
     [Fact]

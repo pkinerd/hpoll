@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Hpoll.Core.Constants;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
@@ -22,17 +23,17 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
-        ActiveCustomers = await _db.Customers.CountAsync(c => c.Status == "active");
-        InactiveCustomers = await _db.Customers.CountAsync(c => c.Status == "inactive");
+        ActiveCustomers = await _db.Customers.CountAsync(c => c.Status == CustomerStatus.Active);
+        InactiveCustomers = await _db.Customers.CountAsync(c => c.Status == CustomerStatus.Inactive);
 
-        ActiveHubs = await _db.Hubs.CountAsync(h => h.Status == "active");
-        InactiveHubs = await _db.Hubs.CountAsync(h => h.Status == "inactive");
-        NeedsReauthHubs = await _db.Hubs.CountAsync(h => h.Status == "needs_reauth");
+        ActiveHubs = await _db.Hubs.CountAsync(h => h.Status == HubStatus.Active);
+        InactiveHubs = await _db.Hubs.CountAsync(h => h.Status == HubStatus.Inactive);
+        NeedsReauthHubs = await _db.Hubs.CountAsync(h => h.Status == HubStatus.NeedsReauth);
 
         var threshold = DateTime.UtcNow.AddHours(48);
         ExpiringTokenHubs = await _db.Hubs
             .Include(h => h.Customer)
-            .Where(h => h.Status == "active" && h.TokenExpiresAt < threshold)
+            .Where(h => h.Status == HubStatus.Active && h.TokenExpiresAt < threshold)
             .OrderBy(h => h.TokenExpiresAt)
             .ToListAsync();
 

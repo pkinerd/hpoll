@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Models;
 using Hpoll.Data;
@@ -91,7 +92,7 @@ public class PollingService : BackgroundService
 
         var activeHubs = await db.Hubs
             .Include(h => h.Devices)
-            .Where(h => h.Status == "active")
+            .Where(h => h.Status == HubStatus.Active)
             .ToListAsync(ct);
 
         _logger.LogInformation("Polling {Count} active hubs", activeHubs.Count);
@@ -159,7 +160,7 @@ public class PollingService : BackgroundService
                     ? ownerDevice.Metadata.Name
                     : "Unknown";
 
-                var dbDevice = await GetOrCreateDeviceAsync(db, hub, motion.Owner.Rid, "motion_sensor", deviceName, ct);
+                var dbDevice = await GetOrCreateDeviceAsync(db, hub, motion.Owner.Rid, DeviceTypes.MotionSensor, deviceName, ct);
 
                 var motionDetected = motion.Motion.MotionReport.Changed > motionCutoff;
 
@@ -167,7 +168,7 @@ public class PollingService : BackgroundService
                 {
                     DeviceId = dbDevice.Id,
                     Timestamp = pollTime,
-                    ReadingType = "motion",
+                    ReadingType = ReadingTypes.Motion,
                     Value = JsonSerializer.Serialize(new
                     {
                         motion = motionDetected,
@@ -186,13 +187,13 @@ public class PollingService : BackgroundService
                     ? ownerDevice.Metadata.Name
                     : "Unknown";
 
-                var dbDevice = await GetOrCreateDeviceAsync(db, hub, temp.Owner.Rid, "temperature_sensor", deviceName, ct);
+                var dbDevice = await GetOrCreateDeviceAsync(db, hub, temp.Owner.Rid, DeviceTypes.TemperatureSensor, deviceName, ct);
 
                 db.DeviceReadings.Add(new DeviceReading
                 {
                     DeviceId = dbDevice.Id,
                     Timestamp = pollTime,
-                    ReadingType = "temperature",
+                    ReadingType = ReadingTypes.Temperature,
                     Value = JsonSerializer.Serialize(new
                     {
                         temperature = temp.Temperature.TemperatureReport.Temperature,
@@ -212,13 +213,13 @@ public class PollingService : BackgroundService
                         ? ownerDevice.Metadata.Name
                         : "Unknown";
 
-                    var dbDevice = await GetOrCreateDeviceAsync(db, hub, power.Owner.Rid, "battery", deviceName, ct);
+                    var dbDevice = await GetOrCreateDeviceAsync(db, hub, power.Owner.Rid, DeviceTypes.Battery, deviceName, ct);
 
                     db.DeviceReadings.Add(new DeviceReading
                     {
                         DeviceId = dbDevice.Id,
                         Timestamp = pollTime,
-                        ReadingType = "battery",
+                        ReadingType = ReadingTypes.Battery,
                         Value = JsonSerializer.Serialize(new
                         {
                             battery_level = power.PowerState.BatteryLevel.Value,
@@ -251,19 +252,14 @@ public class PollingService : BackgroundService
             try
             {
                 var tokenResponse = await hueClient.RefreshTokenAsync(hub.RefreshToken, ct);
-                hub.AccessToken = tokenResponse.AccessToken;
-                if (!string.IsNullOrEmpty(tokenResponse.RefreshToken))
-                {
-                    hub.RefreshToken = tokenResponse.RefreshToken;
-                }
-                hub.TokenExpiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddSeconds(tokenResponse.ExpiresIn);
+                hub.ApplyTokenResponse(tokenResponse, _timeProvider.GetUtcNow().UtcDateTime);
                 log.ErrorMessage = "Unauthorized (401) - token refreshed successfully, will retry next cycle";
                 _logger.LogInformation("Hub {BridgeId}: token refreshed after 401. Expires at {Expiry}", hub.HueBridgeId, hub.TokenExpiresAt);
             }
             catch (Exception refreshEx)
             {
                 _logger.LogError(refreshEx, "Hub {BridgeId}: token refresh failed after 401. Marking as needs_reauth", hub.HueBridgeId);
-                hub.Status = "needs_reauth";
+                hub.Status = HubStatus.NeedsReauth;
                 log.ErrorMessage = "Unauthorized (401) - token refresh failed, hub marked as needs_reauth";
             }
         }

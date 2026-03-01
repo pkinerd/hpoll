@@ -1,5 +1,7 @@
 namespace Hpoll.Data.Entities;
 
+using Hpoll.Core.Constants;
+
 public class Customer
 {
     public int Id { get; set; }
@@ -10,7 +12,7 @@ public class Customer
     public string BccEmails { get; set; } = string.Empty; // comma-separated BCC addresses
     public string SendTimesLocal { get; set; } = string.Empty; // comma-separated local times (HH:mm), empty = use default
     public DateTime? NextSendTimeUtc { get; set; } // next scheduled email send time in UTC
-    public string Status { get; set; } = "active"; // active, inactive
+    public string Status { get; set; } = CustomerStatus.Active;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public List<Hub> Hubs { get; set; } = new();

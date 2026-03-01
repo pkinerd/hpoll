@@ -6,8 +6,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Data;
+using Hpoll.Data.Entities;
 
 public class TokenRefreshService : BackgroundService
 {
@@ -87,7 +89,7 @@ public class TokenRefreshService : BackgroundService
         var hueClient = scope.ServiceProvider.GetRequiredService<IHueApiClient>();
 
         var hubs = await db.Hubs
-            .Where(h => h.Status == "active")
+            .Where(h => h.Status == HubStatus.Active)
             .ToListAsync(ct);
 
         _logger.LogInformation("Checking tokens for {Count} active hubs", hubs.Count);
@@ -115,13 +117,7 @@ public class TokenRefreshService : BackgroundService
                 {
                     var tokenResponse = await hueClient.RefreshTokenAsync(hub.RefreshToken, ct);
 
-                    hub.AccessToken = tokenResponse.AccessToken;
-                    if (!string.IsNullOrEmpty(tokenResponse.RefreshToken))
-                    {
-                        hub.RefreshToken = tokenResponse.RefreshToken;
-                    }
-                    hub.TokenExpiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddSeconds(tokenResponse.ExpiresIn);
-                    hub.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
+                    hub.ApplyTokenResponse(tokenResponse, _timeProvider.GetUtcNow().UtcDateTime);
 
                     await db.SaveChangesAsync(ct);
 
@@ -150,7 +146,7 @@ public class TokenRefreshService : BackgroundService
             {
                 _logger.LogError("Hub {BridgeId}: token refresh failed after {Max} retries. Marking as needs_reauth",
                     hub.HueBridgeId, _settings.TokenRefreshMaxRetries);
-                hub.Status = "needs_reauth";
+                hub.Status = HubStatus.NeedsReauth;
                 hub.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
                 await db.SaveChangesAsync(ct);
             }

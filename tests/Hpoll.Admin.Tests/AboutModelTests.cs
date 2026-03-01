@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Hpoll.Admin.Pages;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
@@ -45,12 +46,12 @@ public class AboutModelTests : IDisposable
             AccessToken = "token",
             RefreshToken = "refresh",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active"
+            Status = HubStatus.Active
         };
         _db.Hubs.Add(hub);
         await _db.SaveChangesAsync();
 
-        var device = new Device { HubId = hub.Id, HueDeviceId = "dev-001", DeviceType = "motion_sensor", Name = "Sensor" };
+        var device = new Device { HubId = hub.Id, HueDeviceId = "dev-001", DeviceType = DeviceTypes.MotionSensor, Name = "Sensor" };
         _db.Devices.Add(device);
         await _db.SaveChangesAsync();
 

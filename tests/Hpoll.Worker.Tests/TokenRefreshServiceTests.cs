@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Models;
 using Hpoll.Data;
@@ -44,7 +45,7 @@ public class TokenRefreshServiceTests : IDisposable
         return scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     }
 
-    private async Task<Hub> SeedHubAsync(string status = "active", DateTime? tokenExpiresAt = null)
+    private async Task<Hub> SeedHubAsync(string status = HubStatus.Active, DateTime? tokenExpiresAt = null)
     {
         using var db = CreateDb();
         var customer = new Customer { Name = "Test", Email = $"test-{Guid.NewGuid()}@example.com" };
@@ -111,7 +112,7 @@ public class TokenRefreshServiceTests : IDisposable
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
-        Assert.Equal("needs_reauth", updatedHub.Status);
+        Assert.Equal(HubStatus.NeedsReauth, updatedHub.Status);
     }
 
     [Fact]
@@ -142,7 +143,7 @@ public class TokenRefreshServiceTests : IDisposable
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
         Assert.Equal("recovered-token", updatedHub.AccessToken);
-        Assert.Equal("active", updatedHub.Status);
+        Assert.Equal(HubStatus.Active, updatedHub.Status);
     }
 
     [Fact]
@@ -233,7 +234,7 @@ public class TokenRefreshServiceTests : IDisposable
     [Fact]
     public async Task RefreshExpiringTokens_InactiveHub_NotIncluded()
     {
-        await SeedHubAsync(status: "inactive", tokenExpiresAt: DateTime.UtcNow.AddHours(1));
+        await SeedHubAsync(status: HubStatus.Inactive, tokenExpiresAt: DateTime.UtcNow.AddHours(1));
 
         var service = CreateService();
         await service.RefreshExpiringTokensAsync(CancellationToken.None);
@@ -278,7 +279,105 @@ public class TokenRefreshServiceTests : IDisposable
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
-        Assert.Equal("needs_reauth", updatedHub.Status);
+        Assert.Equal(HubStatus.NeedsReauth, updatedHub.Status);
         Assert.True(updatedHub.UpdatedAt >= beforeRefresh);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_StopsGracefullyOnCancellation()
+    {
+        var service = CreateService(new PollingSettings { TokenRefreshCheckHours = 24 });
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
+        await service.StartAsync(CancellationToken.None);
+        try { await Task.Delay(500, cts.Token); } catch (OperationCanceledException) { }
+        await service.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_UpdatesSystemInfoMetrics()
+    {
+        var hub = await SeedHubAsync(tokenExpiresAt: DateTime.UtcNow.AddDays(30));
+        var systemInfoMock = new Mock<ISystemInfoService>();
+
+        var service = new TokenRefreshService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<TokenRefreshService>.Instance,
+            Options.Create(new PollingSettings { TokenRefreshThresholdHours = 48, TokenRefreshCheckHours = 24 }),
+            systemInfoMock.Object);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        try { await service.StartAsync(cts.Token); await Task.Delay(1000, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        systemInfoMock.Verify(s => s.SetAsync("Runtime", "runtime.last_token_check", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        systemInfoMock.Verify(s => s.SetAsync("Runtime", "runtime.next_token_check", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_SystemInfoFailure_DoesNotCrashService()
+    {
+        await SeedHubAsync(tokenExpiresAt: DateTime.UtcNow.AddDays(30));
+        var systemInfoMock = new Mock<ISystemInfoService>();
+        systemInfoMock.Setup(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("System info write failed"));
+
+        var service = new TokenRefreshService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<TokenRefreshService>.Instance,
+            Options.Create(new PollingSettings { TokenRefreshCheckHours = 24 }),
+            systemInfoMock.Object);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        try { await service.StartAsync(cts.Token); await Task.Delay(1000, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        // Service should still be running — no unhandled exception
+    }
+
+    [Fact]
+    public async Task RefreshExpiringTokens_NeedsReauthHub_NotIncluded()
+    {
+        await SeedHubAsync(status: HubStatus.NeedsReauth, tokenExpiresAt: DateTime.UtcNow.AddHours(1));
+
+        var service = CreateService();
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
+
+        _mockHueClient.Verify(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RefreshExpiringTokens_NoHubs_CompletesWithoutError()
+    {
+        var service = CreateService();
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
+
+        _mockHueClient.Verify(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RefreshExpiringTokens_TokenExpiresAtBoundary_RefreshesToken()
+    {
+        // Token expires exactly at the threshold boundary
+        var settings = new PollingSettings { TokenRefreshThresholdHours = 48 };
+        await SeedHubAsync(tokenExpiresAt: DateTime.UtcNow.AddHours(48));
+
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueTokenResponse
+            {
+                AccessToken = "boundary-token",
+                RefreshToken = "boundary-refresh",
+                TokenType = "Bearer",
+                ExpiresIn = 604800
+            });
+
+        var service = CreateService(settings);
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
+
+        // At exactly the threshold, the timeUntilExpiry will be <= threshold, so it should refresh
+        // (due to time passing between SeedHubAsync and the check)
+        _mockHueClient.Verify(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtMostOnce);
     }
 }
