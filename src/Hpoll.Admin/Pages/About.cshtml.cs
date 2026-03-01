@@ -34,6 +34,7 @@ public class AboutModel : PageModel
 
         // Build info (baked into assembly at compile time)
         PopulateBuildInfo();
+        BuildEntries.Sort((a, b) => string.Compare(a.Label, b.Label, StringComparison.Ordinal));
 
         var entries = await _db.SystemInfo
             .OrderBy(e => e.Category)
@@ -72,6 +73,7 @@ public class AboutModel : PageModel
 
         // Always surface the Admin's own Hue callback URL from config
         EnsureAdminCallbackUrl();
+
     }
 
     private void EnsureAdminCallbackUrl()
@@ -115,9 +117,14 @@ public class AboutModel : PageModel
         Add("Run ID", BuildInfo.RunId);
         if (!string.IsNullOrEmpty(BuildInfo.PullRequest))
             Add("Pull Request", $"#{BuildInfo.PullRequest}");
-        Add("Built At", BuildInfo.Timestamp);
+        Add("Timestamp", BuildInfo.Timestamp);
         Add("Source", BuildInfo.IsCI ? "CI" : "Local");
     }
+
+    private static readonly Dictionary<string, string> LabelOverrides = new()
+    {
+        ["Run Id"] = "Run ID",
+    };
 
     private static string FormatLabel(string key)
     {
@@ -125,8 +132,9 @@ public class AboutModel : PageModel
         var dotIndex = label.IndexOf('.');
         if (dotIndex >= 0)
             label = label[(dotIndex + 1)..];
-        return string.Join(' ', label.Split('_')
+        var formatted = string.Join(' ', label.Split('_')
             .Select(w => w.Length > 0 ? char.ToUpper(w[0]) + w[1..] : w));
+        return LabelOverrides.GetValueOrDefault(formatted, formatted);
     }
 
     private static string FormatValue(string value)
