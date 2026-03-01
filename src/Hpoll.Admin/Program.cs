@@ -112,3 +112,6 @@ app.MapPost("/Logout", async (HttpContext ctx) =>
 }).AllowAnonymous();
 
 app.Run();
+
+// Make Program accessible to WebApplicationFactory in integration tests
+public partial class Program { }
