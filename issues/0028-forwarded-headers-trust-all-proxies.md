@@ -128,3 +128,34 @@ The issue correctly identifies that `KnownNetworks.Clear()` and `KnownProxies.Cl
 - The priority of "low" is appropriate but "informational/won't-fix" may be more accurate
 
 **Recommendation: Close as won't-fix.** The trust-all configuration is intentional and appropriate for the deployment model. Document that the admin portal should be deployed on a trusted network or behind infrastructure-level access controls.
+
+### claude (critical review) — 2026-03-01
+
+**Assessment: PARTIALLY_VALID — agree with prior reviews. Adding one correction and a consolidated impact table.**
+
+Prior reviews correctly identified the Secure cookie claim as wrong and the rate-limiter bypass as requiring unrealistic prerequisites. One inaccuracy shared by all prior reviews needs correction.
+
+**Correction: the antiforgery cookie lacks `SecurePolicy.Always`.**
+
+In `src/Hpoll.Admin/Program.cs` lines 68-71:
+```csharp
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.Lax;
+});
+```
+
+Unlike the auth cookie (line 53) and session cookie (line 64), the antiforgery cookie does NOT set `SecurePolicy`. It defaults to `CookieSecurePolicy.None`, meaning its `Secure` flag IS influenced by `HttpContext.Request.IsHttps`, which depends on `X-Forwarded-Proto`. Prior reviews stated all cookies are hardcoded to `Always` — this is not fully accurate.
+
+In practice this has negligible impact: spoofing `X-Forwarded-Proto: https` would cause the antiforgery cookie to get the `Secure` flag when actual transport is HTTP, causing subsequent antiforgery validation to fail (the cookie would not be sent back over HTTP). This is self-defeating, not exploitable.
+
+**Consolidated impact of forwarded header spoofing:**
+
+| Header | Affected code | Spoofing impact | Severity |
+|--------|--------------|-----------------|----------|
+| `X-Forwarded-For` | `Login.cshtml.cs:39` rate limiter | Bypass 5-attempt lockout (requires direct container access) | Negligible |
+| `X-Forwarded-Proto` | `OAuthCallback.cshtml.cs:79` callback URL | Redirect URI mismatch breaks OAuth (self-inflicted DoS) | None |
+| `X-Forwarded-Proto` | Antiforgery cookie (no explicit SecurePolicy) | Could set/unset `Secure` flag incorrectly | Negligible |
+| `X-Forwarded-Proto` | Auth cookie (line 53), session cookie (line 64) | No impact (`CookieSecurePolicy.Always`) | None |
+
+**Final recommendation: Close as won't-fix.** The `Clear()` pattern is correct for Docker per Microsoft documentation. Both stated attack vectors are either factually wrong or require direct container access (covered by issue #0061). The proposed remediation of hardcoding `KnownProxies` is impractical for Docker deployments.
