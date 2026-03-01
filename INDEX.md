@@ -10,7 +10,7 @@
 | [0006](issues/0006-setup-cd-pipeline-to-test-and-prod.md) | Setup CD pipeline to test and prod | closed | medium | planning |
 | [0007](issues/0007-research-hue-api-docs.md) | Research API docs for Hue APIs and make available to Claude | closed | medium | documentation, planning |
 | [0008](issues/0008-implementation-plan.md) | Implementation plan | closed | medium | planning, documentation |
-| [0009](issues/0009-extract-shared-activity-summary-builder.md) | Extract shared ActivitySummaryBuilder to eliminate duplicated window aggregation logic | open | high | enhancement, code-quality |
+| [0009](issues/0009-extract-shared-activity-summary-builder.md) | Extract shared ActivitySummaryBuilder to eliminate duplicated window aggregation logic | closed | high | enhancement, code-quality |
 | [0010](issues/0010-introduce-status-readingtype-devicetype-constants.md) | Introduce string constants or enums for Status, ReadingType, and DeviceType fields | open | high | enhancement, code-quality |
 | [0011](issues/0011-extract-device-reading-json-parsing.md) | Extract DeviceReading JSON parsing into typed accessor methods | closed | medium | enhancement, code-quality |
 | [0012](issues/0012-extract-hub-apply-token-response.md) | Extract Hub.ApplyTokenResponse to eliminate 3-location token update duplication | open | medium | enhancement, code-quality |

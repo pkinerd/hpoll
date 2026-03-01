@@ -1,7 +1,8 @@
 ---
 id: 9
 title: "Extract shared ActivitySummaryBuilder to eliminate duplicated window aggregation logic"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [enhancement, code-quality]
@@ -34,3 +35,7 @@ The `ActivitySummaryBuilder` extraction should incorporate:
 2. **Single-pass motion parsing** (from #0056): Each motion reading's JSON is currently parsed twice per window — once for `devicesWithMotion`, once for `totalMotionEvents`. This doubles memory and CPU cost (14 JSON parses where 7 suffice). The shared builder should parse once and derive both metrics from the result.
 
 3. **ReadingType DB filter** (related #0055, consolidated into #0020): The builder's query should filter by ReadingType at the database level rather than loading all reading types into memory.
+
+### claude — 2026-03-01
+
+**Deferred.** This is a significant refactoring effort that would touch multiple projects and require careful coordination. The immediate concern (silent catch blocks swallowing errors) has been addressed in #0044. The duplication, while not ideal, is stable and well-tested. Deferring until there's a stronger driver for the refactor.
