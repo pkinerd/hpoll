@@ -311,4 +311,180 @@ public class EmailSchedulerServiceTests : IDisposable
 
         Assert.Equal(EmailSchedulerService.MaxSleepDuration, duration);
     }
+
+    [Fact]
+    public async Task GetSleepDuration_ReturnsZero_WhenNextDueIsInPast()
+    {
+        var pastTime = DateTime.UtcNow.AddMinutes(-5);
+        await SeedCustomerAsync("test@example.com", nextSendTimeUtc: pastTime);
+
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+        var duration = await service.GetSleepDurationAsync(CancellationToken.None);
+
+        Assert.Equal(TimeSpan.Zero, duration);
+    }
+
+    [Fact]
+    public void ParseEmailList_NullInput_ReturnsNull()
+    {
+        var result = EmailSchedulerService.ParseEmailList(null!);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void ParseEmailList_EmptyString_ReturnsNull()
+    {
+        var result = EmailSchedulerService.ParseEmailList("");
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void ParseEmailList_WhitespaceOnly_ReturnsNull()
+    {
+        var result = EmailSchedulerService.ParseEmailList("   ");
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void ParseEmailList_SingleValidEmail_ReturnsList()
+    {
+        var result = EmailSchedulerService.ParseEmailList("test@example.com");
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Contains("test@example.com", result);
+    }
+
+    [Fact]
+    public void ParseEmailList_MultipleEmails_ReturnsAll()
+    {
+        var result = EmailSchedulerService.ParseEmailList("a@b.com, c@d.com, e@f.com");
+        Assert.NotNull(result);
+        Assert.Equal(3, result.Count);
+    }
+
+    [Fact]
+    public void ParseEmailList_InvalidEntries_FiltersOut()
+    {
+        var result = EmailSchedulerService.ParseEmailList("valid@example.com, not-an-email, another@test.com");
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+        Assert.DoesNotContain("not-an-email", result);
+    }
+
+    [Fact]
+    public void ParseEmailList_AllInvalid_ReturnsNull()
+    {
+        var result = EmailSchedulerService.ParseEmailList("not-email, also-not-email");
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task SendCustomerEmailAsync_NullEmail_SkipsSend()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var renderer = scope.ServiceProvider.GetRequiredService<IEmailRenderer>();
+        var sender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
+
+        var customer = new Customer
+        {
+            Name = "Test",
+            Email = "",
+            TimeZoneId = "UTC",
+            Status = "active"
+        };
+
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+        await service.SendCustomerEmailAsync(customer, renderer, sender, CancellationToken.None);
+
+        _mockSender.Verify(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ProcessDueCustomers_UpdatesSystemInfoMetrics()
+    {
+        var pastTime = DateTime.UtcNow.AddMinutes(-5);
+        await SeedCustomerAsync("test@example.com", nextSendTimeUtc: pastTime);
+
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("<html>Summary</html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var systemInfoMock = new Mock<ISystemInfoService>();
+        var service = new EmailSchedulerService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<EmailSchedulerService>.Instance,
+            Options.Create(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1", SendTimesUtc = new() { "08:00" } }),
+            systemInfoMock.Object);
+
+        await service.ProcessDueCustomersAsync(CancellationToken.None);
+
+        systemInfoMock.Verify(s => s.SetAsync("Runtime", "runtime.last_email_sent", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        systemInfoMock.Verify(s => s.SetAsync("Runtime", "runtime.total_emails_sent", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task ProcessDueCustomers_SystemInfoFailure_DoesNotCrashService()
+    {
+        var pastTime = DateTime.UtcNow.AddMinutes(-5);
+        await SeedCustomerAsync("test@example.com", nextSendTimeUtc: pastTime);
+
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("<html>Summary</html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var systemInfoMock = new Mock<ISystemInfoService>();
+        systemInfoMock.Setup(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("System info write failed"));
+
+        var service = new EmailSchedulerService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<EmailSchedulerService>.Instance,
+            Options.Create(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1", SendTimesUtc = new() { "08:00" } }),
+            systemInfoMock.Object);
+
+        // Should not throw
+        var result = await service.ProcessDueCustomersAsync(CancellationToken.None);
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task ProcessDueCustomers_EmptyCcBcc_PassesNullLists()
+    {
+        var pastTime = DateTime.UtcNow.AddMinutes(-5);
+        await SeedCustomerAsync("main@example.com", "active", "", "", nextSendTimeUtc: pastTime);
+
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("<html>Summary</html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1", SendTimesUtc = new() { "08:00" } });
+        await service.ProcessDueCustomersAsync(CancellationToken.None);
+
+        _mockSender.Verify(s => s.SendEmailAsync(
+            It.IsAny<List<string>>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            null,
+            null,
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task InitializeNextSendTimes_SkipsCustomersWithExistingNextSendTime()
+    {
+        var existingTime = DateTime.UtcNow.AddHours(5);
+        await SeedCustomerAsync("existing@example.com", nextSendTimeUtc: existingTime);
+
+        var service = CreateService(new EmailSettings { SendTimesUtc = new() { "08:00" }, FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+        await service.InitializeNextSendTimesAsync(CancellationToken.None);
+
+        using var db = CreateDb();
+        var customer = await db.Customers.FirstAsync();
+        // NextSendTimeUtc should remain unchanged
+        Assert.Equal(existingTime, customer.NextSendTimeUtc);
+    }
 }
