@@ -105,13 +105,10 @@ public class OAuthCallbackModel : PageModel
             if (existingHub != null)
             {
                 // Update existing hub's tokens
-                existingHub.AccessToken = tokenResponse.AccessToken;
-                existingHub.RefreshToken = tokenResponse.RefreshToken;
-                existingHub.TokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn);
+                existingHub.ApplyTokenResponse(tokenResponse, DateTime.UtcNow);
                 existingHub.HueApplicationKey = applicationKey;
                 existingHub.Status = "active";
                 existingHub.ConsecutiveFailures = 0;
-                existingHub.UpdatedAt = DateTime.UtcNow;
                 await _db.SaveChangesAsync();
 
                 HubId = existingHub.Id;

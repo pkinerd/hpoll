@@ -251,12 +251,7 @@ public class PollingService : BackgroundService
             try
             {
                 var tokenResponse = await hueClient.RefreshTokenAsync(hub.RefreshToken, ct);
-                hub.AccessToken = tokenResponse.AccessToken;
-                if (!string.IsNullOrEmpty(tokenResponse.RefreshToken))
-                {
-                    hub.RefreshToken = tokenResponse.RefreshToken;
-                }
-                hub.TokenExpiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddSeconds(tokenResponse.ExpiresIn);
+                hub.ApplyTokenResponse(tokenResponse, _timeProvider.GetUtcNow().UtcDateTime);
                 log.ErrorMessage = "Unauthorized (401) - token refreshed successfully, will retry next cycle";
                 _logger.LogInformation("Hub {BridgeId}: token refreshed after 401. Expires at {Expiry}", hub.HueBridgeId, hub.TokenExpiresAt);
             }

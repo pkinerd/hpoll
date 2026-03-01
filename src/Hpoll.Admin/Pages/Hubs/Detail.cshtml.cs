@@ -114,11 +114,7 @@ public class DetailModel : PageModel
         {
             var tokenResponse = await _hueClient.RefreshTokenAsync(hub.RefreshToken);
 
-            hub.AccessToken = tokenResponse.AccessToken;
-            if (!string.IsNullOrEmpty(tokenResponse.RefreshToken))
-                hub.RefreshToken = tokenResponse.RefreshToken;
-            hub.TokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn);
-            hub.UpdatedAt = DateTime.UtcNow;
+            hub.ApplyTokenResponse(tokenResponse, DateTime.UtcNow);
             await _db.SaveChangesAsync();
 
             _logger.LogInformation("Manual token refresh for hub {BridgeId}: new expiry {Expiry}",
