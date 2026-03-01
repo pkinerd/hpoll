@@ -56,11 +56,20 @@ public class ConfigurationValidationTests : IDisposable
         var settings = new PollingSettings();
 
         Assert.Equal(60, settings.IntervalMinutes);
-        Assert.Equal(48, settings.DataRetentionHours);
+        Assert.Equal(168, settings.DataRetentionHours);
         Assert.Equal(30, settings.HttpTimeoutSeconds);
         Assert.Equal(3, settings.TokenRefreshMaxRetries);
         Assert.True(settings.IntervalMinutes > 0, "IntervalMinutes must be positive");
         Assert.True(settings.DataRetentionHours > 0, "DataRetentionHours must be positive");
+    }
+
+    [Fact]
+    public void PollingSettings_DataRetentionExceedsBatteryPollInterval()
+    {
+        var settings = new PollingSettings();
+
+        Assert.True(settings.DataRetentionHours >= settings.BatteryPollIntervalHours,
+            "DataRetentionHours must be >= BatteryPollIntervalHours, otherwise battery readings are purged before the next poll");
     }
 
     [Fact]
@@ -72,7 +81,7 @@ public class ConfigurationValidationTests : IDisposable
         Assert.Equal("08:00", settings.SendTimesUtc[0]);
         Assert.Equal(4, settings.SummaryWindowHours);
         Assert.Equal(7, settings.SummaryWindowCount);
-        Assert.Equal(30, settings.BatteryAlertThreshold);
+        Assert.Equal(60, settings.BatteryAlertThreshold);
         Assert.True(settings.BatteryLevelCritical <= settings.BatteryLevelWarning,
             "Critical threshold should be <= warning threshold");
     }

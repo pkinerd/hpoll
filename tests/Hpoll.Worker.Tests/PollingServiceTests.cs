@@ -673,9 +673,9 @@ public class PollingServiceTests : IDisposable
             db.Devices.Add(device);
             await db.SaveChangesAsync();
 
-            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddDays(-3), ReadingType = "motion", Value = "{\"motion\":true}" });
+            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddDays(-8), ReadingType = "motion", Value = "{\"motion\":true}" });
             db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddHours(-1), ReadingType = "motion", Value = "{\"motion\":false}" });
-            db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow.AddDays(-3), Success = true, ApiCallsMade = 3 });
+            db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow.AddDays(-8), Success = true, ApiCallsMade = 3 });
             db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow.AddHours(-1), Success = true, ApiCallsMade = 3 });
             await db.SaveChangesAsync();
         }
@@ -685,11 +685,11 @@ public class PollingServiceTests : IDisposable
 
         using var db2 = CreateDb();
         var readings = await db2.DeviceReadings.ToListAsync();
-        Assert.DoesNotContain(readings, r => r.Timestamp < DateTime.UtcNow.AddHours(-48));
+        Assert.DoesNotContain(readings, r => r.Timestamp < DateTime.UtcNow.AddHours(-168));
         Assert.Contains(readings, r => r.Timestamp > DateTime.UtcNow.AddHours(-2));
 
         var logs = await db2.PollingLogs.ToListAsync();
-        Assert.DoesNotContain(logs, l => l.Timestamp < DateTime.UtcNow.AddHours(-48));
+        Assert.DoesNotContain(logs, l => l.Timestamp < DateTime.UtcNow.AddHours(-168));
         Assert.Contains(logs, l => l.Timestamp > DateTime.UtcNow.AddHours(-2));
     }
 
