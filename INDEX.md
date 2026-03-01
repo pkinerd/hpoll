@@ -65,3 +65,6 @@
 | 0061 | Admin portal Docker container binds to all network interfaces | open | low | security |
 | 0062 | Sequential email sending limits scalability for large customer counts | open | low | enhancement, performance |
 | 0063 | Add HTTPS redirect middleware for admin portal in production | open | medium | security |
+| 0064 | Sanitize exception messages before persisting in PollingLog | open | medium | security |
+| 0065 | OAuth callback should use signed state parameter instead of session-based CSRF | open | medium | security, enhancement |
+| 0066 | Fix CLAUDE.md inaccuracies: CI trigger pattern and missing battery mention | open | low | documentation |

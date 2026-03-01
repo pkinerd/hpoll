@@ -25,3 +25,16 @@ This exception message could surface in logs, error pages, or admin UI polling l
 **Source:** Security review finding S7.1
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Comprehensive review note:** This pattern extends beyond `RegisterApplicationAsync`. The security review identified similar sensitive data exposure in API error body logging at multiple locations in `HueApiClient.cs`:
+
+- Lines 96-97: `EnableLinkButtonAsync` logs error body at Warning level
+- Lines 120-121: `RegisterApplicationAsync` logs error body at Warning level
+- Lines 169-170: `GetResourceAsync` logs error body at Warning level
+- Lines 200-201: `PostTokenRequestAsync` logs error body at Warning level (token endpoint responses are especially sensitive)
+
+The error bodies are truncated to 500 characters but Hue API error responses could contain partial tokens, application keys, or internal bridge details. Token endpoint responses in particular should never be logged even at Warning level.
+
+**Recommendation:** Log only the HTTP status code at Warning level. Move full error body logging to Debug level. Never log token endpoint response bodies.

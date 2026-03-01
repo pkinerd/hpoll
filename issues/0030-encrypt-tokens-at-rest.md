@@ -28,3 +28,12 @@ Additional remediation options beyond Data Protection API:
 - SQLCipher for full database encryption
 - EF Core value converters for per-column encryption with envelope encryption and a key from a vault/KMS
 - At minimum, restrict database file permissions and document the risk
+
+### claude — 2026-03-01
+
+**Comprehensive review note:** The `ConfigSeeder` class (`src/Hpoll.Data/ConfigSeeder.cs:51-72`) supports seeding access tokens, refresh tokens, and application keys from configuration (`HubConfig` properties in `appsettings.json`). This means tokens can end up in configuration files that might be committed to version control or stored in plaintext on disk.
+
+While the current appsettings files have empty values, the design encourages placing tokens in configuration. Consider:
+- Logging a warning when tokens are seeded from configuration (to flag accidental usage)
+- Documenting that environment variables (not config files) should be used if token seeding is necessary
+- Removing the token seeding capability entirely in favor of the OAuth flow
