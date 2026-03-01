@@ -62,12 +62,13 @@ public class SendTimeHelperTests
     }
 
     [Fact]
-    public void ComputeNextSendTimeUtc_EmptyLocalTimesAndNoDefaults_ReturnsNull()
+    public void ComputeNextSendTimeUtc_EmptyLocalTimesAndNoDefaults_FallsBackTo0800Utc()
     {
         var now = new DateTime(2026, 3, 1, 3, 0, 0, DateTimeKind.Utc);
         var result = SendTimeHelper.ComputeNextSendTimeUtc("", "UTC", now);
 
-        Assert.Null(result);
+        Assert.NotNull(result);
+        Assert.Equal(new DateTime(2026, 3, 1, 8, 0, 0), result.Value);
     }
 
     [Fact]
