@@ -89,7 +89,7 @@ GitHub Actions workflow (`.github/workflows/build-and-test.yml`) runs on pushes 
 
 ## Skills (Slash Commands)
 
-The following skills are available and should be preferred over manual alternatives:
+Always use the relevant skill below instead of attempting the task manually. For example, use `/prepare-pr` to create pull requests rather than running `gh pr create` directly, and use `/poll-build-logs` to check CI results rather than manually fetching logs.
 
 - **`/issues`** — Manage issues tracked on the `claude/issues` orphan branch. Use this to list, create, show, update, comment on, close, reopen, search, and filter issues. Always use this skill instead of manually managing issue tracking.
 - **`/hue-api-docs`** — Extract Philips Hue API documentation from the encrypted archive into a temporary directory. Use this whenever you need to reference Hue API endpoints, payloads, or behavior (e.g., when implementing or modifying API calls).
