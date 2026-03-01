@@ -24,11 +24,9 @@ Before launching reviews, complete these preparation steps sequentially:
 #### 1a. Install required tools
 
 Ensure the .NET 8.0 SDK is available (required for build, test, and coverage
-analysis):
-
-```bash
-dotnet --version 2>/dev/null || (sudo apt-get update && sudo apt-get install -y dotnet-sdk-8.0)
-```
+analysis). Check with `dotnet --version` — if the command is not found or
+returns a non-8.x version, invoke the **`/setup-environment-dotnetsdk`** skill
+to install it. This skill configures the apt proxy needed in web sessions.
 
 #### 1b. Extract Hue API documentation
 

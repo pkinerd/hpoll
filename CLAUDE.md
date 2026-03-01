@@ -30,12 +30,9 @@ tests/
 
 ## Environment Setup
 
-The .NET 8.0 SDK must be installed before building or testing locally. If `dotnet` is not available, install it first:
+The .NET 8.0 SDK must be installed before building or testing locally. If `dotnet` is not available, run **`/setup-environment-dotnetsdk`** to install it. This skill handles proxy configuration automatically, which is required in Claude Code web sessions where outbound traffic routes through an egress proxy.
 
-```bash
-# Install .NET 8.0 SDK (Ubuntu/Debian)
-sudo apt-get update && sudo apt-get install -y dotnet-sdk-8.0
-```
+You **must** run this skill before any `dotnet build`, `dotnet test`, or other .NET CLI commands if the SDK is not already present.
 
 ## Build & Test Commands
 
@@ -97,3 +94,4 @@ Always use the relevant skill below instead of attempting the task manually. For
 - **`/prepare-pr`** — Generate PR title, description, and URL for creating a pull request from the current branch. Accepts an optional target branch argument (e.g., `/prepare-pr dev`).
 - **`/simplify`** — Review changed code for reuse, quality, and efficiency, then fix any issues found.
 - **`/comprehensive-review`** — Run a full-spectrum codebase review (code quality, security, unit testing, coverage, documentation) using parallel sub-agents. Collates all findings and creates or updates issues for each actionable result.
+- **`/setup-environment-dotnetsdk`** — Install the .NET 8.0 SDK, configuring apt to use the egress proxy if needed. Use when `dotnet` is not available and you need to build or test.
