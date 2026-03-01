@@ -19,6 +19,7 @@ public class HpollDbContext : DbContext
         modelBuilder.Entity<Customer>(entity =>
         {
             entity.HasIndex(e => e.Email);
+            entity.HasIndex(e => e.NextSendTimeUtc);
         });
 
         modelBuilder.Entity<Hub>(entity =>
