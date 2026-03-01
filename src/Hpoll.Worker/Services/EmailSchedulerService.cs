@@ -7,7 +7,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Interfaces;
+using Hpoll.Core.Services;
 using Hpoll.Data;
+using Hpoll.Data.Entities;
 
 public class EmailSchedulerService : BackgroundService
 {
@@ -17,6 +19,7 @@ public class EmailSchedulerService : BackgroundService
     private readonly ISystemInfoService _systemInfo;
     private readonly TimeProvider _timeProvider;
     private int _totalEmailsSent;
+    internal static readonly TimeSpan MaxSleepDuration = TimeSpan.FromMinutes(10);
 
     public EmailSchedulerService(
         IServiceScopeFactory scopeFactory,
@@ -34,35 +37,28 @@ public class EmailSchedulerService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Email scheduler started. Send times: {Times} UTC",
+        _logger.LogInformation("Email scheduler started. Default send times: {Times} UTC",
             string.Join(", ", _settings.SendTimesUtc));
+
+        // Initialize NextSendTimeUtc for any customers that don't have one
+        await InitializeNextSendTimesAsync(stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
-            var nextSendTime = GetNextSendTime(now);
-
-            var delay = nextSendTime - now;
-            _logger.LogInformation("Next email batch scheduled for {Time} (in {Delay})", nextSendTime, delay);
-
             try
             {
-                await Task.Delay(delay, stoppingToken);
-                await SendAllEmailsAsync(stoppingToken);
+                // Process all due customers, then re-check for any that became due during processing
+                bool sentAny;
+                do
+                {
+                    sentAny = await ProcessDueCustomersAsync(stoppingToken);
+                } while (sentAny && !stoppingToken.IsCancellationRequested);
 
-                try
-                {
-                    _totalEmailsSent++;
-                    var metricTime = _timeProvider.GetUtcNow().UtcDateTime;
-                    await _systemInfo.SetAsync("Runtime", "runtime.last_email_sent", metricTime.ToString("O"));
-                    await _systemInfo.SetAsync("Runtime", "runtime.total_emails_sent", _totalEmailsSent.ToString());
-                    var nextSend = GetNextSendTime(metricTime);
-                    await _systemInfo.SetAsync("Runtime", "runtime.next_email_due", nextSend.ToString("O"));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to update system info metrics");
-                }
+                // Calculate sleep duration: min(10 minutes, time until next due customer)
+                var delay = await GetSleepDurationAsync(stoppingToken);
+                _logger.LogInformation("Next email check in {Delay}", delay);
+
+                await Task.Delay(delay, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -71,7 +67,6 @@ public class EmailSchedulerService : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled error in email scheduler");
-                // Wait a bit before retrying to avoid tight loop on persistent errors
                 try
                 {
                     await Task.Delay(TimeSpan.FromMinutes(_settings.ErrorRetryDelayMinutes), stoppingToken);
@@ -84,38 +79,135 @@ public class EmailSchedulerService : BackgroundService
         }
     }
 
-    public DateTime GetNextSendTime(DateTime now)
+    internal async Task InitializeNextSendTimesAsync(CancellationToken ct)
     {
-        var times = new List<TimeSpan>();
-        foreach (var entry in _settings.SendTimesUtc)
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
+
+        var customers = await db.Customers
+            .Where(c => c.Status == "active" && c.NextSendTimeUtc == null)
+            .ToListAsync(ct);
+
+        if (customers.Count == 0) return;
+
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        foreach (var customer in customers)
         {
-            if (TimeSpan.TryParse(entry, out var ts))
-                times.Add(ts);
-            else
-                _logger.LogWarning("Failed to parse send time '{Value}', ignoring", entry);
+            customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
+                customer.SendTimesLocal, customer.TimeZoneId, now, _settings.SendTimesUtc);
+            _logger.LogInformation("Initialized NextSendTimeUtc for customer {Name} (Id={Id}): {NextSend}",
+                customer.Name, customer.Id, customer.NextSendTimeUtc);
         }
 
-        if (times.Count == 0)
-        {
-            _logger.LogWarning("No valid send times configured, defaulting to 08:00 UTC");
-            times.Add(new TimeSpan(8, 0, 0));
-        }
-
-        times.Sort();
-
-        // Find the next send time today that is still in the future
-        foreach (var ts in times)
-        {
-            var candidate = now.Date.Add(ts);
-            if (candidate > now)
-                return candidate;
-        }
-
-        // All times today have passed — use the first time tomorrow
-        return now.Date.AddDays(1).Add(times[0]);
+        await db.SaveChangesAsync(ct);
     }
 
-    private static List<string>? ParseEmailList(string commaDelimited)
+    internal async Task<bool> ProcessDueCustomersAsync(CancellationToken ct)
+    {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
+        var renderer = scope.ServiceProvider.GetRequiredService<IEmailRenderer>();
+        var sender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
+
+        var dueCustomers = await db.Customers
+            .Where(c => c.Status == "active" && c.NextSendTimeUtc != null && c.NextSendTimeUtc <= now)
+            .ToListAsync(ct);
+
+        if (dueCustomers.Count == 0)
+            return false;
+
+        _logger.LogInformation("Found {Count} customers due for email", dueCustomers.Count);
+
+        foreach (var customer in dueCustomers)
+        {
+            try
+            {
+                await SendCustomerEmailAsync(customer, renderer, sender, ct);
+                _totalEmailsSent++;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send email to {Email} (customer {Name}, Id={Id})",
+                    customer.Email, customer.Name, customer.Id);
+            }
+
+            // Always advance NextSendTimeUtc even on failure, to prevent retry loops
+            var sendNow = _timeProvider.GetUtcNow().UtcDateTime;
+            customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
+                customer.SendTimesLocal, customer.TimeZoneId, sendNow, _settings.SendTimesUtc);
+            customer.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await db.SaveChangesAsync(ct);
+
+        try
+        {
+            var metricTime = _timeProvider.GetUtcNow().UtcDateTime;
+            await _systemInfo.SetAsync("Runtime", "runtime.last_email_sent", metricTime.ToString("O"));
+            await _systemInfo.SetAsync("Runtime", "runtime.total_emails_sent", _totalEmailsSent.ToString());
+
+            var nextDue = await GetNextDueTimeAsync(ct);
+            await _systemInfo.SetAsync("Runtime", "runtime.next_email_due",
+                nextDue?.ToString("O") ?? "N/A");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to update system info metrics");
+        }
+
+        return true;
+    }
+
+    internal async Task SendCustomerEmailAsync(Customer customer, IEmailRenderer renderer, IEmailSender sender, CancellationToken ct)
+    {
+        var toList = ParseEmailList(customer.Email);
+        if (toList == null)
+        {
+            _logger.LogWarning("Customer {Name} (Id={Id}) has no valid notification email addresses, skipping",
+                customer.Name, customer.Id);
+            return;
+        }
+
+        var html = await renderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId, ct: ct);
+
+        var tz = TimeZoneInfo.FindSystemTimeZoneById(customer.TimeZoneId);
+        var localNow = TimeZoneInfo.ConvertTimeFromUtc(_timeProvider.GetUtcNow().UtcDateTime, tz);
+        var subject = $"hpoll Daily Summary - {localNow:d MMM yyyy}";
+        var ccList = ParseEmailList(customer.CcEmails);
+        var bccList = ParseEmailList(customer.BccEmails);
+        await sender.SendEmailAsync(toList, subject, html, ccList, bccList, ct);
+
+        _logger.LogInformation("Email sent to {Email} (customer {Name}, Id={Id})",
+            customer.Email, customer.Name, customer.Id);
+    }
+
+    internal async Task<TimeSpan> GetSleepDurationAsync(CancellationToken ct)
+    {
+        var nextDue = await GetNextDueTimeAsync(ct);
+        if (nextDue == null)
+            return MaxSleepDuration;
+
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var untilNext = nextDue.Value - now;
+
+        if (untilNext <= TimeSpan.Zero)
+            return TimeSpan.Zero;
+
+        return untilNext < MaxSleepDuration ? untilNext : MaxSleepDuration;
+    }
+
+    private async Task<DateTime?> GetNextDueTimeAsync(CancellationToken ct)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
+
+        return await db.Customers
+            .Where(c => c.Status == "active" && c.NextSendTimeUtc != null)
+            .MinAsync(c => (DateTime?)c.NextSendTimeUtc, ct);
+    }
+
+    internal static List<string>? ParseEmailList(string commaDelimited)
     {
         if (string.IsNullOrWhiteSpace(commaDelimited)) return null;
         var list = commaDelimited
@@ -123,48 +215,5 @@ public class EmailSchedulerService : BackgroundService
             .Where(e => e.Contains('@'))
             .ToList();
         return list.Count > 0 ? list : null;
-    }
-
-    internal async Task SendAllEmailsAsync(CancellationToken ct)
-    {
-        using var scope = _scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
-        var renderer = scope.ServiceProvider.GetRequiredService<IEmailRenderer>();
-        var sender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
-
-        var customers = await db.Customers
-            .Where(c => c.Status == "active")
-            .ToListAsync(ct);
-
-        _logger.LogInformation("Sending daily summary emails for {Count} customers", customers.Count);
-
-        foreach (var customer in customers)
-        {
-            try
-            {
-                var toList = ParseEmailList(customer.Email);
-                if (toList == null)
-                {
-                    _logger.LogWarning("Customer {Name} (Id={Id}) has no valid notification email addresses, skipping",
-                        customer.Name, customer.Id);
-                    continue;
-                }
-
-                var html = await renderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId, ct: ct);
-
-                var tz = TimeZoneInfo.FindSystemTimeZoneById(customer.TimeZoneId);
-                var localNow = TimeZoneInfo.ConvertTimeFromUtc(_timeProvider.GetUtcNow().UtcDateTime, tz);
-                var subject = $"hpoll Daily Summary - {localNow:d MMM yyyy}";
-                var ccList = ParseEmailList(customer.CcEmails);
-                var bccList = ParseEmailList(customer.BccEmails);
-                await sender.SendEmailAsync(toList, subject, html, ccList, bccList, ct);
-
-                _logger.LogInformation("Email sent to {Email}", customer.Email);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to send email to {Email}", customer.Email);
-            }
-        }
     }
 }

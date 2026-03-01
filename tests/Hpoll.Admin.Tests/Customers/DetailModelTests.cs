@@ -193,4 +193,78 @@ public class DetailModelTests : IDisposable
         Assert.IsType<PageResult>(result);
         Assert.True(model.ShowActivitySummary);
     }
+
+    [Fact]
+    public async Task OnGetAsync_PopulatesSendTimesLocal()
+    {
+        var customer = await SeedCustomerAsync();
+        customer.SendTimesLocal = "19:30";
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Equal("19:30", model.EditSendTimesLocal);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSendTimesAsync_ValidTimes_UpdatesCustomer()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditSendTimesLocal = "07:00, 19:30";
+
+        var result = await model.OnPostUpdateSendTimesAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Contains("Send times updated", model.SuccessMessage);
+
+        var updated = await _db.Customers.FindAsync(customer.Id);
+        Assert.Equal("07:00, 19:30", updated!.SendTimesLocal);
+        Assert.NotNull(updated.NextSendTimeUtc);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSendTimesAsync_EmptyTimes_ClearsToDefault()
+    {
+        var customer = await SeedCustomerAsync();
+        customer.SendTimesLocal = "19:30";
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        model.EditSendTimesLocal = "";
+
+        var result = await model.OnPostUpdateSendTimesAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        var updated = await _db.Customers.FindAsync(customer.Id);
+        Assert.Equal("", updated!.SendTimesLocal);
+        Assert.NotNull(updated.NextSendTimeUtc); // Falls back to default
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSendTimesAsync_InvalidTimes_ReturnsError()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditSendTimesLocal = "invalid";
+
+        var result = await model.OnPostUpdateSendTimesAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("EditSendTimesLocal"));
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSendTimesAsync_InvalidCustomer_ReturnsNotFound()
+    {
+        var model = CreatePageModel();
+        model.EditSendTimesLocal = "19:30";
+
+        var result = await model.OnPostUpdateSendTimesAsync(999);
+
+        Assert.IsType<NotFoundResult>(result);
+    }
 }

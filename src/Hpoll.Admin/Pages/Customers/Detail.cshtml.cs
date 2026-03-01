@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Services;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
@@ -40,7 +41,11 @@ public class DetailModel : PageModel
     [BindProperty]
     public string? EditBccEmails { get; set; }
 
+    [BindProperty]
+    public string? EditSendTimesLocal { get; set; }
+
     public string? SuccessMessage { get; set; }
+    public string DefaultSendTimesDisplay { get; set; } = string.Empty;
     public string? OAuthUrl { get; set; }
     public bool ShowActivitySummary { get; set; }
     public List<ActivityWindow> ActivityWindows { get; set; } = new();
@@ -58,6 +63,8 @@ public class DetailModel : PageModel
         EditName = customer.Name;
         EditCcEmails = customer.CcEmails;
         EditBccEmails = customer.BccEmails;
+        EditSendTimesLocal = customer.SendTimesLocal;
+        DefaultSendTimesDisplay = string.Join(", ", _emailSettings.SendTimesUtc.Select(t => t + " UTC"));
 
         if (activity == true)
         {
@@ -107,6 +114,44 @@ public class DetailModel : PageModel
         SuccessMessage = "Email addresses updated.";
         EditCcEmails = customer.CcEmails;
         EditBccEmails = customer.BccEmails;
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostUpdateSendTimesAsync(int id)
+    {
+        var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
+        if (customer == null) return NotFound();
+        Customer = customer;
+        EditEmail = customer.Email;
+        EditName = customer.Name;
+        EditCcEmails = customer.CcEmails;
+        EditBccEmails = customer.BccEmails;
+        DefaultSendTimesDisplay = string.Join(", ", _emailSettings.SendTimesUtc.Select(t => t + " UTC"));
+
+        var newSendTimes = (EditSendTimesLocal ?? string.Empty).Trim();
+
+        // Validate send times if provided
+        if (!string.IsNullOrWhiteSpace(newSendTimes))
+        {
+            var parsed = SendTimeHelper.ParseTimeSpans(newSendTimes);
+            if (parsed.Count == 0)
+            {
+                ModelState.AddModelError(nameof(EditSendTimesLocal), "Invalid time format. Use HH:mm (e.g., 19:30, 08:00).");
+                return Page();
+            }
+            // Normalize to sorted HH:mm format
+            parsed.Sort();
+            newSendTimes = string.Join(", ", parsed.Select(t => $"{t:hh\\:mm}"));
+        }
+
+        customer.SendTimesLocal = newSendTimes;
+        customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
+            customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, _emailSettings.SendTimesUtc);
+        customer.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        EditSendTimesLocal = customer.SendTimesLocal;
+        SuccessMessage = $"Send times updated. Next email: {customer.NextSendTimeUtc:yyyy-MM-dd HH:mm} UTC.";
         return Page();
     }
 

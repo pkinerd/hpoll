@@ -15,6 +15,28 @@
     <dl>
         <dt>Status</dt><dd><span class="status status-@Model.Customer.Status">@Model.Customer.Status</span></dd>
         <dt>Timezone</dt><dd>@Model.Customer.TimeZoneId</dd>
+        <dt>Email Send Times</dt>
+        <dd>
+            @if (!string.IsNullOrWhiteSpace(Model.Customer.SendTimesLocal))
+            {
+                @Model.Customer.SendTimesLocal <span style="color: #666;">(local time)</span>
+            }
+            else
+            {
+                <span style="color: #999;">Using default: @Model.DefaultSendTimesDisplay</span>
+            }
+        </dd>
+        <dt>Next Email</dt>
+        <dd>
+            @if (Model.Customer.NextSendTimeUtc.HasValue)
+            {
+                @Model.Customer.NextSendTimeUtc.Value.ToString("yyyy-MM-dd HH:mm") <span style="color: #666;">UTC</span>
+            }
+            else
+            {
+                <span style="color: #999;">Not scheduled</span>
+            }
+        </dd>
         <dt>Created</dt><dd>@Model.Customer.CreatedAt.ToString("yyyy-MM-dd HH:mm") UTC</dd>
     </dl>
 </div>
@@ -49,6 +71,18 @@
             <span style="font-size: 0.8rem; color: #666;">Comma-separated list of BCC recipients</span>
         </div>
         <button type="submit" class="btn">Update Emails</button>
+    </form>
+</div>
+
+<div class="card" style="max-width: 500px;">
+    <form method="post" asp-page-handler="UpdateSendTimes" asp-route-id="@Model.Customer.Id">
+        <div class="form-group">
+            <label asp-for="EditSendTimesLocal">Email Send Times (local time)</label>
+            <input asp-for="EditSendTimesLocal" placeholder="19:30" />
+            <span style="font-size: 0.8rem; color: #666;">Comma-separated times in HH:mm format (e.g., 07:00, 19:30). Leave empty to use default (@Model.DefaultSendTimesDisplay).</span>
+            <span asp-validation-for="EditSendTimesLocal" style="color: #dc2626; font-size: 0.85rem;"></span>
+        </div>
+        <button type="submit" class="btn">Update Send Times</button>
     </form>
 </div>
 

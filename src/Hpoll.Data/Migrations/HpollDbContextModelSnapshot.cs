@@ -42,6 +42,13 @@ namespace Hpoll.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("NextSendTimeUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SendTimesLocal")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -56,6 +63,8 @@ namespace Hpoll.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email");
+
+                    b.HasIndex("NextSendTimeUtc");
 
                     b.ToTable("Customers");
                 });
