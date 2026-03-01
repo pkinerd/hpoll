@@ -1,7 +1,8 @@
 ---
 id: 44
 title: "Silent catch blocks swallow JSON parsing exceptions without logging"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [bug, code-quality]

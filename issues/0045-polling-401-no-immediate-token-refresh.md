@@ -1,7 +1,8 @@
 ---
 id: 45
 title: "401 during polling does not trigger immediate token refresh or status change"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-28
 author: claude
 labels: [bug]

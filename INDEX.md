@@ -45,8 +45,8 @@
 | [0041](issues/0041-add-inline-comments-complex-algorithms.md) | Add inline comments for complex algorithms and design decisions | open | low | documentation |
 | [0042](issues/0042-add-security-response-headers.md) | Add security response headers (CSP, X-Frame-Options, HSTS) | open | high | security |
 | [0043](issues/0043-hue-api-response-errors-not-checked.md) | Hue API response errors array is never checked after deserialization | open | medium | bug |
-| [0044](issues/0044-silent-catch-blocks-in-json-parsing.md) | Silent catch blocks swallow JSON parsing exceptions without logging | open | high | bug, code-quality |
-| [0045](issues/0045-polling-401-no-immediate-token-refresh.md) | 401 during polling does not trigger immediate token refresh or status change | open | high | bug |
+| [0044](issues/0044-silent-catch-blocks-in-json-parsing.md) | Silent catch blocks swallow JSON parsing exceptions without logging | closed | high | bug, code-quality |
+| [0045](issues/0045-polling-401-no-immediate-token-refresh.md) | 401 during polling does not trigger immediate token refresh or status change | closed | high | bug |
 | [0046](issues/0046-disabled-sensors-not-filtered-during-polling.md) | Disabled sensors are not filtered during polling | open | medium | bug |
 | [0047](issues/0047-invalid-timezoneid-crashes-email-batch.md) | Invalid TimeZoneId crashes email sending for all subsequent customers | open | medium | bug |
 | [0048](issues/0048-persist-data-protection-keys-secure-session-cookie.md) | Persist Data Protection keys and add Secure flag to session cookie | open | medium | security |
