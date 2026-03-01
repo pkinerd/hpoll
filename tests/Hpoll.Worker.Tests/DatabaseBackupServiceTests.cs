@@ -224,4 +224,104 @@ public class DatabaseBackupServiceTests : IDisposable
         systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.last_backup_completed", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.Once);
         systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.next_backup_due", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task ExecuteAsync_NoExistingBackups_CreatesInitialBackup()
+    {
+        var systemInfoMock = new Mock<ISystemInfoService>();
+        var service = CreateService(systemInfoMock: systemInfoMock);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        try { await service.StartAsync(cts.Token); await Task.Delay(1500, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        var backupFiles = Directory.Exists(_backupDir)
+            ? Directory.GetFiles(_backupDir, "hpoll-*.db")
+            : Array.Empty<string>();
+        Assert.Single(backupFiles);
+
+        // Verify system info was updated after backup
+        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.last_backup_completed", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.total_backups", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_SystemInfoFailure_DoesNotCrashService()
+    {
+        var systemInfoMock = new Mock<ISystemInfoService>();
+        systemInfoMock.Setup(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("System info write failed"));
+
+        var service = CreateService(systemInfoMock: systemInfoMock);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        try { await service.StartAsync(cts.Token); await Task.Delay(1500, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        // Backup should still have been created despite system info failure
+        var backupFiles = Directory.Exists(_backupDir)
+            ? Directory.GetFiles(_backupDir, "hpoll-*.db")
+            : Array.Empty<string>();
+        Assert.Single(backupFiles);
+    }
+
+    [Fact]
+    public async Task CreateBackupAsync_MultipleBackups_CreatesSeparateFiles()
+    {
+        var service = CreateService();
+
+        await service.CreateBackupAsync(CancellationToken.None);
+        await Task.Delay(1100); // Wait for different timestamp
+        await service.CreateBackupAsync(CancellationToken.None);
+
+        var backupFiles = Directory.GetFiles(_backupDir, "hpoll-*.db");
+        Assert.Equal(2, backupFiles.Length);
+    }
+
+    [Fact]
+    public void PruneOldBackups_ExactlyAtRetentionCount_DoesNotDelete()
+    {
+        Directory.CreateDirectory(_backupDir);
+
+        var fileNames = new[] { "hpoll-20260101-080000.db", "hpoll-20260102-080000.db", "hpoll-20260103-080000.db" };
+        foreach (var name in fileNames)
+            File.WriteAllText(Path.Combine(_backupDir, name), "dummy");
+
+        var service = CreateService(new BackupSettings { RetentionCount = 3, SubDirectory = "backups" });
+        service.PruneOldBackups();
+
+        var remaining = Directory.GetFiles(_backupDir, "hpoll-*.db");
+        Assert.Equal(3, remaining.Length);
+    }
+
+    [Fact]
+    public void HasExistingBackups_IgnoresNonMatchingFiles()
+    {
+        Directory.CreateDirectory(_backupDir);
+        File.WriteAllText(Path.Combine(_backupDir, "other-file.txt"), "dummy");
+        File.WriteAllText(Path.Combine(_backupDir, "backup.db"), "dummy");
+
+        var service = CreateService();
+        Assert.False(service.HasExistingBackups());
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithExistingBackups_SkipsInitialBackup()
+    {
+        Directory.CreateDirectory(_backupDir);
+        File.WriteAllText(Path.Combine(_backupDir, "hpoll-20260101-080000.db"), "dummy");
+
+        var service = CreateService();
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        try { await service.StartAsync(cts.Token); await Task.Delay(1000, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        // Should still only have the 1 pre-existing backup (no new one created)
+        var backupFiles = Directory.GetFiles(_backupDir, "hpoll-*.db");
+        Assert.Single(backupFiles);
+    }
 }
