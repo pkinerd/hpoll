@@ -31,6 +31,24 @@ public class DetailModel : PageModel
         return await LoadHub(id);
     }
 
+    public async Task<IActionResult> OnGetTokenAsync(int id, string type)
+    {
+        var hub = await _db.Hubs.FindAsync(id);
+        if (hub == null) return NotFound();
+
+        var value = type switch
+        {
+            "appkey" => hub.HueApplicationKey,
+            "access" => hub.AccessToken,
+            "refresh" => hub.RefreshToken,
+            _ => null
+        };
+
+        if (value == null) return BadRequest();
+
+        return new JsonResult(new { value });
+    }
+
     public async Task<IActionResult> OnPostToggleStatusAsync(int id)
     {
         var hub = await _db.Hubs.FindAsync(id);

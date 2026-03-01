@@ -275,4 +275,40 @@ public class DetailModelTests : IDisposable
         Assert.IsType<PageResult>(result);
         Assert.Contains("HTTP 503", model.ErrorMessage);
     }
+
+    [Theory]
+    [InlineData("appkey", "key")]
+    [InlineData("access", "token")]
+    [InlineData("refresh", "refresh")]
+    public async Task OnGetTokenAsync_ValidType_ReturnsTokenValue(string type, string expected)
+    {
+        var (_, hub) = await SeedDataAsync();
+
+        var model = CreatePageModel();
+        var result = await model.OnGetTokenAsync(hub.Id, type);
+
+        var json = Assert.IsType<JsonResult>(result);
+        var value = json.Value!.GetType().GetProperty("value")!.GetValue(json.Value) as string;
+        Assert.Equal(expected, value);
+    }
+
+    [Fact]
+    public async Task OnGetTokenAsync_InvalidHub_ReturnsNotFound()
+    {
+        var model = CreatePageModel();
+        var result = await model.OnGetTokenAsync(999, "access");
+
+        Assert.IsType<NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task OnGetTokenAsync_InvalidType_ReturnsBadRequest()
+    {
+        var (_, hub) = await SeedDataAsync();
+
+        var model = CreatePageModel();
+        var result = await model.OnGetTokenAsync(hub.Id, "invalid");
+
+        Assert.IsType<BadRequestResult>(result);
+    }
 }
