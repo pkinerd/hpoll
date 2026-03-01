@@ -36,7 +36,16 @@ public class DetailModel : PageModel
         var hub = await _db.Hubs.FindAsync(id);
         if (hub == null) return NotFound();
 
-        hub.Status = hub.Status == "active" ? "inactive" : "active";
+        if (hub.Status == "active")
+        {
+            hub.Status = "inactive";
+            hub.DeactivatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            hub.Status = "active";
+            hub.DeactivatedAt = null;
+        }
         hub.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
@@ -51,12 +60,31 @@ public class DetailModel : PageModel
         if (hub.Status == "needs_reauth")
         {
             hub.Status = "active";
+            hub.DeactivatedAt = null;
             hub.ConsecutiveFailures = 0;
             hub.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
         }
 
         return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(int id)
+    {
+        var hub = await _db.Hubs.FindAsync(id);
+        if (hub == null) return NotFound();
+
+        if (hub.Status != "inactive" || hub.DeactivatedAt == null ||
+            (DateTime.UtcNow - hub.DeactivatedAt.Value).TotalHours < 24)
+        {
+            return RedirectToPage(new { id });
+        }
+
+        var customerId = hub.CustomerId;
+        _db.Hubs.Remove(hub);
+        await _db.SaveChangesAsync();
+
+        return RedirectToPage("/Customers/Detail", new { id = customerId });
     }
 
     public async Task<IActionResult> OnPostRefreshTokenAsync(int id)

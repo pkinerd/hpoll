@@ -52,6 +52,20 @@
             <button type="submit" class="btn btn-success">Clear Needs Re-auth</button>
         </form>
     }
+    @{
+        var canDelete = Model.Hub.Status == "inactive"
+            && Model.Hub.DeactivatedAt.HasValue
+            && (DateTime.UtcNow - Model.Hub.DeactivatedAt.Value).TotalHours >= 24;
+    }
+    <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Hub.Id" style="display:inline;"
+          onsubmit="return confirm('Delete this hub and all its data? This cannot be undone.');">
+        <button type="submit" class="btn btn-danger" @(canDelete ? "" : "disabled")>Delete Hub</button>
+    </form>
+    @if (Model.Hub.Status == "inactive" && Model.Hub.DeactivatedAt.HasValue && !canDelete)
+    {
+        var hoursRemaining = 24 - (DateTime.UtcNow - Model.Hub.DeactivatedAt.Value).TotalHours;
+        <span style="font-size: 0.8rem; color: #666; margin-left: 0.5rem;">Available in @($"{hoursRemaining:F0}h")</span>
+    }
 </div>
 
 @if (!string.IsNullOrEmpty(Model.Hub.AccessToken))
