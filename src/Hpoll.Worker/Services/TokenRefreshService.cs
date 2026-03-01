@@ -9,6 +9,7 @@ using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Data;
+using Hpoll.Data.Entities;
 
 public class TokenRefreshService : BackgroundService
 {
@@ -116,13 +117,7 @@ public class TokenRefreshService : BackgroundService
                 {
                     var tokenResponse = await hueClient.RefreshTokenAsync(hub.RefreshToken, ct);
 
-                    hub.AccessToken = tokenResponse.AccessToken;
-                    if (!string.IsNullOrEmpty(tokenResponse.RefreshToken))
-                    {
-                        hub.RefreshToken = tokenResponse.RefreshToken;
-                    }
-                    hub.TokenExpiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddSeconds(tokenResponse.ExpiresIn);
-                    hub.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
+                    hub.ApplyTokenResponse(tokenResponse, _timeProvider.GetUtcNow().UtcDateTime);
 
                     await db.SaveChangesAsync(ct);
 
