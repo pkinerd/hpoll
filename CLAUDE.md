@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-hpoll is a Philips Hue monitoring service that polls Hue Bridge hubs for motion and temperature sensor data, stores readings in SQLite, and sends daily summary emails via AWS SES. It includes a web admin portal for managing customers and hubs.
+hpoll is a Philips Hue monitoring service that polls Hue Bridge hubs for motion, temperature, and battery sensor data, stores readings in SQLite, and sends daily summary emails via AWS SES. It includes a web admin portal for managing customers and hubs.
 
 ## Tech Stack
 
@@ -18,7 +18,7 @@ hpoll is a Philips Hue monitoring service that polls Hue Bridge hubs for motion 
 
 ```
 src/
-  Hpoll.Core/          # Interfaces, models, configuration, core services (HueApiClient, HealthEvaluator)
+  Hpoll.Core/          # Interfaces, models, configuration, core services (HueApiClient)
   Hpoll.Data/          # EF Core DbContext, entities, migrations, config seeder
   Hpoll.Worker/        # Background services (polling, token refresh, email scheduler)
   Hpoll.Email/         # Email rendering (HTML) and SES sending
@@ -82,7 +82,7 @@ docker compose up --build                         # Full stack
 
 ## CI
 
-GitHub Actions workflow (`.github/workflows/build-and-test.yml`) runs on pushes to `main`, `dev`, and `claude/*` branches. It builds, runs tests with coverage, then builds and pushes Docker images.
+GitHub Actions workflow (`.github/workflows/build-and-test.yml`) runs on pushes to `main`, `dev`, and `claude/*-*` branches (excluding `claude/zzsysissuesskill-*`), on pull requests, and via manual dispatch. It builds, runs tests with coverage, then builds and pushes Docker images.
 
 ## Skills (Slash Commands)
 
