@@ -1,6 +1,6 @@
 ---
 name: poll-build-logs
-description: Polls for CI build log branches matching changes from the current session. Use after pushing code to monitor build results automatically. Checks periodically for build logs, then fetches and analyzes them when they appear.
+description: Finds or polls for CI build log branches matching the current session branch. Finds the most recent matching build immediately; only polls/waits when recent changes were pushed and no matching build exists yet.
 ---
 
 # Poll Build Logs
@@ -8,6 +8,8 @@ description: Polls for CI build log branches matching changes from the current s
 ## Instructions
 
 After pushing code changes, use this process to monitor for CI build results and analyze them when available.
+
+**IMPORTANT — Do not wait for a build that won't come:** Before entering the polling loop, check whether there are recent unpushed or just-pushed changes on the session branch that would have triggered a new CI run. If there are NO recent changes (e.g., the branch hasn't been pushed to since the last known build), skip the polling loop entirely — just find the most recent matching build-log branch (Step 2) and report its result. Only enter the polling loop (Step 3) when you have evidence that a new build should be in progress (e.g., you just pushed, or the user just pushed, and no matching build-log exists yet for the current HEAD commit).
 
 ### Step 1: Identify the Branch and Commit
 

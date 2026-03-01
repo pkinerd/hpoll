@@ -90,7 +90,7 @@ Always use the relevant skill below instead of attempting the task manually. For
 
 - **`/issues`** — Manage issues tracked on the `claude/issues` orphan branch. Use this to list, create, show, update, comment on, close, reopen, search, and filter issues. Always use this skill instead of manually managing issue tracking.
 - **`/hue-api-docs`** — Extract Philips Hue API documentation from the encrypted archive into a temporary directory. Use this whenever you need to reference Hue API endpoints, payloads, or behavior (e.g., when implementing or modifying API calls).
-- **`/poll-build-logs`** — Poll for CI build log branches after pushing code. Use this after every push to monitor whether the build passed or failed, and to analyze test results and build output.
+- **`/poll-build-logs`** — Find or poll for CI build log branches. Finds the most recent matching build immediately; only waits/polls when recent changes were pushed and no matching build exists yet. Use this to check build status and analyze test results.
 - **`/prepare-pr`** — Generate PR title, description, and URL for creating a pull request from the current branch. Accepts an optional target branch argument (e.g., `/prepare-pr dev`).
 - **`/simplify`** — Review changed code for reuse, quality, and efficiency, then fix any issues found.
 - **`/comprehensive-review`** — Run a full-spectrum codebase review (code quality, security, unit testing, coverage, documentation) using parallel sub-agents. Collates all findings and creates or updates issues for each actionable result.
