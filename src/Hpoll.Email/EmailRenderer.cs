@@ -54,7 +54,10 @@ public class EmailRenderer : IEmailRenderer
             .ToListAsync(ct);
 
         var readings = await _db.DeviceReadings
-            .Where(r => deviceIds.Contains(r.DeviceId) && r.Timestamp >= startUtc && r.Timestamp < endUtc)
+            .Where(r => deviceIds.Contains(r.DeviceId)
+                && r.Timestamp >= startUtc && r.Timestamp < endUtc
+                && (r.ReadingType == "motion" || r.ReadingType == "temperature"))
+            .AsNoTracking()
             .ToListAsync(ct);
 
         if (readings.Count == 0)
@@ -249,14 +252,14 @@ public class EmailRenderer : IEmailRenderer
         sb.AppendLine("</table>");
 
         // Battery status section — only shown if any device is below the alert threshold
-        if (batteryStatuses.Count > 0 && batteryStatuses.Any(b => b.BatteryLevel < batteryAlertThreshold))
+        if (batteryStatuses.Count > 0 && batteryStatuses.Any(b => b.BatteryLevel <= batteryAlertThreshold))
         {
             sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-top:20px;\">");
             sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Battery Status</td></tr>");
             foreach (var b in batteryStatuses)
             {
-                var color = b.BatteryLevel < batteryLevelCritical ? "#e74c3c"
-                          : b.BatteryLevel < batteryLevelWarning ? "#f39c12"
+                var color = b.BatteryLevel <= batteryLevelCritical ? "#e74c3c"
+                          : b.BatteryLevel <= batteryLevelWarning ? "#f39c12"
                           : "#27ae60";
                 var barWidth = Math.Max(b.BatteryLevel, 5);
 

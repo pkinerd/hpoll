@@ -199,7 +199,10 @@ public class DetailModel : PageModel
             .CountAsync();
 
         var readings = await _db.DeviceReadings
-            .Where(r => deviceIds.Contains(r.DeviceId) && r.Timestamp >= startUtc && r.Timestamp < nowUtc)
+            .Where(r => deviceIds.Contains(r.DeviceId)
+                && r.Timestamp >= startUtc && r.Timestamp < nowUtc
+                && (r.ReadingType == "motion" || r.ReadingType == "temperature"))
+            .AsNoTracking()
             .ToListAsync();
 
         for (int i = 0; i < windowCount; i++)

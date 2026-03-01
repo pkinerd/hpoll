@@ -134,7 +134,7 @@ public class PollingService : BackgroundService
             // Process motion readings
             foreach (var motion in motionResponse.Data)
             {
-                if (motion.Motion.MotionReport == null) continue;
+                if (!motion.Enabled || motion.Motion.MotionReport == null) continue;
 
                 // owner.rid is the parent device ID
                 var deviceName = deviceById.TryGetValue(motion.Owner.Rid, out var ownerDevice)
@@ -161,7 +161,7 @@ public class PollingService : BackgroundService
             // Process temperature readings
             foreach (var temp in tempResponse.Data)
             {
-                if (temp.Temperature.TemperatureReport == null) continue;
+                if (!temp.Enabled || temp.Temperature.TemperatureReport == null) continue;
 
                 // owner.rid is the parent device ID
                 var deviceName = deviceById.TryGetValue(temp.Owner.Rid, out var ownerDevice)
@@ -295,40 +295,13 @@ public class PollingService : BackgroundService
             var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
             var cutoff = _timeProvider.GetUtcNow().UtcDateTime.AddHours(-_settings.DataRetentionHours);
 
-            // Delete in batches to avoid loading excessive rows into memory at once
-            const int batchSize = 1000;
-            int totalReadings = 0, totalLogs = 0;
+            var totalReadings = await db.DeviceReadings
+                .Where(r => r.Timestamp < cutoff)
+                .ExecuteDeleteAsync(ct);
 
-            int deleted;
-            do
-            {
-                var batch = await db.DeviceReadings
-                    .Where(r => r.Timestamp < cutoff)
-                    .Take(batchSize)
-                    .ToListAsync(ct);
-                deleted = batch.Count;
-                if (deleted > 0)
-                {
-                    db.DeviceReadings.RemoveRange(batch);
-                    await db.SaveChangesAsync(ct);
-                    totalReadings += deleted;
-                }
-            } while (deleted == batchSize);
-
-            do
-            {
-                var batch = await db.PollingLogs
-                    .Where(l => l.Timestamp < cutoff)
-                    .Take(batchSize)
-                    .ToListAsync(ct);
-                deleted = batch.Count;
-                if (deleted > 0)
-                {
-                    db.PollingLogs.RemoveRange(batch);
-                    await db.SaveChangesAsync(ct);
-                    totalLogs += deleted;
-                }
-            } while (deleted == batchSize);
+            var totalLogs = await db.PollingLogs
+                .Where(l => l.Timestamp < cutoff)
+                .ExecuteDeleteAsync(ct);
 
             if (totalReadings > 0 || totalLogs > 0)
             {
