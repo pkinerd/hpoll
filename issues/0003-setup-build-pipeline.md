@@ -1,7 +1,8 @@
 ---
 id: 3
 title: "Setup build pipeline"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-26
 author: claude
 labels: [planning]

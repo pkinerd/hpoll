@@ -4,12 +4,12 @@
 |----|-------|--------|----------|--------|
 | 0001 | Define objectives and document plan | closed | medium | planning |
 | 0002 | Add initialization procedure to issues skill | closed | medium | enhancement |
-| 0003 | Setup build pipeline | open | medium | planning |
-| 0004 | Setup hosting | open | medium | planning |
-| 0005 | Setup CI pipeline for dev/ci | open | medium | planning |
-| 0006 | Setup CD pipeline to test and prod | open | medium | planning |
+| 0003 | Setup build pipeline | closed | medium | planning |
+| 0004 | Setup hosting | closed | medium | planning |
+| 0005 | Setup CI pipeline for dev/ci | closed | medium | planning |
+| 0006 | Setup CD pipeline to test and prod | closed | medium | planning |
 | 0007 | Research API docs for Hue APIs and make available to Claude | closed | medium | documentation, planning |
-| 0008 | Implementation plan | open | medium | planning, documentation |
+| 0008 | Implementation plan | closed | medium | planning, documentation |
 | 0009 | Extract shared ActivitySummaryBuilder to eliminate duplicated window aggregation logic | open | high | enhancement, code-quality |
 | 0010 | Introduce string constants or enums for Status, ReadingType, and DeviceType fields | open | high | enhancement, code-quality |
 | 0011 | Extract DeviceReading JSON parsing into typed accessor methods | open | medium | enhancement, code-quality |

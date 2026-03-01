@@ -1,7 +1,8 @@
 ---
 id: 8
 title: "Implementation plan"
-status: open
+status: closed
+closed: 2026-03-01
 created: 2026-02-27
 author: claude
 labels: [planning, documentation]
