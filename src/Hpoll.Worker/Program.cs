@@ -94,7 +94,8 @@ using (var scope = host.Services.CreateScope())
     AddBuild("build.commit", Hpoll.Core.BuildInfo.ShortCommit);
     AddBuild("build.number", Hpoll.Core.BuildInfo.BuildNumber);
     AddBuild("build.run_id", Hpoll.Core.BuildInfo.RunId);
-    AddBuild("build.pull_request", Hpoll.Core.BuildInfo.PullRequest);
+    if (!string.IsNullOrEmpty(Hpoll.Core.BuildInfo.PullRequest))
+        AddBuild("build.pull_request", $"#{Hpoll.Core.BuildInfo.PullRequest}");
     AddBuild("build.timestamp", Hpoll.Core.BuildInfo.Timestamp);
     AddBuild("build.source", Hpoll.Core.BuildInfo.IsCI ? "CI" : "Local");
     if (buildEntries.Count > 0)
