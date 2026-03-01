@@ -82,3 +82,30 @@ There are two minor complications:
 **Conclusion:**
 
 The duplication is real and correctly identified. However, with only 3 sites across 2 files in a single project, the benefit of extraction is minimal. The pattern is simple enough (a ternary operator) that inline repetition carries very little cognitive overhead or maintenance risk. If a fourth or fifth occurrence appeared, the case for extraction would strengthen. As it stands, this is a legitimate but low-impact cleanup — the "low" priority label is appropriate. Consider this a "nice to have" that should not be prioritized over more impactful work.
+
+### claude (critical review) — 2026-03-01
+
+**Verdict: CLOSE — the duplication is real but too trivial and narrow to warrant extraction.**
+
+**Misleading title and framing.** The title "Extract HttpRequestException error formatting helper" implies the duplication lives in how `HttpRequestException` objects are *constructed* (i.e., in `HueApiClient`). In reality, the 4 throw sites in `HueApiClient.cs` (lines 98, 122, 172, 202) each use intentionally different message strings — "Enable link button failed", "Register application failed", "Hue API request failed for {path}", "Token request failed" — and share no extractable pattern. The actual duplication is in how `HttpRequestException` is *caught and formatted for user display* in the Admin Razor pages. The issue body describes this correctly, but the title creates a false impression about scope and location.
+
+**The duplicated pattern is a UI concern, not an HTTP concern.** The 3 catch sites produce user-facing strings shown in the admin portal. Each already carries a distinct action prefix ("Token refresh failed", "Connection test failed", "Hub registration failed") that is essential for the user to understand what went wrong. A helper like `FormatHueApiError(string action, HttpRequestException ex)` would parameterize the action string — but parameterizing a single ternary expression with one variable part produces a helper that is nearly as long as the code it replaces:
+
+```csharp
+// Helper (5 lines including signature)
+static string FormatHueApiError(string action, HttpRequestException ex)
+    => ex.StatusCode.HasValue
+        ? $"{action}: Hue API returned HTTP {(int)ex.StatusCode}."
+        : $"{action}: could not reach the Hue API.";
+
+// Call site (1 line, saves 2 lines per site)
+ErrorMessage = FormatHueApiError("Token refresh failed", ex);
+```
+
+Net savings: approximately 6 lines across the entire codebase (3 sites x 2 lines saved, minus 5 lines for the helper definition plus a new file or class). This is negligible.
+
+**Premature abstraction risk.** With only 3 call sites, extracting a helper creates a coupling point. If any site later needs richer formatting — including the response body, varying the wording, adding retry guidance, or distinguishing between different HTTP status codes — the helper either grows parameters for every variation or the site reverts to inline code. The Worker project already demonstrates this divergence: `PollingService` uses status-specific catch filters with hardcoded messages, showing that error-handling strategies naturally differ by context. Locking the Admin sites into a shared helper assumes their formatting needs will evolve in lockstep, which is unlikely.
+
+**Error messages should remain context-specific for debuggability.** The current inline ternary expressions are immediately readable at the catch site. A developer investigating a user-reported error can see exactly what message is produced without navigating to a helper method. This is a minor but real advantage for a codebase with only 3 occurrences.
+
+**Recommendation: close this issue.** The duplication is real but falls below the threshold where extraction provides meaningful benefit. The rule of three is a guideline, not a mandate — especially when the repeated code is a single expression and the "common" part is boilerplate rather than logic. If the Admin project grows additional catch sites using this pattern (a fourth or fifth occurrence), the case strengthens and the issue can be reopened. Until then, the inline approach is clearer, more maintainable, and carries no abstraction overhead.
