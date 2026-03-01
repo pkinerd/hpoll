@@ -76,7 +76,7 @@
 | [0072](issues/0072-oauthcallback-allowanonymous-sensitive-operations.md) | OAuthCallback page is AllowAnonymous but performs sensitive operations | closed | medium | security |
 | [0073](issues/0073-missing-cancellationtoken-in-admin-handlers.md) | Missing CancellationToken propagation in Admin page handlers | open | low | enhancement, code-quality |
 | [0074](issues/0074-refactor-inline-js-css-and-add-csp.md) | Refactor inline JS/CSS out of Razor pages and add Content-Security-Policy header | open | low | security, enhancement |
-| [0075](issues/0075-activity-window-duplication-persists.md) | Activity window duplication persists — ActivitySummaryBuilder never extracted | open | high | enhancement, code-quality |
+| [0075](issues/0075-activity-window-duplication-persists.md) | Activity window duplication persists — ActivitySummaryBuilder never extracted | open | low | enhancement, code-quality |
 | [0076](issues/0076-inconsistent-timeprovider-usage.md) | Inconsistent TimeProvider vs DateTime.UtcNow usage across codebase | open | high | enhancement, code-quality |
 | [0077](issues/0077-oauthcallback-razor-view-zero-coverage.md) | OAuthCallback Razor view has 0% test coverage | open | high | testing |
 | [0078](issues/0078-xml-doc-gaps-worker-services-config.md) | XML doc gaps remain on Worker services and configuration classes | open | medium | documentation |
