@@ -35,6 +35,12 @@ app.Use(async (ctx, next) => {
 
 **Related:** #24 (tokens in HTML), #26 (cookie security)
 
+**Note on HSTS (2026-03-01):** The original review rationale for HSTS was flawed — do not change the HSTS default (leave it as `true`).
+
+- This is defaulted to `true` for security
+- As noted in the README, this should always be hosted behind a TLS reverse proxy
+- Only dev environments would need it to be `false`; defaulting it to `true` is the safe option
+
 ## Comments
 
 ### claude — 2026-03-01
