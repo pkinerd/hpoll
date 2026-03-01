@@ -29,7 +29,7 @@ variables use `__` (double underscore) as section separators.
 | **Polling** | | | |
 | `Polling:IntervalMinutes` | `Polling__IntervalMinutes` | `60` | Minutes between polling cycles |
 | `Polling:BatteryPollIntervalHours` | `Polling__BatteryPollIntervalHours` | `84` | Hours between battery level polls (~twice per week) |
-| `Polling:DataRetentionHours` | `Polling__DataRetentionHours` | `48` | Hours to keep device readings and polling logs before cleanup |
+| `Polling:DataRetentionHours` | `Polling__DataRetentionHours` | `168` | Hours to keep device readings and polling logs before cleanup |
 | `Polling:HttpTimeoutSeconds` | `Polling__HttpTimeoutSeconds` | `30` | HTTP client timeout for Hue API calls |
 | `Polling:TokenRefreshCheckHours` | `Polling__TokenRefreshCheckHours` | `24` | Hours between token refresh checks |
 | `Polling:TokenRefreshThresholdHours` | `Polling__TokenRefreshThresholdHours` | `48` | Hours before token expiry to trigger a refresh |
@@ -217,7 +217,7 @@ Where `appsettings.Production.json` contains:
   "Polling": {
     "IntervalMinutes": 60,
     "BatteryPollIntervalHours": 84,
-    "DataRetentionHours": 48,
+    "DataRetentionHours": 168,
     "HttpTimeoutSeconds": 30,
     "TokenRefreshCheckHours": 24,
     "TokenRefreshThresholdHours": 48,
@@ -266,7 +266,7 @@ services:
       # ── Polling ──────────────────────────────────────────
       Polling__IntervalMinutes: "60"
       Polling__BatteryPollIntervalHours: "84"
-      Polling__DataRetentionHours: "48"
+      Polling__DataRetentionHours: "168"
       Polling__HttpTimeoutSeconds: "30"
       Polling__TokenRefreshCheckHours: "24"
       Polling__TokenRefreshThresholdHours: "48"

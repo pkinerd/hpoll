@@ -29,7 +29,7 @@ public class PollingSettings
 {
     public int IntervalMinutes { get; set; } = 60;
     public int BatteryPollIntervalHours { get; set; } = 84;
-    public int DataRetentionHours { get; set; } = 48;
+    public int DataRetentionHours { get; set; } = 168;
     public int HttpTimeoutSeconds { get; set; } = 30;
     public int TokenRefreshCheckHours { get; set; } = 24;
     public int TokenRefreshThresholdHours { get; set; } = 48;
