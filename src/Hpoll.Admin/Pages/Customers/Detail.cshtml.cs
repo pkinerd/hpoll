@@ -52,10 +52,11 @@ public class DetailModel : PageModel
     public string DefaultSendTimesDisplay { get; set; } = string.Empty;
     public string? OAuthUrl { get; set; }
     public bool ShowActivitySummary { get; set; }
+    public bool EditingTimeZone { get; set; }
     public List<ActivityWindow> ActivityWindows { get; set; } = new();
     public int MotionSensorCount { get; set; }
 
-    public async Task<IActionResult> OnGetAsync(int id, bool? activity = null)
+    public async Task<IActionResult> OnGetAsync(int id, bool? activity = null, bool editTz = false)
     {
         var customer = await _db.Customers
             .Include(c => c.Hubs)
@@ -69,6 +70,7 @@ public class DetailModel : PageModel
         EditBccEmails = customer.BccEmails;
         EditSendTimesLocal = customer.SendTimesLocal;
         EditTimeZoneId = customer.TimeZoneId;
+        EditingTimeZone = editTz;
         DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
 
         if (activity == true)
@@ -176,6 +178,7 @@ public class DetailModel : PageModel
         var newTzId = (EditTimeZoneId ?? string.Empty).Trim();
         if (string.IsNullOrEmpty(newTzId))
         {
+            EditingTimeZone = true;
             ModelState.AddModelError(nameof(EditTimeZoneId), "Timezone is required.");
             return Page();
         }
@@ -186,6 +189,7 @@ public class DetailModel : PageModel
         }
         catch (TimeZoneNotFoundException)
         {
+            EditingTimeZone = true;
             ModelState.AddModelError(nameof(EditTimeZoneId), "Invalid timezone.");
             return Page();
         }
