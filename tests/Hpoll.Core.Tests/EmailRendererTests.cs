@@ -894,8 +894,9 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, nowUtc);
 
         Assert.NotNull(html);
-        // The newest window label "00:00–01:00" should appear (exactly 60 min, not omitted)
-        Assert.Contains("00:00\u201301:00", html);
+        // The newest window should appear (exactly 60 min, not omitted).
+        // Duration is 1h < 3h, so end time is wrapped in dark red span.
+        Assert.Contains("00:00\u2013<span style=\"color:#8B0000;\">01:00</span>", html);
     }
 
     [Fact]
