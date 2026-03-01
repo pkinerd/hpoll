@@ -96,3 +96,4 @@ Always use the relevant skill below instead of attempting the task manually. For
 - **`/poll-build-logs`** — Poll for CI build log branches after pushing code. Use this after every push to monitor whether the build passed or failed, and to analyze test results and build output.
 - **`/prepare-pr`** — Generate PR title, description, and URL for creating a pull request from the current branch. Accepts an optional target branch argument (e.g., `/prepare-pr dev`).
 - **`/simplify`** — Review changed code for reuse, quality, and efficiency, then fix any issues found.
+- **`/comprehensive-review`** — Run a full-spectrum codebase review (code quality, security, unit testing, coverage, documentation) using parallel sub-agents. Collates all findings and creates or updates issues for each actionable result.
