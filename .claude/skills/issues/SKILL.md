@@ -148,8 +148,10 @@ Comment text.
 
 | ID | Title | Status | Priority | Labels |
 |----|-------|--------|----------|--------|
-| *No issues yet.* | | | | |
 ```
+
+Note: when the table is empty, omit the placeholder row. The first issue
+created will add the first data row.
 
 ##### 4. Commit and push the initialization
 
@@ -283,6 +285,12 @@ useful for tracking decisions or recording issues that were already resolved.
    table. If the table contains the "*No issues yet.*" placeholder, remove it
    first. If `--closed`, the status column should show `closed`.
 
+   **The ID column must be a relative markdown link to the issue file:**
+   ```
+   | [<id>](issues/<id>-<slug>.md) | <title> | <status> | <priority> | <labels> |
+   ```
+   For example: `| [0042](issues/0042-add-security-headers.md) | Add security headers | open | high | security |`
+
    **Note:** The Write tool requires a prior Read of the file. Always read
    existing worktree files (state.json, INDEX.md, issue files) before writing
    to them.
@@ -314,8 +322,12 @@ useful for tracking decisions or recording issues that were already resolved.
 
 1. Set up a temporary worktree (same as create step 3).
 2. Ask the user what to change (title, status, labels, priority, description).
-3. Read then edit the issue file in the worktree.
+3. Read then edit the issue file in the worktree. If the title changes, rename
+   the issue file to use the new slug (e.g., `git mv` the old file to the new
+   `<id>-<new-slug>.md` name).
 4. Read then update INDEX.md if title, status, labels, or priority changed.
+   If the title (and therefore slug/filename) changed, also update the link
+   target in the ID column to point to the renamed file.
 5. Commit: `Update issue #<id>: <description of change>`
 6. Push and clean up (same as create steps 7-8).
 7. Run **Step 4** (verify sync).
@@ -511,7 +523,8 @@ avoids repeated AskUserQuestion prompts and produces a single clean commit.
      the SCHEMA.md frontmatter format (id, title, status, created, author, plus
      optional labels, priority, closed)
    - Every issue body must include `## Description` and `## Comments` sections
-   - Append one row per issue to INDEX.md
+   - Append one row per issue to INDEX.md, using a linked ID column:
+     `| [<id>](issues/<id>-<slug>.md) | <title> | ... |`
    - Update `state.json` with the final `next_id`
 
    Using a script is preferred over writing files one at a time with the Write
