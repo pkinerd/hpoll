@@ -82,7 +82,7 @@ docker compose up --build                         # Full stack
 
 ## CI
 
-GitHub Actions workflow (`.github/workflows/build-and-test.yml`) runs on pushes to `main`, `dev`, and `claude/*-*` branches (excluding `claude/zzsysissuesskill-*`), on pull requests, and via manual dispatch. It builds, runs tests with coverage, then builds and pushes Docker images.
+GitHub Actions workflow (`.github/workflows/build-and-test.yml`) runs on pushes to `main` and `dev` branches, on pull requests targeting `main` or `dev`, and via manual dispatch. It builds, runs tests with coverage, then builds and pushes Docker images.
 
 ## Skills (Slash Commands)
 
