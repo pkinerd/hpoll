@@ -51,12 +51,16 @@ public class AboutModel : PageModel
                     UpdatedAt = e.UpdatedAt
                 }).ToList());
 
-        // Explicit section ordering
+        // Explicit section ordering (rename "Build" to "Worker Build" for clarity)
         var categoryOrder = new[] { "Build", "System", "Polling", "Email", "Hue", "Runtime" };
+        var categoryDisplayNames = new Dictionary<string, string> { ["Build"] = "Worker Build" };
         foreach (var cat in categoryOrder)
         {
             if (grouped.TryGetValue(cat, out var list))
-                Sections.Add((cat, list));
+            {
+                var displayName = categoryDisplayNames.GetValueOrDefault(cat, cat);
+                Sections.Add((displayName, list));
+            }
         }
 
         // Any categories not in the explicit order
@@ -80,8 +84,8 @@ public class AboutModel : PageModel
         if (hueIndex >= 0)
         {
             var hueEntries = Sections[hueIndex].Entries;
-            // Only add if the Worker hasn't already written callback_url to SystemInfo
-            if (!hueEntries.Any(e => e.Label == "Callback Url"))
+            // Only add if the Worker hasn't already written a non-empty callback_url to SystemInfo
+            if (!hueEntries.Any(e => e.Label == "Callback Url" && !string.IsNullOrEmpty(e.Value)))
             {
                 hueEntries.Add(new SystemInfoEntry { Label = "Callback Url", Value = callbackUrl });
             }

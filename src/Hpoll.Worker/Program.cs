@@ -131,11 +131,13 @@ using (var scope = host.Services.CreateScope())
 
     // Hue settings (non-sensitive only)
     var hueApp = scope.ServiceProvider.GetRequiredService<IOptions<HueAppSettings>>().Value;
-    await systemInfo.SetBatchAsync("Hue", new Dictionary<string, string>
+    var hueEntries = new Dictionary<string, string>
     {
         ["hue.app_configured"] = (!string.IsNullOrEmpty(hueApp.ClientId)).ToString(),
-        ["hue.callback_url"] = hueApp.CallbackUrl,
-    });
+    };
+    if (!string.IsNullOrEmpty(hueApp.CallbackUrl))
+        hueEntries["hue.callback_url"] = hueApp.CallbackUrl;
+    await systemInfo.SetBatchAsync("Hue", hueEntries);
 
     // Runtime (initial placeholders)
     await systemInfo.SetBatchAsync("Runtime", new Dictionary<string, string>

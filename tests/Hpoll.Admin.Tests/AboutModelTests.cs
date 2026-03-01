@@ -122,6 +122,7 @@ public class AboutModelTests : IDisposable
     public async Task OnGetAsync_SectionsInExpectedOrder()
     {
         _db.SystemInfo.AddRange(
+            new SystemInfo { Key = "build.branch", Value = "main", Category = "Build" },
             new SystemInfo { Key = "runtime.total_poll_cycles", Value = "5", Category = "Runtime" },
             new SystemInfo { Key = "email.aws_region", Value = "us-east-1", Category = "Email" },
             new SystemInfo { Key = "system.version", Value = "1.0.0", Category = "System" },
@@ -134,7 +135,7 @@ public class AboutModelTests : IDisposable
         await model.OnGetAsync();
 
         var categories = model.Sections.Select(s => s.Category).ToList();
-        Assert.Equal(new[] { "System", "Polling", "Email", "Hue", "Runtime" }, categories);
+        Assert.Equal(new[] { "Worker Build", "System", "Polling", "Email", "Hue", "Runtime" }, categories);
     }
 
     [Fact]
@@ -185,6 +186,24 @@ public class AboutModelTests : IDisposable
         var hueSection = model.Sections.Single(s => s.Category == "Hue");
         // Should not duplicate — Worker's value is kept
         Assert.Single(hueSection.Entries.Where(e => e.Label == "Callback Url"));
+    }
+
+    [Fact]
+    public async Task OnGetAsync_ShowsCallbackUrlFromConfig_WhenWorkerWroteEmptyValue()
+    {
+        // Worker wrote an empty callback_url (Worker config doesn't include CallbackUrl)
+        _db.SystemInfo.AddRange(
+            new SystemInfo { Key = "hue.app_configured", Value = "True", Category = "Hue" },
+            new SystemInfo { Key = "hue.callback_url", Value = "", Category = "Hue" }
+        );
+        await _db.SaveChangesAsync();
+
+        var model = new AboutModel(_db, CreateHueOptions(
+            callbackUrl: "https://admin.example.com/Hubs/OAuthCallback"));
+        await model.OnGetAsync();
+
+        var hueSection = model.Sections.Single(s => s.Category == "Hue");
+        Assert.Contains(hueSection.Entries, e => e.Label == "Callback Url" && e.Value == "https://admin.example.com/Hubs/OAuthCallback");
     }
 
     [Fact]
