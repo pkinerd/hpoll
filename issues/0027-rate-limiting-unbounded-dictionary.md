@@ -89,3 +89,47 @@ No. Replacing `ConcurrentDictionary` with `MemoryCache` adds complexity (sliding
 - **Priority upgrade to medium**: Unjustified. The original low priority was correct. The attack scenario requires a sophisticated distributed attacker targeting an internal admin tool, bypassing antiforgery tokens, from enough IPs to cause memory pressure. This is not a medium-severity finding.
 
 **Recommendation:** Keep priority at **low**. If desired, add a simple periodic expired-entry cleanup timer as a minor hardening measure. A full migration to `Microsoft.AspNetCore.RateLimiting` or `MemoryCache` is over-engineering for this use case.
+
+### critical-review — 2026-03-01
+
+**Assessment: MOSTLY_INVALID / SIGNIFICANTLY_OVERSTATED. Recommend closing as won't-fix or downgrading to informational.**
+
+Independent code review of `src/Hpoll.Admin/Pages/Login.cshtml.cs` on `origin/main` confirms the prior critical review's findings. Here is a focused summary of the key points with additional analysis:
+
+#### 1. The dictionary is not truly "unbounded" in practice
+
+The issue title claims "no size bounds (DoS risk)," but fails to account for the multiple factors that constrain growth:
+
+- **Lazy cleanup exists.** Lines 44-48 remove expired entries when the same IP retries after `ResetAt` has passed. Lines 62 remove entries on successful login. The first comment's claim that "expired entries are never cleaned up" is factually wrong — they are cleaned up lazily on next access.
+- **One entry per unique IP, not per attempt.** The `AddOrUpdate` call (lines 53-55) increments the count for an existing IP; it does not create new entries. A single attacker from one IP produces exactly one dictionary entry regardless of how many times they fail.
+- **Process restarts clear everything.** The dictionary is `static` in-process memory. Any container restart, deployment, or crash wipes it entirely.
+
+#### 2. Antiforgery tokens make mass-IP attacks impractical
+
+This is the most important mitigating factor that the original issue completely ignores. ASP.NET Core Razor Pages enforce antiforgery validation on POST handlers by default. The login form (`Login.cshtml`) uses `<form method="post" asp-page="/Login">`, which generates a `__RequestVerificationToken` via tag helpers. `Program.cs` line 68 configures `AddAntiforgery`. No `[IgnoreAntiforgeryToken]` attribute exists anywhere in the codebase.
+
+This means an attacker cannot simply send raw HTTP POSTs from millions of spoofed IPs. Each attempt requires:
+1. A GET request to obtain the antiforgery cookie and form token
+2. A POST request including both the cookie and token
+
+This doubles the request cost and requires maintaining cookie state per "attacking IP," which fundamentally undermines the mass-IP dictionary-stuffing attack scenario the issue envisions.
+
+#### 3. The deployment context makes this a non-issue
+
+From `docker-compose.yml`: the admin portal runs as a single Docker container exposed on port 8080. This is an internal tool for managing Philips Hue bridge monitoring, not a public-facing web application. In realistic deployments, it sits behind a VPN, firewall, or private network where the set of unique client IPs is measured in single digits.
+
+Even in an exposed deployment, the attacker would need to control tens of thousands of unique IPs, each performing the antiforgery token handshake, sustaining this over an extended period without triggering any network-level protections, to consume meaningful memory (~10MB per 100K entries).
+
+#### 4. Memory math shows negligible impact
+
+Per entry: string key (IPv4 ~46 bytes / IPv6 ~94 bytes) + value tuple `(int, DateTime)` 12 bytes + `ConcurrentDictionary` overhead ~80 bytes = ~140-190 bytes per entry. Even at 1 million entries (astronomically unrealistic), total consumption would be ~180MB. At realistic levels for an internal tool (hundreds to low thousands), this is under 1MB.
+
+#### 5. IP spoofing concern is misdirected
+
+The prior comment (2026-02-28) raised IP spoofing via `X-Forwarded-For` as an amplifier for this issue. However: (a) this is tracked separately in issue #28, (b) spoofing `X-Forwarded-For` still requires passing antiforgery validation, and (c) if an attacker can spoof IPs, each spoofed IP produces exactly one entry with count=1 — the entries are smaller and the lockout mechanism is not even triggered (count < MaxAttempts=5), meaning subsequent requests from the same spoofed IP would not even hit the cleanup path. This makes the spoofing scenario slightly worse for accumulation but the memory per entry remains trivial.
+
+#### Verdict
+
+The original issue identifies a theoretically correct observation (no hard cap) but grossly overstates the practical risk. The "DoS risk" framing in the title is misleading given the antiforgery token requirement, internal deployment context, lazy cleanup mechanism, and trivial per-entry memory cost. The severity upgrade to "Medium" in the first comment was unjustified and has been correctly reverted to "Low."
+
+**Recommended disposition:** Close as won't-fix. If any change is desired for defense-in-depth, a 10-line `Timer` callback that periodically sweeps entries where `ResetAt < DateTime.UtcNow` would fully address the theoretical concern without introducing unnecessary complexity.
