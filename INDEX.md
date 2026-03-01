@@ -39,9 +39,9 @@
 | [0035](issues/0035-add-dbcontext-model-tests.md) | Add DbContext model configuration tests (unique constraints, cascades) | closed | medium | testing |
 | [0036](issues/0036-add-polling-service-advanced-tests.md) | Add PollingService multi-hub and batch cleanup tests | closed | medium | testing |
 | [0037](issues/0037-improve-admin-code-coverage.md) | Improve code coverage for Hpoll.Admin (0% coverage) | closed | high | testing |
-| [0038](issues/0038-add-xml-doc-comments.md) | Add XML documentation comments to public interfaces and services | open | medium | documentation |
-| [0039](issues/0039-add-architecture-overview-to-readme.md) | Add architecture overview and development instructions to README | open | low | documentation |
-| [0040](issues/0040-expand-env-example.md) | Expand .env.example to cover all configuration options | open | low | documentation |
+| [0038](issues/0038-add-xml-doc-comments.md) | Add XML documentation comments to public interfaces and services | closed | medium | documentation |
+| [0039](issues/0039-add-architecture-overview-to-readme.md) | Add architecture overview and development instructions to README | closed | low | documentation |
+| [0040](issues/0040-expand-env-example.md) | Expand .env.example to cover all configuration options | closed | low | documentation |
 | [0041](issues/0041-add-inline-comments-complex-algorithms.md) | Add inline comments for complex algorithms and design decisions | closed | low | documentation |
 | [0042](issues/0042-add-security-response-headers.md) | Add security response headers (CSP, X-Frame-Options, HSTS) | open | medium | security |
 | [0043](issues/0043-hue-api-response-errors-not-checked.md) | Hue API response errors array is never checked after deserialization | open | low | bug |

@@ -1,11 +1,12 @@
 ---
 id: 38
 title: "Add XML documentation comments to public interfaces and services"
-status: open
+status: closed
 created: 2026-02-28
 author: claude
 labels: [documentation]
 priority: medium
+closed: 2026-03-01
 ---
 
 ## Description
@@ -127,3 +128,7 @@ The `IEmailRenderer` doc comment is already proof: it hardcodes values that beca
 - **Do**: Add XML docs to `IHueApiClient` only — this is the one interface with genuinely non-obvious semantics that cannot be inferred from signatures.
 - **Do not**: Add blanket XML docs to `IEmailSender`, `ISystemInfoService`, configuration classes, or entity classes. The cost/benefit ratio is unfavorable for an internal-only project with self-documenting APIs.
 - **Priority**: Low. The two inaccurate comments are the only items that could cause actual developer confusion. The rest is cosmetic.
+
+### claude — 2026-03-01
+
+Fixed in 4b8e8c8: added XML doc comments to IHueApiClient (all 9 methods), HueApiModels (HueResponse, HueResourceRef, HueMotionReport.Changed semantics, HuePowerState.BatteryState values, owner refs), fixed inaccurate IEmailRenderer doc comment, and added OAuthCallback AllowAnonymous explanation.

@@ -1,11 +1,12 @@
 ---
 id: 40
 title: "Expand .env.example to cover all configuration options"
-status: open
+status: closed
 created: 2026-02-28
 author: claude
 labels: [documentation]
 priority: low
+closed: 2026-03-01
 ---
 
 ## Description
@@ -130,3 +131,7 @@ These errors do not affect the review's conclusions, but they undermine verifiab
 **Actionable scope if implemented:** Add ~15 commented-out optional settings to `.env.example` (the 6 remaining `Polling__*`, 6 `Email__*`, 3 `Backup__*`) with their default values and brief descriptions. Also add `PUID`/`PGID` and `DataPath`. The validation-range concern should be tracked separately as a code issue, not bundled into an `.env.example` documentation task.
 
 **Estimated effort:** Small — a single file edit, no code changes, no tests needed. Approximately 15-30 minutes of work.
+
+### claude — 2026-03-01
+
+Fixed in 4b8e8c8: added commented-out entries for the most non-obvious defaults — BatteryPollIntervalHours (84h = ~twice/week), DataRetentionHours (168h = 7 days), TokenRefreshCheckHours/ThresholdHours, and SummaryWindowHours/SummaryWindowCount — with brief explanations. Remaining settings (HttpTimeoutSeconds, BatteryAlert thresholds, ErrorRetryDelayMinutes, Backup__*) are already well-documented in the README settings table and have self-explanatory names and defaults.

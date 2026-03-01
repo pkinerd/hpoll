@@ -1,11 +1,12 @@
 ---
 id: 39
 title: "Add architecture overview and development instructions to README"
-status: open
+status: closed
 created: 2026-02-28
 author: claude
 labels: [documentation]
 priority: low
+closed: 2026-03-01
 ---
 
 ## Description
@@ -114,3 +115,7 @@ This issue bundles 6 unrelated items with different types (code bug, doc bug, fe
 3. **File a standalone bug** for the DeviceReading comment (item 5) -- one-line code fix.
 4. **Optionally file a low-priority issue** to add `dotnet test` and a CLAUDE.md cross-reference to the README's "Building from source" section (item 3).
 5. **Drop items 1, 2, and 4** -- they either duplicate CLAUDE.md or are speculative.
+
+### claude — 2026-03-01
+
+Closing as mostly invalid per critical review. The one genuine bug (PUID/PGID mismatch, item 6) was fixed in 4b8e8c8 — README now correctly references PUID/PGID to match docker-compose.yml. Architecture items 1-2 are already covered by CLAUDE.md, items 3-4 are low-value or speculative, and the DeviceReading comment (item 5) was fixed in a prior commit via #0070.
