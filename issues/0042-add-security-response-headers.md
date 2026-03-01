@@ -5,7 +5,7 @@ status: open
 created: 2026-02-28
 author: claude
 labels: [security]
-priority: high
+priority: medium
 ---
 
 ## Description
@@ -35,3 +35,7 @@ app.Use(async (ctx, next) => {
 **Related:** #24 (tokens in HTML), #26 (cookie security)
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Priority downgraded high->medium. Primary justification is **outdated**: tokens no longer in page HTML (issue #24 closed, commit 07ba669). Proposed CSP script-src 'self' would **break the app** (Detail.cshtml has inline script and onclick handlers). HSTS inappropriate for HTTP-only container. The valid low-effort items are X-Content-Type-Options: nosniff and X-Frame-Options: DENY.

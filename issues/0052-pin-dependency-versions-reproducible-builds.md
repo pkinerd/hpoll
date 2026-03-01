@@ -30,3 +30,7 @@ All NuGet packages use floating wildcard versions (e.g., `Version="8.0.*"`, `Ver
 **Source:** Security review findings S5.1, S5.2
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Recommend relabeling security->enhancement. Claim 'all packages use wildcards' is false (Hosting pinned to 8.0.1, xunit to 2.4.2). CI already pins GitHub Actions by SHA digest. NuGet lock files should be primary recommendation. Supply-chain risk for first-party Microsoft 8.0.* packages is extremely low. Docker base image pinning is the most actionable item.

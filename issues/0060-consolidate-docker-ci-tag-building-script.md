@@ -24,3 +24,7 @@ Option 2 (matrix) would be the cleanest, reducing two near-identical jobs to one
 **Source:** Code reuse review finding R9
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: VALID. Line numbers slightly off (actual: 106-125 and 163-182). The issue understates duplication scope: the entire Docker jobs are duplicated (56 lines each, only 5 lines differ). The push-build-logs job references both jobs by name (lines 209, 219-228), which would need updating in a matrix refactor.

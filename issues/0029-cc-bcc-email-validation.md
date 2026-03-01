@@ -17,3 +17,7 @@ In `Customers/Detail.cshtml.cs` lines 108-124, CC and BCC email fields are store
 **Remediation:** Apply `[EmailAddress]` validation or regex pattern to individual CC/BCC entries on the server side before persisting.
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Recommend relabeling security->enhancement. Admin portal requires authentication (line 90). SES validates and rejects malformed emails. Primary To field has same validation gap (not mentioned). [EmailAddress] attribute cannot validate comma-delimited strings. This is a UX/data quality concern, not a security vulnerability.

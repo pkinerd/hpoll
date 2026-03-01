@@ -5,7 +5,7 @@ status: open
 created: 2026-02-28
 author: claude
 labels: [enhancement, code-quality]
-priority: medium
+priority: low
 ---
 
 ## Description
@@ -22,3 +22,7 @@ Several hardcoded values are scattered across the codebase without named constan
 - `EmailSettings`: `BatteryAlertThreshold` and `BatteryLevelCritical` both default to 30 with overlapping semantics
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Priority downgraded medium->low. **FABRICATED claim**: batchSize=1000 at PollingService.cs:278 does not exist anywhere. **FACTUALLY WRONG**: BatteryAlertThreshold defaults to 60 (not 30). The suggestion to couple dashboard 48-hour threshold to PollingSettings conflates UI display with operational threshold. Multiple line numbers wrong. After removing invalid claims, only minor cosmetic items remain.

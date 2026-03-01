@@ -5,7 +5,7 @@ status: open
 created: 2026-02-28
 author: claude
 labels: [security]
-priority: critical
+priority: medium
 ---
 
 ## Description
@@ -37,3 +37,7 @@ While the current appsettings files have empty values, the design encourages pla
 - Logging a warning when tokens are seeded from configuration (to flag accidental usage)
 - Documenting that environment variables (not config files) should be used if token seeding is necessary
 - Removing the token seeding capability entirely in favor of the OAuth flow
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Priority downgraded critical->medium. Every scenario granting SQLite access also grants encryption key access (same data volume) unless external KMS is used. **FABRICATED**: ConfigSeeder at src/Hpoll.Data/ConfigSeeder.cs does not exist (removed in 4020a11). Token refresh requires ClientId/ClientSecret from env vars, not DB. Existing mitigations not acknowledged: non-root Docker, authenticated admin, time-limited tokens.

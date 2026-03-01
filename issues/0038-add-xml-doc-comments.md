@@ -5,7 +5,7 @@ status: open
 created: 2026-02-28
 author: claude
 labels: [documentation]
-priority: high
+priority: medium
 ---
 
 ## Description
@@ -78,3 +78,7 @@ Two specific inaccurate comments to fix as part of this documentation effort:
 1. **IEmailRenderer XML doc** (from #0068, `IEmailRenderer.cs:5-9`): The only existing XML doc comment hardcodes configurable values — says "28 hours" and "4-hour windows aligned to midnight" but these are configurable via `SummaryWindowHours`/`SummaryWindowCount`. Also lists 6 windows when default config produces 7. Replace with: "Renders the daily summary email. Covers a configurable period (default 28 hours) bucketed into time windows aligned to multiples of SummaryWindowHours in the customer's timezone."
 
 2. **PollingService motion comment** (from #0069, `PollingService.cs:121-125`): Claims the Hue motion boolean "resets quickly" which oversimplifies. Per Hue CLIP v2 docs: `motion_report.motion` reflects current sensor state, `motion_report.changed` is the timestamp of the last state transition, and the sensor holds `true` for a cooldown period (10-30 seconds). Replace with a comment referencing the actual API behavior and explaining why we use the `changed` timestamp instead.
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Priority downgraded high->medium. **FABRICATED**: HealthEvaluator class does not exist in src/ (hallucinated from review skill template). **FABRICATED**: HealthFailureThreshold and HealthMaxSilenceHours properties do not exist. The 'only 1 XML doc' claim is stale (SendTimeHelper.cs added 5 summary blocks in d97a36a). Scope should focus on IHueApiClient (9 undocumented methods) and HueApiModels.cs.

@@ -5,7 +5,7 @@ status: open
 created: 2026-02-28
 author: claude
 labels: [security]
-priority: medium
+priority: low
 ---
 
 ## Description
@@ -31,3 +31,7 @@ Additional risks identified:
 3. **Null IP bucketing**: All requests with `RemoteIpAddress == null` share a single "unknown" bucket, creating a potential denial of service for legitimate users behind certain proxy configurations.
 
 Combined with #28, the rate limiting protection is effectively bypassable. Consider ASP.NET Core's built-in `Microsoft.AspNetCore.RateLimiting` middleware as a more robust alternative.
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Priority downgraded medium->low (reverting prior upgrade). Razor Pages enforce antiforgery tokens on POST, preventing trivial mass-IP attacks. Memory math absent: each entry ~60 bytes, 1M entries = ~50MB. Entries are cleaned on lockout expiry and successful login. 'Memory leak' is technically incorrect (entries are reclaimable). A simple periodic cleanup timer would suffice.

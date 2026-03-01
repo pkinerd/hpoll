@@ -17,3 +17,7 @@ In `Admin/Program.cs` lines 15-20, `KnownNetworks.Clear()` and `KnownProxies.Cle
 **Remediation:** Configure `KnownProxies` or `KnownNetworks` to the expected reverse proxy address. Document the trust-all configuration.
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. The Secure cookies claim is **factually wrong**: CookieSecurePolicy.Always is hardcoded (lines 53, 64). The Clear() pattern is Microsoft-recommended for Docker. Default ForwardLimit=1 limits spoofing. Only concrete impact is rate-limiter bypass, which is minor for an authenticated internal tool. Static KnownProxies is impractical in Docker.

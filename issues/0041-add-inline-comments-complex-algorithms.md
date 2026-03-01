@@ -25,3 +25,7 @@ Several complex code sections lack explanatory comments:
 6. **`docs/` directory** contains only placeholder READMEs with no actual documentation content.
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Recommend wontfix. Item 1 (bucket-snap) already has a comment at line 40. Item 2 (motion colors) is universally understood UX. Item 3 (exponential backoff) is one of the most recognized patterns. Item 4 (WAL) already has a comment. Item 5 (no TODOs) is code health, not a gap. Item 6 (docs) mischaracterizes content. Most items are self-documenting or already commented.

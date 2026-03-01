@@ -32,3 +32,7 @@ Note: The `DbContext` is not thread-safe, so each parallel task would need its o
 **Source:** Efficiency review finding E9
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Recommend wontfix. This is an SQLite single-writer home monitoring service with single-digit customer counts. Code snippet inaccurate (loop at line 122, not 120). Per-customer send times (d97a36a) stagger delivery naturally. Parallel.ForEachAsync with SQLite would just contend on the database lock. Even 50 customers would take ~15 seconds, well within the 1-minute scheduler tolerance.

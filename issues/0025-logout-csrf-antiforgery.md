@@ -5,7 +5,7 @@ status: open
 created: 2026-02-28
 author: claude
 labels: [security]
-priority: medium
+priority: low
 ---
 
 ## Description
@@ -17,3 +17,7 @@ The Logout endpoint in `Admin/Program.cs` lines 91-95 is a Minimal API `MapPost`
 **Remediation:** Add `.RequireAntiforgery()` to the Logout endpoint, and use `@Html.AntiForgeryToken()` in the form, or switch to a Razor Page which handles this automatically.
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Priority downgraded medium->low. The auth cookie already has SameSite=Lax (Program.cs line 52), which prevents cross-site POST requests in all modern browsers -- the exact attack vector described. CSRF logout is classified as low severity by OWASP. Adding antiforgery would be defense-in-depth, not fixing an exploitable vulnerability.

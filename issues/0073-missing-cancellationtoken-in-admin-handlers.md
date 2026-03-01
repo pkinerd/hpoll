@@ -26,3 +26,7 @@ Without this, database queries and Hue API calls continue running even after the
 *Found during comprehensive review (code quality review).*
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Scope should be narrowed. POST handlers should NOT be cancelled on disconnect (data inconsistency risk). SQLite queries are near-instantaneous for this dataset. HttpClient already has timeout configured. Focus should be on the 3 handlers making Hue API calls and the one expensive read (LoadActivitySummaryAsync), not all 20 async handlers.

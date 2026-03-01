@@ -21,3 +21,7 @@ All follow: `ex.StatusCode.HasValue ? $"{action}: Hue API returned HTTP {(int)ex
 **Recommendation:** Add a small helper: `static string FormatHueApiError(string action, HttpRequestException ex)`.
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Line numbers stale (actual: 131-133, 159-161 in Detail.cshtml.cs; 152-154 in OAuthCallback.cshtml.cs). Pattern confined to Admin project only (2 files, 3 sites). Worker handles HttpRequestException completely differently. Target property differs (ErrorMessage vs Message). Borderline case for extraction.

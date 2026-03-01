@@ -28,3 +28,7 @@ If the Docker host is directly reachable from the network (no firewall or revers
 **Source:** Security review finding S6.3
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Recommend relabeling security->documentation. Binding to 0.0.0.0 inside a container is standard and required Docker practice. The concern is solely the docker-compose port mapping, not the Dockerfile ENV. Admin portal requires authentication, has hardened cookies, runs as non-root. Synology NAS support (PUID/PGID) indicates LAN access is an intended use case.

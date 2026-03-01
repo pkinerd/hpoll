@@ -5,7 +5,7 @@ status: open
 created: 2026-02-28
 author: claude
 labels: [bug]
-priority: medium
+priority: low
 ---
 
 ## Description
@@ -27,3 +27,7 @@ return result ?? throw new InvalidOperationException(...);
 **Remediation:** After deserialization, check `if (result.Errors.Count > 0)` and log them. For critical endpoints, consider throwing on errors.
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: VALID. Priority downgraded medium->low. Core claim is true (HueResponse.Errors never inspected). However, HTTP 207 claim is misleading -- app only uses GET requests. Practical impact limited: empty data means skipped iteration and false-positive success log. Fix is straightforward (log warning in GetResourceAsync when errors exist).

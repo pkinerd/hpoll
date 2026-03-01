@@ -5,7 +5,7 @@ status: open
 created: 2026-03-01
 author: claude
 labels: [enhancement, code-quality]
-priority: medium
+priority: low
 ---
 
 ## Description
@@ -41,3 +41,7 @@ Simplify the interface to a single method: `Task SendEmailAsync(EmailMessage mes
 **Source:** Code quality review finding Q11
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Priority downgraded medium->low. **Factual error**: interface uses List<string> toAddresses (plural), not string toAddress. The proposed EmailMessage model with string ToAddress would be a regression. Only 1 production caller exists. The YAGNI extensibility argument (reply-to, attachments) is speculative. The EmailMessage model just moves parameters to an object initializer without reducing complexity.

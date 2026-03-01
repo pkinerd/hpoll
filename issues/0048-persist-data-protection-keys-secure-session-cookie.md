@@ -5,7 +5,7 @@ status: open
 created: 2026-02-28
 author: claude
 labels: [security]
-priority: medium
+priority: low
 ---
 
 ## Description
@@ -59,3 +59,7 @@ All four items (Data Protection keys, session cookie Secure flag, auth cookie Se
 Remaining open items on this issue:
 1. Data Protection key persistence (`PersistKeysToFileSystem`)
 4. HTTPS redirect middleware (`UseHttpsRedirection` / `UseHsts`)
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Priority downgraded medium->low. **Items 2 and 3 are FIXED** (commit 5742eb0): auth cookie and session cookie both have SecurePolicy.Always. Remaining: Data Protection key persistence is a UX issue (session loss on restart), not a security vulnerability. HTTPS redirect is architecturally questionable for HTTP-only container behind reverse proxy. Note: antiforgery cookie still missing SecurePolicy.

@@ -5,7 +5,7 @@ status: open
 created: 2026-02-28
 author: claude
 labels: [enhancement, code-quality]
-priority: high
+priority: medium
 ---
 
 ## Description
@@ -28,3 +28,7 @@ Raw string literals are used throughout the codebase for `Customer.Status`, `Hub
 **Consolidated from #0070 (closed as subset of this issue).**
 
 When introducing the `ReadingType` enum/constants, also update `DeviceReading.cs` line 10's `Value` comment to include the battery JSON schema: `{"battery_level": 85, "battery_state": "normal"}` (currently only documents motion and temperature formats). The stale `ReadingType` comment on line 9 will be naturally replaced by the enum's own documentation.
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Priority downgraded high->medium. No active bug exists; risk is hypothetical. Issue does not acknowledge EF Core migration cost, Razor view impact, or that static string constants (simpler option) are not evaluated. Test files (~10+) would also need updates.

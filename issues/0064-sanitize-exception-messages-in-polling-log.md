@@ -5,7 +5,7 @@ status: open
 created: 2026-03-01
 author: claude
 labels: [security]
-priority: medium
+priority: low
 ---
 
 ## Description
@@ -51,3 +51,7 @@ Specific source-side fix from #0053: In `HueApiClient.RegisterApplicationAsync` 
 throw new InvalidOperationException($"Unexpected registration response format: {json}");
 ```
 This is one concrete instance of the general problem described in this issue. The exception message surfaces in `PollingLog.ErrorMessage` and the admin UI. Fix by throwing a generic message and logging the full body at Debug level only.
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Priority downgraded medium->low. Consolidation of #0053 was a mistake: RegisterApplicationAsync is only called from OAuthCallback, not during polling. HttpRequestException messages are already curated (no response bodies). Specific 401/429/503 catch blocks use curated messages. Only realistic vector is JsonException (sensor data, not credentials). Razor auto-encodes output. Consider reopening #0053 separately.

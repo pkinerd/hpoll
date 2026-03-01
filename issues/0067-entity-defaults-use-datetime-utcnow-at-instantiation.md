@@ -5,7 +5,7 @@ status: open
 created: 2026-03-01
 author: claude
 labels: [enhancement, code-quality]
-priority: medium
+priority: low
 ---
 
 ## Description
@@ -26,3 +26,7 @@ All entity classes (`Customer`, `Device`, `DeviceReading`, `Hub`, `PollingLog`) 
 *Found during comprehensive review (code quality review).*
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Priority downgraded medium->low. Practically irrelevant: entities are created and saved in the same flow. DeviceReading.Timestamp and PollingLog.Timestamp defaults are never relied upon (always overridden by pollTime). HasDefaultValueSql would not work as described (EF Core sends explicit values). SaveChanges interceptor would break PollingService's intentional Timestamp=pollTime.

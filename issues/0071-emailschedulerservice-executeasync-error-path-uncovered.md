@@ -5,7 +5,7 @@ status: open
 created: 2026-03-01
 author: claude
 labels: [testing]
-priority: medium
+priority: low
 ---
 
 ## Description
@@ -32,3 +32,7 @@ This follows the same gap pattern as `TokenRefreshService.ExecuteAsync` (issue #
 *Found during comprehensive review (code coverage analysis).*
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Priority downgraded medium->low. Line numbers wrong (67-78, not 50-60). SendAllEmailsAsync **does not exist** (actual: SendCustomerEmailAsync, ProcessDueCustomersAsync). Issues #0032/#0036 were closed without testing their equivalent ExecuteAsync error paths either (deliberate choice per commit f142a28). The error path is 11 lines of standard BackgroundService boilerplate.

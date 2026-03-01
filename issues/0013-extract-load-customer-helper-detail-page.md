@@ -25,3 +25,7 @@ EditBccEmails = customer.BccEmails;
 **Recommendation:** Extract a private `LoadCustomerAsync(int id)` helper that returns `Customer?` and populates all bind properties.
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. There are **7 handlers** (not 5) that load a customer. The hydration is NOT identical across handlers -- each POST handler deliberately skips fields being updated via [BindProperty]. A naive helper that sets all fields would break validation error re-display. Line numbers significantly off. The most honest refactor extracts only the DB query + null check (~2 lines saved per handler).

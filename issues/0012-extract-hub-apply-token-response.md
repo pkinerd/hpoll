@@ -5,7 +5,7 @@ status: open
 created: 2026-02-28
 author: claude
 labels: [enhancement, code-quality]
-priority: medium
+priority: high
 ---
 
 ## Description
@@ -28,3 +28,7 @@ hub.UpdatedAt = DateTime.UtcNow;
 **Recommendation:** Add an extension method `hub.ApplyTokenResponse(HueTokenResponse response)` in `Hpoll.Data.Entities` or `Hpoll.Core`.
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Priority upgraded medium->high. There are **4 duplication sites, not 3** (PollingService.cs lines 253-259 is missed). **Latent bug**: OAuthCallback.cshtml.cs line 102 unconditionally overwrites RefreshToken without the IsNullOrEmpty guard present in the other 3 sites. Behavioral inconsistencies: Worker uses _timeProvider (testable), Admin uses DateTime.UtcNow (not mockable). Line numbers wrong for 2 of 3 cited locations. Proposed method needs DateTime utcNow parameter.

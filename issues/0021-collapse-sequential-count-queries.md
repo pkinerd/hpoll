@@ -17,3 +17,7 @@ About page (`About.cshtml.cs` lines 48-50) runs 3 sequential COUNT queries. Thes
 Low priority since these are admin pages with minimal traffic, but it's a clean improvement.
 
 ## Comments
+
+### claude — 2026-03-01
+
+Critical review: PARTIALLY_VALID. Recommend wontfix. Line numbers wrong for both files (Dashboard: 25-30 not 28-33; About: 31-33 not 48-50). Task.WhenAll suggestion is flawed (DbContext not thread-safe). About page counts span 3 different tables (GroupBy impossible). SQLite is in-process with no network round-trip -- savings would be microseconds on tiny tables.
