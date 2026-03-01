@@ -75,3 +75,4 @@
 | [0071](issues/0071-emailschedulerservice-executeasync-error-path-uncovered.md) | EmailSchedulerService.ExecuteAsync error retry path has 0% test coverage | open | low | testing |
 | [0072](issues/0072-oauthcallback-allowanonymous-sensitive-operations.md) | OAuthCallback page is AllowAnonymous but performs sensitive operations | closed | medium | security |
 | [0073](issues/0073-missing-cancellationtoken-in-admin-handlers.md) | Missing CancellationToken propagation in Admin page handlers | open | low | enhancement, code-quality |
+| [0074](issues/0074-refactor-inline-js-css-and-add-csp.md) | Refactor inline JS/CSS out of Razor pages and add Content-Security-Policy header | open | low | security, enhancement |
