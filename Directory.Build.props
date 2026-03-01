@@ -1,0 +1,40 @@
+<Project>
+
+  <!-- Build metadata — defaults for local builds, overridden by CI via -p: flags -->
+  <PropertyGroup>
+    <BuildBranch Condition="'$(BuildBranch)' == ''">local</BuildBranch>
+    <BuildCommit Condition="'$(BuildCommit)' == ''"></BuildCommit>
+    <BuildNumber Condition="'$(BuildNumber)' == ''"></BuildNumber>
+    <BuildRunId Condition="'$(BuildRunId)' == ''"></BuildRunId>
+    <BuildTimestamp Condition="'$(BuildTimestamp)' == ''">$([System.DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))</BuildTimestamp>
+    <PullRequestNumber Condition="'$(PullRequestNumber)' == ''"></PullRequestNumber>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuildBranch</_Parameter1>
+      <_Parameter2>$(BuildBranch)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuildCommit</_Parameter1>
+      <_Parameter2>$(BuildCommit)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuildNumber</_Parameter1>
+      <_Parameter2>$(BuildNumber)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuildRunId</_Parameter1>
+      <_Parameter2>$(BuildRunId)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuildTimestamp</_Parameter1>
+      <_Parameter2>$(BuildTimestamp)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>PullRequestNumber</_Parameter1>
+      <_Parameter2>$(PullRequestNumber)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

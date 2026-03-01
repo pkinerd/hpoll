@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Hpoll.Admin.Pages;
+using Hpoll.Core.Configuration;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
@@ -18,6 +20,15 @@ public class AboutModelTests : IDisposable
     }
 
     public void Dispose() => _db.Dispose();
+
+    private static IOptions<HueAppSettings> CreateHueOptions(string? callbackUrl = null, string? clientId = null)
+    {
+        return Options.Create(new HueAppSettings
+        {
+            CallbackUrl = callbackUrl ?? string.Empty,
+            ClientId = clientId ?? string.Empty
+        });
+    }
 
     [Fact]
     public async Task OnGetAsync_ReturnsCorrectDbCounts()
@@ -43,7 +54,7 @@ public class AboutModelTests : IDisposable
         _db.Devices.Add(device);
         await _db.SaveChangesAsync();
 
-        var model = new AboutModel(_db);
+        var model = new AboutModel(_db, CreateHueOptions());
         await model.OnGetAsync();
 
         Assert.Equal(1, model.CustomerCount);
@@ -61,7 +72,7 @@ public class AboutModelTests : IDisposable
         );
         await _db.SaveChangesAsync();
 
-        var model = new AboutModel(_db);
+        var model = new AboutModel(_db, CreateHueOptions());
         await model.OnGetAsync();
 
         Assert.Equal(3, model.Sections.Count);
@@ -76,7 +87,7 @@ public class AboutModelTests : IDisposable
         _db.SystemInfo.Add(new SystemInfo { Key = "polling.interval_minutes", Value = "60", Category = "Polling" });
         await _db.SaveChangesAsync();
 
-        var model = new AboutModel(_db);
+        var model = new AboutModel(_db, CreateHueOptions());
         await model.OnGetAsync();
 
         var entry = model.Sections[0].Entries[0];
@@ -89,7 +100,7 @@ public class AboutModelTests : IDisposable
         _db.SystemInfo.Add(new SystemInfo { Key = "runtime.last_poll_completed", Value = "2026-03-01T10:00:00.0000000Z", Category = "Runtime" });
         await _db.SaveChangesAsync();
 
-        var model = new AboutModel(_db);
+        var model = new AboutModel(_db, CreateHueOptions());
         await model.OnGetAsync();
 
         var entry = model.Sections[0].Entries[0];
@@ -100,7 +111,7 @@ public class AboutModelTests : IDisposable
     [Fact]
     public async Task OnGetAsync_HandlesEmptySystemInfoTable()
     {
-        var model = new AboutModel(_db);
+        var model = new AboutModel(_db, CreateHueOptions());
         await model.OnGetAsync();
 
         Assert.Empty(model.Sections);
@@ -119,10 +130,70 @@ public class AboutModelTests : IDisposable
         );
         await _db.SaveChangesAsync();
 
-        var model = new AboutModel(_db);
+        var model = new AboutModel(_db, CreateHueOptions());
         await model.OnGetAsync();
 
         var categories = model.Sections.Select(s => s.Category).ToList();
         Assert.Equal(new[] { "System", "Polling", "Email", "Hue", "Runtime" }, categories);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_ShowsCallbackUrlFromConfig_WhenWorkerHasNotStarted()
+    {
+        // No SystemInfo data at all — Worker hasn't started
+        var model = new AboutModel(_db, CreateHueOptions(
+            callbackUrl: "https://admin.example.com/Hubs/OAuthCallback",
+            clientId: "test-client-id"));
+        await model.OnGetAsync();
+
+        Assert.Single(model.Sections);
+        Assert.Equal("Hue", model.Sections[0].Category);
+        var entries = model.Sections[0].Entries;
+        Assert.Contains(entries, e => e.Label == "App Configured" && e.Value == "True");
+        Assert.Contains(entries, e => e.Label == "Callback Url" && e.Value == "https://admin.example.com/Hubs/OAuthCallback");
+    }
+
+    [Fact]
+    public async Task OnGetAsync_ShowsCallbackUrlFromConfig_WhenWorkerHueSection_MissingCallbackUrl()
+    {
+        // Worker has written app_configured but NOT callback_url
+        _db.SystemInfo.Add(new SystemInfo { Key = "hue.app_configured", Value = "True", Category = "Hue" });
+        await _db.SaveChangesAsync();
+
+        var model = new AboutModel(_db, CreateHueOptions(
+            callbackUrl: "https://admin.example.com/Hubs/OAuthCallback"));
+        await model.OnGetAsync();
+
+        var hueSection = model.Sections.Single(s => s.Category == "Hue");
+        Assert.Contains(hueSection.Entries, e => e.Label == "Callback Url" && e.Value == "https://admin.example.com/Hubs/OAuthCallback");
+    }
+
+    [Fact]
+    public async Task OnGetAsync_DoesNotDuplicateCallbackUrl_WhenWorkerAlreadyWroteIt()
+    {
+        // Worker has written both app_configured and callback_url
+        _db.SystemInfo.AddRange(
+            new SystemInfo { Key = "hue.app_configured", Value = "True", Category = "Hue" },
+            new SystemInfo { Key = "hue.callback_url", Value = "https://worker.example.com/Hubs/OAuthCallback", Category = "Hue" }
+        );
+        await _db.SaveChangesAsync();
+
+        var model = new AboutModel(_db, CreateHueOptions(
+            callbackUrl: "https://admin.example.com/Hubs/OAuthCallback"));
+        await model.OnGetAsync();
+
+        var hueSection = model.Sections.Single(s => s.Category == "Hue");
+        // Should not duplicate — Worker's value is kept
+        Assert.Single(hueSection.Entries.Where(e => e.Label == "Callback Url"));
+    }
+
+    [Fact]
+    public async Task OnGetAsync_NoCallbackUrlEntry_WhenConfigIsEmpty()
+    {
+        var model = new AboutModel(_db, CreateHueOptions(callbackUrl: ""));
+        await model.OnGetAsync();
+
+        // No Hue section at all since config is empty and Worker hasn't written anything
+        Assert.Empty(model.Sections);
     }
 }

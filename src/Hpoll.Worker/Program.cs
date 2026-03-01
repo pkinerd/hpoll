@@ -87,6 +87,19 @@ using (var scope = host.Services.CreateScope())
         ["system.hostname"] = Environment.GetEnvironmentVariable("HOSTNAME") ?? Environment.MachineName,
     });
 
+    // Build info (baked into assembly at compile time)
+    var buildEntries = new Dictionary<string, string>();
+    void AddBuild(string key, string value) { if (!string.IsNullOrEmpty(value)) buildEntries[key] = value; }
+    AddBuild("build.branch", Hpoll.Core.BuildInfo.Branch);
+    AddBuild("build.commit", Hpoll.Core.BuildInfo.ShortCommit);
+    AddBuild("build.number", Hpoll.Core.BuildInfo.BuildNumber);
+    AddBuild("build.run_id", Hpoll.Core.BuildInfo.RunId);
+    AddBuild("build.pull_request", Hpoll.Core.BuildInfo.PullRequest);
+    AddBuild("build.timestamp", Hpoll.Core.BuildInfo.Timestamp);
+    AddBuild("build.source", Hpoll.Core.BuildInfo.IsCI ? "CI" : "Local");
+    if (buildEntries.Count > 0)
+        await systemInfo.SetBatchAsync("Build", buildEntries);
+
     // Polling settings
     using var scope = host.Services.CreateScope();
     var polling = scope.ServiceProvider.GetRequiredService<IOptions<PollingSettings>>().Value;

@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Hpoll.Core;
+using Microsoft.Extensions.Options;
+using Hpoll.Core.Configuration;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
@@ -8,16 +11,19 @@ namespace Hpoll.Admin.Pages;
 public class AboutModel : PageModel
 {
     private readonly HpollDbContext _db;
+    private readonly HueAppSettings _hueApp;
 
-    public AboutModel(HpollDbContext db)
+    public AboutModel(HpollDbContext db, IOptions<HueAppSettings> hueApp)
     {
         _db = db;
+        _hueApp = hueApp.Value;
     }
 
     public int CustomerCount { get; set; }
     public int HubCount { get; set; }
     public int DeviceCount { get; set; }
 
+    public List<BuildInfoEntry> BuildEntries { get; set; } = new();
     public List<(string Category, List<SystemInfoEntry> Entries)> Sections { get; set; } = new();
 
     public async Task OnGetAsync()
@@ -25,6 +31,9 @@ public class AboutModel : PageModel
         CustomerCount = await _db.Customers.CountAsync();
         HubCount = await _db.Hubs.CountAsync();
         DeviceCount = await _db.Devices.CountAsync();
+
+        // Build info (baked into assembly at compile time)
+        PopulateBuildInfo();
 
         var entries = await _db.SystemInfo
             .OrderBy(e => e.Category)
@@ -43,7 +52,7 @@ public class AboutModel : PageModel
                 }).ToList());
 
         // Explicit section ordering
-        var categoryOrder = new[] { "System", "Polling", "Email", "Hue", "Runtime" };
+        var categoryOrder = new[] { "Build", "System", "Polling", "Email", "Hue", "Runtime" };
         foreach (var cat in categoryOrder)
         {
             if (grouped.TryGetValue(cat, out var list))
@@ -56,6 +65,54 @@ public class AboutModel : PageModel
             if (!categoryOrder.Contains(kvp.Key))
                 Sections.Add((kvp.Key, kvp.Value));
         }
+
+        // Always surface the Admin's own Hue callback URL from config
+        EnsureAdminCallbackUrl();
+    }
+
+    private void EnsureAdminCallbackUrl()
+    {
+        var callbackUrl = _hueApp.CallbackUrl;
+        if (string.IsNullOrEmpty(callbackUrl))
+            return;
+
+        var hueIndex = Sections.FindIndex(s => s.Category == "Hue");
+        if (hueIndex >= 0)
+        {
+            var hueEntries = Sections[hueIndex].Entries;
+            // Only add if the Worker hasn't already written callback_url to SystemInfo
+            if (!hueEntries.Any(e => e.Label == "Callback Url"))
+            {
+                hueEntries.Add(new SystemInfoEntry { Label = "Callback Url", Value = callbackUrl });
+            }
+        }
+        else
+        {
+            // Worker hasn't started yet — create a Hue section from Admin config
+            Sections.Add(("Hue", new List<SystemInfoEntry>
+            {
+                new() { Label = "App Configured", Value = (!string.IsNullOrEmpty(_hueApp.ClientId)).ToString() },
+                new() { Label = "Callback Url", Value = callbackUrl },
+            }));
+        }
+    }
+
+    private void PopulateBuildInfo()
+    {
+        void Add(string label, string value)
+        {
+            if (!string.IsNullOrEmpty(value))
+                BuildEntries.Add(new BuildInfoEntry { Label = label, Value = value });
+        }
+
+        Add("Branch", BuildInfo.Branch);
+        Add("Commit", BuildInfo.ShortCommit);
+        Add("Build Number", BuildInfo.BuildNumber);
+        Add("Run ID", BuildInfo.RunId);
+        if (!string.IsNullOrEmpty(BuildInfo.PullRequest))
+            Add("Pull Request", $"#{BuildInfo.PullRequest}");
+        Add("Built At", BuildInfo.Timestamp);
+        Add("Source", BuildInfo.IsCI ? "CI" : "Local");
     }
 
     private static string FormatLabel(string key)
@@ -77,6 +134,12 @@ public class AboutModel : PageModel
         }
         return value;
     }
+}
+
+public class BuildInfoEntry
+{
+    public string Label { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
 }
 
 public class SystemInfoEntry
