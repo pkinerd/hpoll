@@ -1,8 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 using Hpoll.Admin.Pages;
-using Hpoll.Core.Configuration;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
@@ -21,24 +18,6 @@ public class AboutModelTests : IDisposable
     }
 
     public void Dispose() => _db.Dispose();
-
-    [Fact]
-    public async Task OnGetAsync_ReturnsVersionAndRuntimeInfo()
-    {
-        var hueApp = Options.Create(new HueAppSettings { ClientId = "test-id", CallbackUrl = "http://localhost/callback" });
-        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["DataPath"] = "/tmp/test"
-        }).Build();
-
-        var model = new AboutModel(_db, hueApp, config);
-        await model.OnGetAsync();
-
-        Assert.NotEmpty(model.Version);
-        Assert.StartsWith(".NET", model.Runtime);
-        Assert.True(model.HueAppConfigured);
-        Assert.Equal("http://localhost/callback", model.HueCallbackUrl);
-    }
 
     [Fact]
     public async Task OnGetAsync_ReturnsCorrectDbCounts()
@@ -64,14 +43,86 @@ public class AboutModelTests : IDisposable
         _db.Devices.Add(device);
         await _db.SaveChangesAsync();
 
-        var hueApp = Options.Create(new HueAppSettings());
-        var config = new ConfigurationBuilder().Build();
-        var model = new AboutModel(_db, hueApp, config);
+        var model = new AboutModel(_db);
         await model.OnGetAsync();
 
         Assert.Equal(1, model.CustomerCount);
         Assert.Equal(1, model.HubCount);
         Assert.Equal(1, model.DeviceCount);
-        Assert.False(model.HueAppConfigured);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_GroupsSystemInfoByCategory()
+    {
+        _db.SystemInfo.AddRange(
+            new SystemInfo { Key = "system.version", Value = "1.0.0", Category = "System" },
+            new SystemInfo { Key = "polling.interval_minutes", Value = "60", Category = "Polling" },
+            new SystemInfo { Key = "email.aws_region", Value = "us-east-1", Category = "Email" }
+        );
+        await _db.SaveChangesAsync();
+
+        var model = new AboutModel(_db);
+        await model.OnGetAsync();
+
+        Assert.Equal(3, model.Sections.Count);
+        Assert.Equal("System", model.Sections[0].Category);
+        Assert.Equal("Polling", model.Sections[1].Category);
+        Assert.Equal("Email", model.Sections[2].Category);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_FormatsLabelsCorrectly()
+    {
+        _db.SystemInfo.Add(new SystemInfo { Key = "polling.interval_minutes", Value = "60", Category = "Polling" });
+        await _db.SaveChangesAsync();
+
+        var model = new AboutModel(_db);
+        await model.OnGetAsync();
+
+        var entry = model.Sections[0].Entries[0];
+        Assert.Equal("Interval Minutes", entry.Label);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_FormatsDateValues()
+    {
+        _db.SystemInfo.Add(new SystemInfo { Key = "runtime.last_poll_completed", Value = "2026-03-01T10:00:00.0000000Z", Category = "Runtime" });
+        await _db.SaveChangesAsync();
+
+        var model = new AboutModel(_db);
+        await model.OnGetAsync();
+
+        var entry = model.Sections[0].Entries[0];
+        Assert.Contains("2026-03-01 10:00:00", entry.Value);
+        Assert.Contains("UTC", entry.Value);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_HandlesEmptySystemInfoTable()
+    {
+        var model = new AboutModel(_db);
+        await model.OnGetAsync();
+
+        Assert.Empty(model.Sections);
+        Assert.Equal(0, model.CustomerCount);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_SectionsInExpectedOrder()
+    {
+        _db.SystemInfo.AddRange(
+            new SystemInfo { Key = "runtime.total_poll_cycles", Value = "5", Category = "Runtime" },
+            new SystemInfo { Key = "email.aws_region", Value = "us-east-1", Category = "Email" },
+            new SystemInfo { Key = "system.version", Value = "1.0.0", Category = "System" },
+            new SystemInfo { Key = "polling.interval_minutes", Value = "60", Category = "Polling" },
+            new SystemInfo { Key = "hue.app_configured", Value = "True", Category = "Hue" }
+        );
+        await _db.SaveChangesAsync();
+
+        var model = new AboutModel(_db);
+        await model.OnGetAsync();
+
+        var categories = model.Sections.Select(s => s.Category).ToList();
+        Assert.Equal(new[] { "System", "Polling", "Email", "Hue", "Runtime" }, categories);
     }
 }

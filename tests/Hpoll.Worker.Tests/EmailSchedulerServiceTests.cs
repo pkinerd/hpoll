@@ -58,7 +58,8 @@ public class EmailSchedulerServiceTests : IDisposable
         return new EmailSchedulerService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<EmailSchedulerService>.Instance,
-            Options.Create(settings));
+            Options.Create(settings),
+            new Mock<ISystemInfoService>().Object);
     }
 
     [Fact]

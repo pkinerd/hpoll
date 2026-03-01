@@ -12,6 +12,7 @@ public class HpollDbContext : DbContext
     public DbSet<Device> Devices => Set<Device>();
     public DbSet<DeviceReading> DeviceReadings => Set<DeviceReading>();
     public DbSet<PollingLog> PollingLogs => Set<PollingLog>();
+    public DbSet<SystemInfo> SystemInfo => Set<SystemInfo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,6 +56,13 @@ public class HpollDbContext : DbContext
                 .WithMany(h => h.PollingLogs)
                 .HasForeignKey(e => e.HubId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SystemInfo>(entity =>
+        {
+            entity.HasKey(e => e.Key);
+            entity.Property(e => e.Key).HasMaxLength(128);
+            entity.HasIndex(e => e.Category);
         });
     }
 }

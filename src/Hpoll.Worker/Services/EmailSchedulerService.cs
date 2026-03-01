@@ -14,17 +14,21 @@ public class EmailSchedulerService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<EmailSchedulerService> _logger;
     private readonly EmailSettings _settings;
+    private readonly ISystemInfoService _systemInfo;
     private readonly TimeProvider _timeProvider;
+    private int _totalEmailsSent;
 
     public EmailSchedulerService(
         IServiceScopeFactory scopeFactory,
         ILogger<EmailSchedulerService> logger,
         IOptions<EmailSettings> settings,
+        ISystemInfoService systemInfo,
         TimeProvider? timeProvider = null)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _settings = settings.Value;
+        _systemInfo = systemInfo;
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
@@ -45,6 +49,20 @@ public class EmailSchedulerService : BackgroundService
             {
                 await Task.Delay(delay, stoppingToken);
                 await SendAllEmailsAsync(stoppingToken);
+
+                try
+                {
+                    _totalEmailsSent++;
+                    var metricTime = _timeProvider.GetUtcNow().UtcDateTime;
+                    await _systemInfo.SetAsync("Runtime", "runtime.last_email_sent", metricTime.ToString("O"));
+                    await _systemInfo.SetAsync("Runtime", "runtime.total_emails_sent", _totalEmailsSent.ToString());
+                    var nextSend = GetNextSendTime(metricTime);
+                    await _systemInfo.SetAsync("Runtime", "runtime.next_email_due", nextSend.ToString("O"));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to update system info metrics");
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
