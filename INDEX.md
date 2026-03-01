@@ -53,3 +53,15 @@
 | 0049 | HealthEvaluator class is dead code — never registered or used | open | low | code-quality |
 | 0050 | Remove or fix orphaned entrypoint.sh | open | low | bug |
 | 0051 | BatteryAlertThreshold boundary condition — device at exactly threshold level is neither shown nor alerted | open | medium | bug |
+| 0052 | Pin NuGet and Docker dependency versions for reproducible builds | open | low | security, enhancement |
+| 0053 | RegisterApplicationAsync leaks full Hue API response body in exception message | open | medium | bug, security |
+| 0054 | Introduce EmailMessage model to simplify IEmailSender interface | open | medium | enhancement, code-quality |
+| 0055 | Filter DeviceReadings by ReadingType at database level in activity summary queries | open | medium | enhancement, performance |
+| 0056 | Duplicate JSON parsing of motion readings doubles memory and CPU cost | open | medium | enhancement, performance |
+| 0057 | Add configuration validation tests for boundary conditions | open | medium | testing, bug |
+| 0058 | Add CI coverage thresholds and codecov.yml configuration | open | medium | enhancement, testing |
+| 0059 | Add missing HueApiClient error path tests | open | medium | testing |
+| 0060 | Consolidate Docker CI tag-building script into reusable action or shared script | open | low | enhancement |
+| 0061 | Admin portal Docker container binds to all network interfaces | open | low | security |
+| 0062 | Sequential email sending limits scalability for large customer counts | open | low | enhancement, performance |
+| 0063 | Add HTTPS redirect middleware for admin portal in production | open | medium | security |
