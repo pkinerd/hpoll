@@ -84,3 +84,53 @@ an invalid address, rather than discovering it later in logs. It is not a securi
 **Recommendation:** Relabel from `security` to `enhancement`, keep priority `low`. If
 implemented, write a custom validation helper that splits on commas and validates each entry
 individually, rather than using `[EmailAddress]` on the whole field.
+
+### claude (critical review) — 2026-03-01
+
+**Assessment: VALID as a data quality concern. Agree this is NOT a security issue. However, the previous review understates the operational risk.**
+
+**Confirming the core finding:**
+
+The issue correctly identifies that CC/BCC fields have no server-side format validation. In `src/Hpoll.Admin/Pages/Customers/Detail.cshtml.cs`, the `EditCcEmails` (line 38-39) and `EditBccEmails` (line 41-42) bind properties have `[BindProperty]` but no validation attributes whatsoever. The `OnPostUpdateEmailsAsync` method (lines 104-122) checks `ModelState.IsValid` at line 111, but since there are no validation attributes on these properties, ModelState will always pass for them. The values are persisted directly:
+
+```csharp
+// Detail.cshtml.cs lines 114-115
+customer.CcEmails = (EditCcEmails ?? string.Empty).Trim();
+customer.BccEmails = (EditBccEmails ?? string.Empty).Trim();
+```
+
+Notably, `EditEmail` (the primary To field, line 32-33) also has no `[EmailAddress]` or `[Required]` attribute, confirming the previous reviewer's point that this gap is not unique to CC/BCC.
+
+**Correcting a factual error in the previous review:**
+
+The previous critical-review comment states: "the primary To recipients still receive their email" when CC/BCC contains malformed addresses. **This is incorrect.** Examining the send path:
+
+1. `EmailSchedulerService.SendCustomerEmailAsync` (line 169-190 of `src/Hpoll.Worker/Services/EmailSchedulerService.cs`) builds To, CC, and BCC lists, then calls `sender.SendEmailAsync(toList, subject, html, ccList, bccList, ct)` in a **single API call** (line 186).
+
+2. `SesEmailSender.SendEmailAsync` (line 31-66 of `src/Hpoll.Email/SesEmailSender.cs`) constructs a single `SendEmailRequest` with all recipients in one `Destination` object (lines 33-39), then calls `_sesClient.SendEmailAsync(sendRequest, ct)` at line 58.
+
+3. If SES rejects the request because any address in CC or BCC is syntactically invalid (e.g., `not-an-email`), the entire `SendEmailAsync` call throws. The exception propagates from `SesEmailSender` (re-thrown at line 64) to `SendCustomerEmailAsync`, and is caught in `ProcessDueCustomersAsync` at line 140.
+
+4. **Consequence: a malformed CC/BCC address causes the entire email to fail for ALL recipients, including the primary To addresses.** The customer receives no daily summary email at all. Furthermore, since `ProcessDueCustomersAsync` always advances `NextSendTimeUtc` (lines 146-150), the failed send is not retried -- the email is simply lost for that cycle.
+
+This is a meaningful operational risk, not just "the intended recipient does not receive the email." It silently prevents delivery to *all* recipients for that customer.
+
+**Nuance on the `Contains('@')` filter:**
+
+`ParseEmailList` at line 217-225 does filter out entries without `@`. So a completely non-email string like `"hello world"` would be dropped. However, strings like `"@"`, `"foo@"`, `"@bar"`, or `"foo @bar.com baz"` (with embedded spaces after comma splitting) would pass the `Contains('@')` check but are not valid RFC 5321 addresses. The `.TrimEntries` in the split handles leading/trailing whitespace, but `"foo @bar"` as a single entry would still pass.
+
+More importantly, a string like `"not-real@nonexistent.tld"` passes all current checks but will bounce at the SMTP level -- this is not caught by SES at send time (SES accepts the request and the bounce occurs asynchronously). High bounce rates can damage the SES sender reputation, potentially leading to SES throttling or suspension of the sending account. This is documented in AWS SES best practices.
+
+**Precise scope of the gap:**
+
+| Field | Create page validation | Detail page validation | Runtime guard |
+|-------|----------------------|----------------------|---------------|
+| Email (To) | `[Required, StringLength(500)]` only (`src/Hpoll.Admin/Pages/Customers/Create.cshtml.cs` line 26) | No attributes (`Detail.cshtml.cs` line 32-33) | `ParseEmailList` filters by `@` |
+| CcEmails | N/A (not on Create page) | No attributes (`Detail.cshtml.cs` line 38-39) | `ParseEmailList` filters by `@` |
+| BccEmails | N/A (not on Create page) | No attributes (`Detail.cshtml.cs` line 41-42) | `ParseEmailList` filters by `@` |
+
+**Agreement on label change:**
+
+This is not a security vulnerability. The admin portal requires authentication (`Program.cs` line 90: `app.MapRazorPages().RequireAuthorization()`), uses antiforgery tokens (line 68), and the login system has rate limiting (`Login.cshtml.cs` lines 42-50). Only authenticated administrators can set these fields. There is no injection vector or privilege escalation.
+
+**Recommendation:** Relabel `security` to `enhancement`. Upgrade priority from `low` to `medium` given the operational risk that a single bad CC/BCC address silently blocks delivery to all recipients for that customer. The fix should be a custom validation helper in `OnPostUpdateEmailsAsync` that splits on commas and validates each entry with `System.Net.Mail.MailAddress.TryCreate()` (available in .NET 8) before persisting. The same validation should be applied to the primary `EditEmail` field for consistency.
