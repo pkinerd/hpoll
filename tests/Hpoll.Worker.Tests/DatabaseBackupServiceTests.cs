@@ -175,4 +175,31 @@ public class DatabaseBackupServiceTests : IDisposable
         // Should not throw
         service.PruneOldBackups();
     }
+
+    [Fact]
+    public void HasExistingBackups_ReturnsFalse_WhenNoBackupsExist()
+    {
+        var service = CreateService();
+
+        Assert.False(service.HasExistingBackups());
+    }
+
+    [Fact]
+    public void HasExistingBackups_ReturnsFalse_WhenDirectoryExistsButEmpty()
+    {
+        Directory.CreateDirectory(_backupDir);
+        var service = CreateService();
+
+        Assert.False(service.HasExistingBackups());
+    }
+
+    [Fact]
+    public void HasExistingBackups_ReturnsTrue_WhenBackupsExist()
+    {
+        Directory.CreateDirectory(_backupDir);
+        File.WriteAllText(Path.Combine(_backupDir, "hpoll-20260101-080000.db"), "dummy");
+        var service = CreateService();
+
+        Assert.True(service.HasExistingBackups());
+    }
 }

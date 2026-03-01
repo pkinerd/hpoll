@@ -44,36 +44,19 @@ public class DatabaseBackupService : BackgroundService
             "Database backup service started. Interval: {Hours}h, retention: {Count} backups, directory: {Dir}",
             _settings.IntervalHours, _settings.RetentionCount, _backupDirectory);
 
+        // On startup, only back up if no backups exist yet
+        if (!HasExistingBackups())
+        {
+            _logger.LogInformation("No existing backups found — creating initial backup");
+            await RunBackupCycleAsync(stoppingToken);
+        }
+        else
+        {
+            _logger.LogInformation("Existing backups found — waiting for next scheduled cycle");
+        }
+
         while (!stoppingToken.IsCancellationRequested)
         {
-            try
-            {
-                await CreateBackupAsync(stoppingToken);
-                PruneOldBackups();
-                _totalBackups++;
-
-                try
-                {
-                    var now = _timeProvider.GetUtcNow().UtcDateTime;
-                    await _systemInfo.SetAsync("Runtime", "runtime.last_backup_completed", now.ToString("O"));
-                    await _systemInfo.SetAsync("Runtime", "runtime.next_backup_due",
-                        now.AddHours(_settings.IntervalHours).ToString("O"));
-                    await _systemInfo.SetAsync("Runtime", "runtime.total_backups", _totalBackups.ToString());
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to update system info metrics");
-                }
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unhandled error in database backup cycle");
-            }
-
             try
             {
                 await Task.Delay(TimeSpan.FromHours(_settings.IntervalHours), stoppingToken);
@@ -82,6 +65,45 @@ public class DatabaseBackupService : BackgroundService
             {
                 break;
             }
+
+            await RunBackupCycleAsync(stoppingToken);
+        }
+    }
+
+    internal bool HasExistingBackups()
+    {
+        return Directory.Exists(_backupDirectory)
+            && Directory.GetFiles(_backupDirectory, "hpoll-*.db").Length > 0;
+    }
+
+    private async Task RunBackupCycleAsync(CancellationToken stoppingToken)
+    {
+        try
+        {
+            await CreateBackupAsync(stoppingToken);
+            PruneOldBackups();
+            _totalBackups++;
+
+            try
+            {
+                var now = _timeProvider.GetUtcNow().UtcDateTime;
+                await _systemInfo.SetAsync("Runtime", "runtime.last_backup_completed", now.ToString("O"));
+                await _systemInfo.SetAsync("Runtime", "runtime.next_backup_due",
+                    now.AddHours(_settings.IntervalHours).ToString("O"));
+                await _systemInfo.SetAsync("Runtime", "runtime.total_backups", _totalBackups.ToString());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to update system info metrics");
+            }
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            // Shutting down — don't log as error
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unhandled error in database backup cycle");
         }
     }
 
