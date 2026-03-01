@@ -32,7 +32,7 @@ Critical review: PARTIALLY_VALID. Recommend wontfix. Duplication is real but tri
 Compared `src/Hpoll.Worker/Program.cs` (168 lines) and `src/Hpoll.Admin/Program.cs` (99 lines) on the `main` branch.
 
 **Block 1 — DB path resolution + DbContext registration (identical, 7 lines)**
-Worker lines 22-29 vs Admin lines 29-36:
+Worker lines 22-28 vs Admin lines 28-34:
 ```csharp
 var dbPath = Path.Combine(
     builder.Configuration.GetValue<string>("DataPath") ?? "data",
@@ -45,7 +45,7 @@ builder.Services.AddDbContext<HpollDbContext>(options =>
 Character-for-character identical in both files.
 
 **Block 2 — HttpClient + HueApiClient registration (identical, 6 lines)**
-Worker lines 31-36 vs Admin lines 38-43:
+Worker lines 31-36 vs Admin lines 37-42:
 ```csharp
 var pollingSettings = builder.Configuration.GetSection("Polling").Get<PollingSettings>() ?? new PollingSettings();
 builder.Services.AddHttpClient("HueApi", client =>
@@ -57,7 +57,7 @@ builder.Services.AddScoped<IHueApiClient, HueApiClient>();
 Character-for-character identical in both files.
 
 **Block 3 — WAL pragma (NOT identical)**
-Worker lines 65-69 run both `MigrateAsync()` and the WAL pragma in a single scope. Admin lines 79-83 run only the WAL pragma. The Worker owns schema migration; the Admin intentionally does not. This is a meaningful semantic difference, not a clean duplicate.
+Worker lines 63-68 run both `MigrateAsync()` and the WAL pragma in a single scope. Admin lines 78-82 run only the WAL pragma. The Worker owns schema migration; the Admin intentionally does not. This is a meaningful semantic difference, not a clean duplicate.
 
 **Block 4 — Options pattern bindings (trivial partial overlap)**
 Worker lines 16-19 bind `Polling`, `Email`, `HueApp`, `Backup`. Admin lines 24-26 bind `HueApp`, `Polling`, `Email`. Two lines overlap, but each app binds different subsets (Worker has `BackupSettings`, Admin omits it). These are one-liners not worth extracting.
@@ -70,7 +70,7 @@ Worker lines 16-19 bind `Polling`, `Email`, `HueApp`, `Backup`. Admin lines 24-2
 
 1. **Rule of Three not met.** Exactly two consumers exist. The canonical refactoring guideline tolerates duplication until a third occurrence. No third host is planned.
 
-2. **WAL block cannot be cleanly shared.** Worker combines `MigrateAsync()` + WAL in one scope (Worker line 66-67). Admin only runs WAL (Admin line 82). An extension method would need a `bool runMigrations` parameter or would split migration from WAL, changing the Worker's current single-scope pattern. Neither improves clarity.
+2. **WAL block cannot be cleanly shared.** Worker combines `MigrateAsync()` + WAL in one scope (Worker lines 66-67). Admin only runs WAL (Admin line 81). An extension method would need a `bool runMigrations` parameter or would split migration from WAL, changing the Worker's current single-scope pattern. Neither improves clarity.
 
 3. **Dependency graph problems.** The issue suggests placing extensions in `Hpoll.Core` or `Hpoll.Data`. Placing `AddHueApiClient` in `Hpoll.Data` would force it to reference `Hpoll.Core.Services.HueApiClient` and `Hpoll.Core.Configuration.PollingSettings`, coupling the data layer to HTTP/API concerns. Placing both in `Hpoll.Core` would require `Hpoll.Core` to reference `Hpoll.Data` for `HpollDbContext`, creating a circular or inverted dependency. Neither location is clean without restructuring the project graph.
 
@@ -82,9 +82,9 @@ Worker lines 16-19 bind `Polling`, `Email`, `HueApp`, `Backup`. Admin lines 24-2
 
 The issue cites `Worker/Program.cs` lines 20-33 and 61, and `Admin/Program.cs` lines 28-42 and 79. These are approximately but not precisely correct:
 - Worker DB+HTTP block is actually lines 22-36 (not 20-33).
-- Worker WAL is at lines 65-69 (not line 61).
-- Admin DB+HTTP block is lines 29-43 (not 28-42).
-- Admin WAL is at lines 79-83 (not line 79 alone).
+- Worker WAL is at lines 63-68 (not line 61).
+- Admin DB+HTTP block is lines 28-42 (matches the issue).
+- Admin WAL is at lines 78-82 (not line 79 alone).
 
 #### Conclusion
 
