@@ -87,6 +87,19 @@ using (var scope = host.Services.CreateScope())
         ["system.hostname"] = Environment.GetEnvironmentVariable("HOSTNAME") ?? Environment.MachineName,
     });
 
+    // Build info (baked into assembly at compile time)
+    var buildEntries = new Dictionary<string, string>();
+    void AddBuild(string key, string value) { if (!string.IsNullOrEmpty(value)) buildEntries[key] = value; }
+    AddBuild("build.branch", Hpoll.Core.BuildInfo.Branch);
+    AddBuild("build.commit", Hpoll.Core.BuildInfo.ShortCommit);
+    AddBuild("build.number", Hpoll.Core.BuildInfo.BuildNumber);
+    AddBuild("build.run_id", Hpoll.Core.BuildInfo.RunId);
+    AddBuild("build.pull_request", Hpoll.Core.BuildInfo.PullRequest);
+    AddBuild("build.timestamp", Hpoll.Core.BuildInfo.Timestamp);
+    AddBuild("build.source", Hpoll.Core.BuildInfo.IsCI ? "CI" : "Local");
+    if (buildEntries.Count > 0)
+        await systemInfo.SetBatchAsync("Build", buildEntries);
+
     // Polling settings
     using var scope = host.Services.CreateScope();
     var polling = scope.ServiceProvider.GetRequiredService<IOptions<PollingSettings>>().Value;
@@ -116,12 +129,11 @@ using (var scope = host.Services.CreateScope())
         ["email.error_retry_delay_minutes"] = email.ErrorRetryDelayMinutes.ToString(),
     });
 
-    // Hue settings (non-sensitive only)
+    // Hue settings (non-sensitive only — callback URL is an Admin concern, not written here)
     var hueApp = scope.ServiceProvider.GetRequiredService<IOptions<HueAppSettings>>().Value;
     await systemInfo.SetBatchAsync("Hue", new Dictionary<string, string>
     {
         ["hue.app_configured"] = (!string.IsNullOrEmpty(hueApp.ClientId)).ToString(),
-        ["hue.callback_url"] = hueApp.CallbackUrl,
     });
 
     // Runtime (initial placeholders)
