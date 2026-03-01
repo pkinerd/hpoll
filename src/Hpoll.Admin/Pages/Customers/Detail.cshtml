@@ -52,21 +52,35 @@
     </form>
 </div>
 
-<div class="card" style="max-width: 500px;">
-    <form method="post" asp-page-handler="UpdateTimeZone" asp-route-id="@Model.Customer.Id">
+@if (Model.EditingTimeZone)
+{
+    <div class="card" style="max-width: 500px;">
+        <form method="post" asp-page-handler="UpdateTimeZone" asp-route-id="@Model.Customer.Id">
+            <div class="form-group">
+                <label asp-for="EditTimeZoneId">Timezone</label>
+                <select asp-for="EditTimeZoneId">
+                    @foreach (var tz in TimeZoneInfo.GetSystemTimeZones().OrderBy(t => t.BaseUtcOffset))
+                    {
+                        <option value="@tz.Id">@tz.DisplayName</option>
+                    }
+                </select>
+                <span asp-validation-for="EditTimeZoneId" style="color: #dc2626; font-size: 0.85rem;"></span>
+            </div>
+            <button type="submit" class="btn">Update Timezone</button>
+            <a asp-page="/Customers/Detail" asp-route-id="@Model.Customer.Id" class="btn" style="margin-left: 0.5rem;">Cancel</a>
+        </form>
+    </div>
+}
+else
+{
+    <div class="card" style="max-width: 500px;">
         <div class="form-group">
-            <label asp-for="EditTimeZoneId">Timezone</label>
-            <select asp-for="EditTimeZoneId">
-                @foreach (var tz in TimeZoneInfo.GetSystemTimeZones().OrderBy(t => t.BaseUtcOffset))
-                {
-                    <option value="@tz.Id">@tz.DisplayName</option>
-                }
-            </select>
-            <span asp-validation-for="EditTimeZoneId" style="color: #dc2626; font-size: 0.85rem;"></span>
+            <label>Timezone</label>
+            <input type="text" value="@TimeZoneInfo.FindSystemTimeZoneById(Model.Customer.TimeZoneId).DisplayName" readonly />
         </div>
-        <button type="submit" class="btn">Update Timezone</button>
-    </form>
-</div>
+        <a asp-page="/Customers/Detail" asp-route-id="@Model.Customer.Id" asp-route-editTz="true" class="btn">Change Timezone</a>
+    </div>
+}
 
 <div class="card" style="max-width: 500px;">
     <form method="post" asp-page-handler="UpdateEmails" asp-route-id="@Model.Customer.Id">
