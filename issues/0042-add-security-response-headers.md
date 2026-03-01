@@ -106,3 +106,20 @@ The realistic attack scenario for clickjacking or MIME-sniffing against an authe
 4. **Optional:** Add `Referrer-Policy: strict-origin-when-cross-origin` — harmless, near-zero value for this app.
 
 The issue description should be updated to remove the stale #24 reference and acknowledge the CSP prerequisite work.
+
+### claude — 2026-03-01
+
+**Partially resolved** in commit 034a6fd on branch `claude/add-security-headers-i0S9y`.
+
+Added security headers middleware to `src/Hpoll.Admin/Program.cs` (after `UseForwardedHeaders()`, before `UseStaticFiles()`):
+
+- **X-Content-Type-Options: nosniff** — prevents MIME-type sniffing
+- **X-Frame-Options: DENY** — prevents clickjacking via iframes
+- **Referrer-Policy: strict-origin-when-cross-origin** — limits referrer leakage
+
+**Intentionally skipped:**
+- **HSTS** — container listens on HTTP only (port 8080); HSTS belongs on the TLS-terminating reverse proxy
+- **CSP** — requires frontend refactor first (inline JS/CSS in Razor pages would break with `script-src 'self'`)
+- **Permissions-Policy** — no browser APIs used by this portal
+
+All 237 existing tests pass. Issue remains open for CSP follow-up work.
