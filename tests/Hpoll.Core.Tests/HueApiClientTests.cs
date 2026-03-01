@@ -438,6 +438,64 @@ public class HueApiClientTests
             () => _client.GetBridgeIdAsync(TestAccessToken, TestApplicationKey));
     }
 
+    [Fact]
+    public async Task EnableLinkButtonAsync_OnFailure_ThrowsHttpRequestException()
+    {
+        _mockHandler.ConfigureResponse(HttpStatusCode.Forbidden, """{"errors":[{"description":"forbidden"}]}""");
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(
+            () => _client.EnableLinkButtonAsync(TestAccessToken));
+
+        Assert.Equal(HttpStatusCode.Forbidden, ex.StatusCode);
+    }
+
+    [Fact]
+    public async Task RegisterApplicationAsync_On401_ThrowsHttpRequestException()
+    {
+        _mockHandler.ConfigureResponse(HttpStatusCode.Unauthorized, """{"error":"unauthorized"}""");
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(
+            () => _client.RegisterApplicationAsync(TestAccessToken));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, ex.StatusCode);
+    }
+
+    [Fact]
+    public async Task RegisterApplicationAsync_OnNonArrayResponse_ThrowsInvalidOperationException()
+    {
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, """{"not":"an array"}""");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _client.RegisterApplicationAsync(TestAccessToken));
+    }
+
+    [Fact]
+    public async Task RegisterApplicationAsync_WithNullUsername_ThrowsInvalidOperationException()
+    {
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, """[{"success":{"username":null}}]""");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _client.RegisterApplicationAsync(TestAccessToken));
+    }
+
+    [Fact]
+    public async Task GetMotionSensorsAsync_OnNullDeserialization_ThrowsInvalidOperationException()
+    {
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, "null");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _client.GetMotionSensorsAsync(TestAccessToken, TestApplicationKey));
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_OnNullDeserialization_ThrowsInvalidOperationException()
+    {
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, "null");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _client.RefreshTokenAsync(TestRefreshToken));
+    }
+
     /// <summary>
     /// A mock HTTP message handler that captures the request and returns a configured response.
     /// </summary>

@@ -1,0 +1,81 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
+using Hpoll.Admin.Pages.Customers;
+using Hpoll.Data;
+
+namespace Hpoll.Admin.Tests.Customers;
+
+public class CreateModelTests : IDisposable
+{
+    private readonly HpollDbContext _db;
+
+    public CreateModelTests()
+    {
+        var options = new DbContextOptionsBuilder<HpollDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        _db = new HpollDbContext(options);
+    }
+
+    public void Dispose() => _db.Dispose();
+
+    private CreateModel CreatePageModel()
+    {
+        var model = new CreateModel(_db);
+        model.PageContext = new PageContext
+        {
+            ActionDescriptor = new CompiledPageActionDescriptor(),
+            HttpContext = new DefaultHttpContext(),
+            RouteData = new RouteData()
+        };
+        return model;
+    }
+
+    [Fact]
+    public async Task OnPostAsync_ValidInput_CreatesCustomer()
+    {
+        var model = CreatePageModel();
+        model.Name = "Alice Smith";
+        model.Email = "alice@example.com";
+        model.TimeZoneId = "UTC";
+
+        var result = await model.OnPostAsync();
+
+        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        Assert.Equal("Detail", redirect.PageName);
+
+        var customer = await _db.Customers.FirstOrDefaultAsync(c => c.Email == "alice@example.com");
+        Assert.NotNull(customer);
+        Assert.Equal("Alice Smith", customer.Name);
+        Assert.Equal("active", customer.Status);
+    }
+
+    [Fact]
+    public async Task OnPostAsync_InvalidTimezone_ReturnsError()
+    {
+        var model = CreatePageModel();
+        model.Name = "Bob";
+        model.Email = "bob@example.com";
+        model.TimeZoneId = "Invalid/Timezone";
+
+        var result = await model.OnPostAsync();
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("TimeZoneId"));
+    }
+
+    [Fact]
+    public async Task OnPostAsync_InvalidModelState_ReturnsPage()
+    {
+        var model = CreatePageModel();
+        model.ModelState.AddModelError("Name", "Name is required.");
+
+        var result = await model.OnPostAsync();
+
+        Assert.IsType<PageResult>(result);
+    }
+}

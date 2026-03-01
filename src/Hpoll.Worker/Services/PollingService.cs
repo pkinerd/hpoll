@@ -17,16 +17,19 @@ public class PollingService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<PollingService> _logger;
     private readonly PollingSettings _settings;
+    private readonly TimeProvider _timeProvider;
     private bool _firstCycle = true;
 
     public PollingService(
         IServiceScopeFactory scopeFactory,
         ILogger<PollingService> logger,
-        IOptions<PollingSettings> settings)
+        IOptions<PollingSettings> settings,
+        TimeProvider? timeProvider = null)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _settings = settings.Value;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -62,7 +65,7 @@ public class PollingService : BackgroundService
         }
     }
 
-    private async Task PollAllHubsAsync(bool forceBatteryPoll, CancellationToken ct)
+    internal async Task PollAllHubsAsync(bool forceBatteryPoll, CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
@@ -77,7 +80,7 @@ public class PollingService : BackgroundService
 
         foreach (var hub in activeHubs)
         {
-            if (hub.TokenExpiresAt <= DateTime.UtcNow)
+            if (hub.TokenExpiresAt <= _timeProvider.GetUtcNow().UtcDateTime)
             {
                 _logger.LogWarning("Hub {BridgeId}: token expired, skipping poll", hub.HueBridgeId);
                 continue;
@@ -88,7 +91,7 @@ public class PollingService : BackgroundService
 
     private async Task PollHubAsync(HpollDbContext db, IHueApiClient hueClient, Hub hub, bool forceBatteryPoll, CancellationToken ct)
     {
-        var pollTime = DateTime.UtcNow;
+        var pollTime = _timeProvider.GetUtcNow().UtcDateTime;
         var log = new PollingLog { HubId = hub.Id, Timestamp = pollTime };
         int apiCalls = 0;
 
@@ -266,13 +269,13 @@ public class PollingService : BackgroundService
         }
     }
 
-    private async Task CleanupOldDataAsync(CancellationToken ct)
+    internal async Task CleanupOldDataAsync(CancellationToken ct)
     {
         try
         {
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
-            var cutoff = DateTime.UtcNow.AddHours(-_settings.DataRetentionHours);
+            var cutoff = _timeProvider.GetUtcNow().UtcDateTime.AddHours(-_settings.DataRetentionHours);
 
             // Delete in batches to avoid loading excessive rows into memory at once
             const int batchSize = 1000;

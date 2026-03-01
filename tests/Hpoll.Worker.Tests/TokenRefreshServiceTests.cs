@@ -1,4 +1,3 @@
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -45,37 +44,38 @@ public class TokenRefreshServiceTests : IDisposable
         return scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     }
 
-    private async Task<Hub> SeedHubAsync()
+    private async Task<Hub> SeedHubAsync(string status = "active", DateTime? tokenExpiresAt = null)
     {
         using var db = CreateDb();
-        var customer = new Customer { Name = "Test", Email = "test@example.com" };
+        var customer = new Customer { Name = "Test", Email = $"test-{Guid.NewGuid()}@example.com" };
         db.Customers.Add(customer);
         await db.SaveChangesAsync();
 
         var hub = new Hub
         {
             CustomerId = customer.Id,
-            HueBridgeId = "001788FFFE123456",
+            HueBridgeId = $"001788FFFE{Guid.NewGuid().ToString()[..6]}",
             HueApplicationKey = "appkey",
             AccessToken = "old-access-token",
             RefreshToken = "old-refresh-token",
-            TokenExpiresAt = DateTime.UtcNow.AddDays(1),
-            Status = "active"
+            TokenExpiresAt = tokenExpiresAt ?? DateTime.UtcNow.AddDays(1),
+            Status = status
         };
         db.Hubs.Add(hub);
         await db.SaveChangesAsync();
         return hub;
     }
 
-    private async Task InvokeRefreshExpiringTokensAsync(TokenRefreshService service, CancellationToken ct)
+    private TokenRefreshService CreateService(PollingSettings? settings = null)
     {
-        var method = typeof(TokenRefreshService).GetMethod("RefreshExpiringTokensAsync", BindingFlags.NonPublic | BindingFlags.Instance);
-        var task = (Task)method!.Invoke(service, new object[] { ct })!;
-        await task;
+        return new TokenRefreshService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<TokenRefreshService>.Instance,
+            Options.Create(settings ?? new PollingSettings()));
     }
 
     [Fact]
-    public async Task RefreshAllTokens_UpdatesAccessToken()
+    public async Task RefreshExpiringTokens_UpdatesAccessToken()
     {
         var hub = await SeedHubAsync();
 
@@ -88,12 +88,8 @@ public class TokenRefreshServiceTests : IDisposable
                 ExpiresIn = 604800
             });
 
-        var service = new TokenRefreshService(
-            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<TokenRefreshService>.Instance,
-            Options.Create(new PollingSettings()));
-
-        await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
+        var service = CreateService();
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
@@ -102,19 +98,15 @@ public class TokenRefreshServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task RefreshAllTokens_OnFailure_MarksHubAsNeedsReauth()
+    public async Task RefreshExpiringTokens_OnFailure_MarksHubAsNeedsReauth()
     {
         var hub = await SeedHubAsync();
 
         _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("Unauthorized"));
 
-        var service = new TokenRefreshService(
-            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<TokenRefreshService>.Instance,
-            Options.Create(new PollingSettings()));
-
-        await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
+        var service = CreateService();
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
@@ -122,7 +114,7 @@ public class TokenRefreshServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task RefreshAllTokens_RetriesOnFailure()
+    public async Task RefreshExpiringTokens_RetriesOnFailure()
     {
         var hub = await SeedHubAsync();
 
@@ -142,17 +134,150 @@ public class TokenRefreshServiceTests : IDisposable
                 });
             });
 
-        var service = new TokenRefreshService(
-            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<TokenRefreshService>.Instance,
-            Options.Create(new PollingSettings()));
-
-        await InvokeRefreshExpiringTokensAsync(service, CancellationToken.None);
+        var service = CreateService();
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
 
         Assert.Equal(3, callCount);
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
         Assert.Equal("recovered-token", updatedHub.AccessToken);
         Assert.Equal("active", updatedHub.Status);
+    }
+
+    [Fact]
+    public async Task RefreshExpiringTokens_TokenNotNearExpiry_SkipsRefresh()
+    {
+        // Token expires far in the future (well beyond threshold)
+        await SeedHubAsync(tokenExpiresAt: DateTime.UtcNow.AddDays(30));
+
+        var service = CreateService(new PollingSettings { TokenRefreshThresholdHours = 48 });
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
+
+        _mockHueClient.Verify(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RefreshExpiringTokens_MultipleHubs_OnlyRefreshesExpiring()
+    {
+        // Hub1: near expiry (within threshold)
+        var hub1 = await SeedHubAsync(tokenExpiresAt: DateTime.UtcNow.AddHours(12));
+        // Hub2: far from expiry
+        var hub2 = await SeedHubAsync(tokenExpiresAt: DateTime.UtcNow.AddDays(30));
+
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueTokenResponse
+            {
+                AccessToken = "refreshed",
+                RefreshToken = "refreshed-refresh",
+                TokenType = "Bearer",
+                ExpiresIn = 604800
+            });
+
+        var service = CreateService(new PollingSettings { TokenRefreshThresholdHours = 48 });
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
+
+        // Only hub1 should have been refreshed
+        _mockHueClient.Verify(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        using var db = CreateDb();
+        var updatedHub1 = await db.Hubs.FirstAsync(h => h.Id == hub1.Id);
+        var updatedHub2 = await db.Hubs.FirstAsync(h => h.Id == hub2.Id);
+        Assert.Equal("refreshed", updatedHub1.AccessToken);
+        Assert.Equal("old-access-token", updatedHub2.AccessToken);
+    }
+
+    [Fact]
+    public async Task RefreshExpiringTokens_EmptyRefreshToken_KeepsExistingRefreshToken()
+    {
+        var hub = await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueTokenResponse
+            {
+                AccessToken = "new-access",
+                RefreshToken = "",  // Empty refresh token
+                TokenType = "Bearer",
+                ExpiresIn = 604800
+            });
+
+        var service = CreateService();
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
+
+        using var db = CreateDb();
+        var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.Equal("new-access", updatedHub.AccessToken);
+        Assert.Equal("old-refresh-token", updatedHub.RefreshToken);  // Original kept
+    }
+
+    [Fact]
+    public async Task RefreshExpiringTokens_VerifyRetryCount_ExactlyMaxRetries()
+    {
+        await SeedHubAsync();
+
+        var callCount = 0;
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns<string, CancellationToken>((_, _) =>
+            {
+                callCount++;
+                throw new HttpRequestException("Always fails");
+            });
+
+        var settings = new PollingSettings { TokenRefreshMaxRetries = 5 };
+        var service = CreateService(settings);
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
+
+        Assert.Equal(5, callCount);
+    }
+
+    [Fact]
+    public async Task RefreshExpiringTokens_InactiveHub_NotIncluded()
+    {
+        await SeedHubAsync(status: "inactive", tokenExpiresAt: DateTime.UtcNow.AddHours(1));
+
+        var service = CreateService();
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
+
+        _mockHueClient.Verify(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RefreshExpiringTokens_UpdatedAtTimestamp_SetOnSuccess()
+    {
+        var hub = await SeedHubAsync();
+        var beforeRefresh = DateTime.UtcNow;
+
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueTokenResponse
+            {
+                AccessToken = "new-token",
+                RefreshToken = "new-refresh",
+                TokenType = "Bearer",
+                ExpiresIn = 604800
+            });
+
+        var service = CreateService();
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
+
+        using var db = CreateDb();
+        var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.True(updatedHub.UpdatedAt >= beforeRefresh);
+    }
+
+    [Fact]
+    public async Task RefreshExpiringTokens_UpdatedAtTimestamp_SetOnNeedsReauth()
+    {
+        var hub = await SeedHubAsync();
+        var beforeRefresh = DateTime.UtcNow;
+
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Fail"));
+
+        var service = CreateService();
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
+
+        using var db = CreateDb();
+        var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.Equal("needs_reauth", updatedHub.Status);
+        Assert.True(updatedHub.UpdatedAt >= beforeRefresh);
     }
 }
