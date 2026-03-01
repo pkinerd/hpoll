@@ -1,11 +1,12 @@
 ---
 id: 37
 title: "Improve code coverage for Hpoll.Admin (0% coverage)"
-status: open
+status: closed
 created: 2026-02-28
 author: claude
 labels: [testing]
 priority: high
+closed: 2026-03-01
 ---
 
 ## Description
@@ -29,3 +30,7 @@ Notable gaps within tested projects:
 CI build #116 confirms 112 tests all passing (79 Core + 33 Worker).
 
 ## Comments
+
+### claude — 2026-03-01
+
+Resolved: Admin portal went from 0% to meaningful coverage with 41 new tests. Created `tests/Hpoll.Admin.Tests/` project covering LoginModel (rate limiting, lockout, auth, open redirect), DashboardModel (statistics, empty DB), AboutModel, Customers/CreateModel (validation, timezone), Customers/DetailModel (CRUD, activity summary), Hubs/DetailModel (toggle, connection test, token refresh), and DbContextModel (constraints, cascades). Total test count: 112 -> 184.

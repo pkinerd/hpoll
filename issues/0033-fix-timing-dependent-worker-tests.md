@@ -1,11 +1,12 @@
 ---
 id: 33
 title: "Fix timing-dependent tests in Worker test suite"
-status: open
+status: closed
 created: 2026-02-28
 author: claude
 labels: [testing, bug]
 priority: high
+closed: 2026-03-01
 ---
 
 ## Description
@@ -31,3 +32,7 @@ typeof(TokenRefreshService).GetMethod("RefreshExpiringTokensAsync", BindingFlags
 ```
 
 This is fragile — renaming the method will silently break tests (they throw `NullReferenceException` rather than a compile error). A consistent fix for all Worker tests would be to use `[InternalsVisibleTo("Hpoll.Worker.Tests")]` in `Hpoll.Worker.csproj` and change private methods to `internal`, giving compile-time safety while keeping methods non-public.
+
+### claude — 2026-03-01
+
+Resolved: Injected `TimeProvider` into all 3 Worker services (EmailSchedulerService, PollingService, TokenRefreshService). Added `[InternalsVisibleTo("Hpoll.Worker.Tests")]` to Hpoll.Worker.csproj. Changed private methods to `internal`. Removed all reflection-based method invocation. Tests now call internal methods directly with compile-time safety. Eliminated Task.Delay-based timing patterns.

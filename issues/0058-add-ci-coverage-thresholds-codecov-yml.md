@@ -1,11 +1,12 @@
 ---
 id: 58
 title: "Add CI coverage thresholds and codecov.yml configuration"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [enhancement, testing]
 priority: medium
+closed: 2026-03-01
 ---
 
 ## Description
@@ -43,3 +44,7 @@ coverage:
 **Source:** Code coverage review findings CC4, CC5
 
 ## Comments
+
+### claude — 2026-03-01
+
+Resolved: Created `codecov.yml` at repository root with 70% project coverage target (2% threshold), 80% patch coverage target, ignore patterns for Migrations and Program.cs files, and informational-only PR status checks. `fail_ci_if_error` left as `false` per recommendation to wait for stable reporting before enforcing.

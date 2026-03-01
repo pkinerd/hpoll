@@ -1,11 +1,12 @@
 ---
 id: 59
 title: "Add missing HueApiClient error path tests"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [testing]
 priority: medium
+closed: 2026-03-01
 ---
 
 ## Description
@@ -35,3 +36,7 @@ Several `HueApiClient` methods have untested error/failure paths:
 **Source:** Unit testing review finding UT1.4
 
 ## Comments
+
+### claude — 2026-03-01
+
+Resolved: Added all 6 requested error path tests to HueApiClientTests.cs: EnableLinkButtonAsync_OnFailure_ThrowsHttpRequestException, RegisterApplicationAsync_On401_ThrowsHttpRequestException, RegisterApplicationAsync_OnNonArrayResponse_ThrowsInvalidOperationException, RegisterApplicationAsync_WithNullUsername_ThrowsInvalidOperationException, GetMotionSensorsAsync_OnNullDeserialization_ThrowsInvalidOperationException, RefreshTokenAsync_OnNullDeserialization_ThrowsInvalidOperationException. All 6 tests passing.

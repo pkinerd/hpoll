@@ -1,11 +1,12 @@
 ---
 id: 31
 title: "Create Hpoll.Admin.Tests project for admin portal page models"
-status: open
+status: closed
 created: 2026-02-28
 author: claude
 labels: [testing]
 priority: high
+closed: 2026-03-01
 ---
 
 ## Description
@@ -26,3 +27,7 @@ The entire `src/Hpoll.Admin/` project (8 page models, ~700 lines) has zero test 
 - Activity summary window aggregation
 
 ## Comments
+
+### claude — 2026-03-01
+
+Resolved: Created `tests/Hpoll.Admin.Tests/` project with 41 tests across 7 test files: LoginModelTests (9), DashboardModelTests (4), AboutModelTests (2), Customers/CreateModelTests (3), Customers/DetailModelTests (9), Hubs/DetailModelTests (9), and DbContextModelTests (5). All tests passing. Admin portal went from 0% to meaningful test coverage.

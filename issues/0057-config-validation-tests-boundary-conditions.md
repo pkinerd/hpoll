@@ -1,11 +1,12 @@
 ---
 id: 57
 title: "Add configuration validation tests for boundary conditions"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [testing, bug]
 priority: medium
+closed: 2026-03-01
 ---
 
 ## Description
@@ -27,3 +28,7 @@ No tests verify that invalid or edge-case configuration values are handled grace
 **Source:** Unit testing review finding UT3.2, code coverage analysis
 
 ## Comments
+
+### claude — 2026-03-01
+
+Resolved: Created `ConfigurationValidationTests.cs` with 5 tests. Covers: EmailRenderer with zero SummaryWindowHours throws DivideByZeroException, zero SummaryWindowCount produces valid HTML, negative SummaryWindowCount produces valid HTML, PollingSettings defaults are reasonable, EmailSettings defaults are reasonable. Also added EmailSchedulerService test for empty SendTimesList defaulting to 08:00.

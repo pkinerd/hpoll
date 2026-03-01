@@ -32,13 +32,13 @@
 | 0028 | Forwarded headers trust all proxies — IP spoofing possible | open | low | security |
 | 0029 | CC/BCC email fields lack server-side format validation | open | low | security |
 | 0030 | Encrypt OAuth tokens at rest in SQLite database | open | critical | security |
-| 0031 | Create Hpoll.Admin.Tests project for admin portal page models | open | high | testing |
-| 0032 | Expand TokenRefreshService tests (currently only 3 tests for 140 lines) | open | high | testing |
-| 0033 | Fix timing-dependent tests in Worker test suite | open | high | testing, bug |
-| 0034 | Add missing edge case tests for EmailRenderer | open | medium | testing |
-| 0035 | Add DbContext model configuration tests (unique constraints, cascades) | open | medium | testing |
-| 0036 | Add PollingService multi-hub and batch cleanup tests | open | medium | testing |
-| 0037 | Improve code coverage for Hpoll.Admin (0% coverage) | open | high | testing |
+| 0031 | Create Hpoll.Admin.Tests project for admin portal page models | closed | high | testing |
+| 0032 | Expand TokenRefreshService tests (currently only 3 tests for 140 lines) | closed | high | testing |
+| 0033 | Fix timing-dependent tests in Worker test suite | closed | high | testing, bug |
+| 0034 | Add missing edge case tests for EmailRenderer | closed | medium | testing |
+| 0035 | Add DbContext model configuration tests (unique constraints, cascades) | closed | medium | testing |
+| 0036 | Add PollingService multi-hub and batch cleanup tests | closed | medium | testing |
+| 0037 | Improve code coverage for Hpoll.Admin (0% coverage) | closed | high | testing |
 | 0038 | Add XML documentation comments to public interfaces and services | open | high | documentation |
 | 0039 | Add architecture overview and development instructions to README | open | medium | documentation |
 | 0040 | Expand .env.example to cover all configuration options | open | medium | documentation |
@@ -58,9 +58,9 @@
 | 0054 | Introduce EmailMessage model to simplify IEmailSender interface | open | medium | enhancement, code-quality |
 | 0055 | Filter DeviceReadings by ReadingType at database level in activity summary queries | open | medium | enhancement, performance |
 | 0056 | Duplicate JSON parsing of motion readings doubles memory and CPU cost | open | medium | enhancement, performance |
-| 0057 | Add configuration validation tests for boundary conditions | open | medium | testing, bug |
-| 0058 | Add CI coverage thresholds and codecov.yml configuration | open | medium | enhancement, testing |
-| 0059 | Add missing HueApiClient error path tests | open | medium | testing |
+| 0057 | Add configuration validation tests for boundary conditions | closed | medium | testing, bug |
+| 0058 | Add CI coverage thresholds and codecov.yml configuration | closed | medium | enhancement, testing |
+| 0059 | Add missing HueApiClient error path tests | closed | medium | testing |
 | 0060 | Consolidate Docker CI tag-building script into reusable action or shared script | open | low | enhancement |
 | 0061 | Admin portal Docker container binds to all network interfaces | open | low | security |
 | 0062 | Sequential email sending limits scalability for large customer counts | open | low | enhancement, performance |
