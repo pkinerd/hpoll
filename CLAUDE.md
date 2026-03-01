@@ -97,3 +97,4 @@ Always use the relevant skill below instead of attempting the task manually. For
 - **`/prepare-pr`** — Generate PR title, description, and URL for creating a pull request from the current branch. Accepts an optional target branch argument (e.g., `/prepare-pr dev`).
 - **`/simplify`** — Review changed code for reuse, quality, and efficiency, then fix any issues found.
 - **`/comprehensive-review`** — Run a full-spectrum codebase review (code quality, security, unit testing, coverage, documentation) using parallel sub-agents. Collates all findings and creates or updates issues for each actionable result.
+- **`/setup-environment-dotnetsdk`** — Install the .NET 8.0 SDK, configuring apt to use the egress proxy if needed. Use when `dotnet` is not available and you need to build or test.
