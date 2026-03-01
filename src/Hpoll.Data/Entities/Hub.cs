@@ -11,6 +11,7 @@ public class Hub
     public string RefreshToken { get; set; } = string.Empty;
     public DateTime TokenExpiresAt { get; set; }
     public string Status { get; set; } = "active"; // active, inactive, needs_reauth
+    public DateTime? DeactivatedAt { get; set; }
     public DateTime? LastPolledAt { get; set; }
     public DateTime? LastBatteryPollUtc { get; set; }
     public DateTime? LastSuccessAt { get; set; }

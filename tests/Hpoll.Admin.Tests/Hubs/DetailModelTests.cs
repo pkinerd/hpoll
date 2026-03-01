@@ -86,7 +86,7 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostToggleStatusAsync_ActiveToInactive_TogglesStatus()
+    public async Task OnPostToggleStatusAsync_ActiveToInactive_SetsDeactivatedAt()
     {
         var (_, hub) = await SeedDataAsync("active");
 
@@ -97,6 +97,75 @@ public class DetailModelTests : IDisposable
 
         var updated = await _db.Hubs.FindAsync(hub.Id);
         Assert.Equal("inactive", updated!.Status);
+        Assert.NotNull(updated.DeactivatedAt);
+    }
+
+    [Fact]
+    public async Task OnPostToggleStatusAsync_InactiveToActive_ClearsDeactivatedAt()
+    {
+        var (_, hub) = await SeedDataAsync("inactive");
+        hub.DeactivatedAt = DateTime.UtcNow.AddDays(-2);
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        var result = await model.OnPostToggleStatusAsync(hub.Id);
+
+        Assert.IsType<RedirectToPageResult>(result);
+
+        var updated = await _db.Hubs.FindAsync(hub.Id);
+        Assert.Equal("active", updated!.Status);
+        Assert.Null(updated.DeactivatedAt);
+    }
+
+    [Fact]
+    public async Task OnPostDeleteAsync_InactiveOver24Hours_DeletesHub()
+    {
+        var (customer, hub) = await SeedDataAsync("inactive");
+        hub.DeactivatedAt = DateTime.UtcNow.AddHours(-25);
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        var result = await model.OnPostDeleteAsync(hub.Id);
+
+        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        Assert.Equal("/Customers/Detail", redirect.PageName);
+
+        Assert.Null(await _db.Hubs.FindAsync(hub.Id));
+    }
+
+    [Fact]
+    public async Task OnPostDeleteAsync_InactiveUnder24Hours_DoesNotDelete()
+    {
+        var (_, hub) = await SeedDataAsync("inactive");
+        hub.DeactivatedAt = DateTime.UtcNow.AddHours(-12);
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        var result = await model.OnPostDeleteAsync(hub.Id);
+
+        Assert.IsType<RedirectToPageResult>(result);
+        Assert.NotNull(await _db.Hubs.FindAsync(hub.Id));
+    }
+
+    [Fact]
+    public async Task OnPostDeleteAsync_ActiveHub_DoesNotDelete()
+    {
+        var (_, hub) = await SeedDataAsync("active");
+
+        var model = CreatePageModel();
+        var result = await model.OnPostDeleteAsync(hub.Id);
+
+        Assert.IsType<RedirectToPageResult>(result);
+        Assert.NotNull(await _db.Hubs.FindAsync(hub.Id));
+    }
+
+    [Fact]
+    public async Task OnPostDeleteAsync_InvalidHub_ReturnsNotFound()
+    {
+        var model = CreatePageModel();
+        var result = await model.OnPostDeleteAsync(999);
+
+        Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]
@@ -205,5 +274,41 @@ public class DetailModelTests : IDisposable
 
         Assert.IsType<PageResult>(result);
         Assert.Contains("HTTP 503", model.ErrorMessage);
+    }
+
+    [Theory]
+    [InlineData("appkey", "key")]
+    [InlineData("access", "token")]
+    [InlineData("refresh", "refresh")]
+    public async Task OnGetTokenAsync_ValidType_ReturnsTokenValue(string type, string expected)
+    {
+        var (_, hub) = await SeedDataAsync();
+
+        var model = CreatePageModel();
+        var result = await model.OnGetTokenAsync(hub.Id, type);
+
+        var json = Assert.IsType<JsonResult>(result);
+        var value = json.Value!.GetType().GetProperty("value")!.GetValue(json.Value) as string;
+        Assert.Equal(expected, value);
+    }
+
+    [Fact]
+    public async Task OnGetTokenAsync_InvalidHub_ReturnsNotFound()
+    {
+        var model = CreatePageModel();
+        var result = await model.OnGetTokenAsync(999, "access");
+
+        Assert.IsType<NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task OnGetTokenAsync_InvalidType_ReturnsBadRequest()
+    {
+        var (_, hub) = await SeedDataAsync();
+
+        var model = CreatePageModel();
+        var result = await model.OnGetTokenAsync(hub.Id, "invalid");
+
+        Assert.IsType<BadRequestResult>(result);
     }
 }

@@ -34,8 +34,6 @@ public class PollingSettings
     public int TokenRefreshCheckHours { get; set; } = 24;
     public int TokenRefreshThresholdHours { get; set; } = 48;
     public int TokenRefreshMaxRetries { get; set; } = 3;
-    public int HealthFailureThreshold { get; set; } = 3;
-    public int HealthMaxSilenceHours { get; set; } = 6;
 }
 
 public class EmailSettings

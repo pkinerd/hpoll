@@ -45,7 +45,6 @@ builder.Services.AddSingleton<IAmazonSimpleEmailService>(sp =>
 builder.Services.AddSingleton(TimeProvider.System);
 
 // Services
-builder.Services.AddScoped<ConfigSeeder>();
 builder.Services.AddScoped<IEmailRenderer, EmailRenderer>();
 builder.Services.AddScoped<IEmailSender, SesEmailSender>();
 
@@ -56,19 +55,12 @@ builder.Services.AddHostedService<EmailSchedulerService>();
 
 var host = builder.Build();
 
-// Initialize DB and seed config
+// Initialize DB
 using (var scope = host.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     await db.Database.MigrateAsync();
     await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
-
-    var customers = builder.Configuration.GetSection("Customers").Get<List<CustomerConfig>>();
-    if (customers?.Count > 0)
-    {
-        var seeder = scope.ServiceProvider.GetRequiredService<ConfigSeeder>();
-        await seeder.SeedAsync(customers);
-    }
 }
 
 await host.RunAsync();

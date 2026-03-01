@@ -124,6 +124,14 @@ public class EmailSchedulerService : BackgroundService
         {
             try
             {
+                var toList = ParseEmailList(customer.Email);
+                if (toList == null)
+                {
+                    _logger.LogWarning("Customer {Name} (Id={Id}) has no valid notification email addresses, skipping",
+                        customer.Name, customer.Id);
+                    continue;
+                }
+
                 var html = await renderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId, ct: ct);
 
                 var tz = TimeZoneInfo.FindSystemTimeZoneById(customer.TimeZoneId);
@@ -131,7 +139,7 @@ public class EmailSchedulerService : BackgroundService
                 var subject = $"hpoll Daily Summary - {localNow:d MMM yyyy}";
                 var ccList = ParseEmailList(customer.CcEmails);
                 var bccList = ParseEmailList(customer.BccEmails);
-                await sender.SendEmailAsync(customer.Email, subject, html, ccList, bccList, ct);
+                await sender.SendEmailAsync(toList, subject, html, ccList, bccList, ct);
 
                 _logger.LogInformation("Email sent to {Email}", customer.Email);
             }
