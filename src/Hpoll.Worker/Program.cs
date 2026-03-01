@@ -129,15 +129,12 @@ using (var scope = host.Services.CreateScope())
         ["email.error_retry_delay_minutes"] = email.ErrorRetryDelayMinutes.ToString(),
     });
 
-    // Hue settings (non-sensitive only)
+    // Hue settings (non-sensitive only — callback URL is an Admin concern, not written here)
     var hueApp = scope.ServiceProvider.GetRequiredService<IOptions<HueAppSettings>>().Value;
-    var hueEntries = new Dictionary<string, string>
+    await systemInfo.SetBatchAsync("Hue", new Dictionary<string, string>
     {
         ["hue.app_configured"] = (!string.IsNullOrEmpty(hueApp.ClientId)).ToString(),
-    };
-    if (!string.IsNullOrEmpty(hueApp.CallbackUrl))
-        hueEntries["hue.callback_url"] = hueApp.CallbackUrl;
-    await systemInfo.SetBatchAsync("Hue", hueEntries);
+    });
 
     // Runtime (initial placeholders)
     await systemInfo.SetBatchAsync("Runtime", new Dictionary<string, string>
