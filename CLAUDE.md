@@ -30,12 +30,9 @@ tests/
 
 ## Environment Setup
 
-The .NET 8.0 SDK must be installed before building or testing locally. If `dotnet` is not available, install it first:
+The .NET 8.0 SDK must be installed before building or testing locally. If `dotnet` is not available, run **`/setup-environment-dotnetsdk`** to install it. This skill handles proxy configuration automatically, which is required in Claude Code web sessions where outbound traffic routes through an egress proxy.
 
-```bash
-# Install .NET 8.0 SDK (Ubuntu/Debian)
-sudo apt-get update && sudo apt-get install -y dotnet-sdk-8.0
-```
+You **must** run this skill before any `dotnet build`, `dotnet test`, or other .NET CLI commands if the SDK is not already present.
 
 ## Build & Test Commands
 
