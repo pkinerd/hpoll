@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Models;
 using Hpoll.Data;
@@ -44,7 +45,7 @@ public class TokenRefreshServiceTests : IDisposable
         return scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     }
 
-    private async Task<Hub> SeedHubAsync(string status = "active", DateTime? tokenExpiresAt = null)
+    private async Task<Hub> SeedHubAsync(string status = HubStatus.Active, DateTime? tokenExpiresAt = null)
     {
         using var db = CreateDb();
         var customer = new Customer { Name = "Test", Email = $"test-{Guid.NewGuid()}@example.com" };
@@ -111,7 +112,7 @@ public class TokenRefreshServiceTests : IDisposable
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
-        Assert.Equal("needs_reauth", updatedHub.Status);
+        Assert.Equal(HubStatus.NeedsReauth, updatedHub.Status);
     }
 
     [Fact]
@@ -142,7 +143,7 @@ public class TokenRefreshServiceTests : IDisposable
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
         Assert.Equal("recovered-token", updatedHub.AccessToken);
-        Assert.Equal("active", updatedHub.Status);
+        Assert.Equal(HubStatus.Active, updatedHub.Status);
     }
 
     [Fact]
@@ -233,7 +234,7 @@ public class TokenRefreshServiceTests : IDisposable
     [Fact]
     public async Task RefreshExpiringTokens_InactiveHub_NotIncluded()
     {
-        await SeedHubAsync(status: "inactive", tokenExpiresAt: DateTime.UtcNow.AddHours(1));
+        await SeedHubAsync(status: HubStatus.Inactive, tokenExpiresAt: DateTime.UtcNow.AddHours(1));
 
         var service = CreateService();
         await service.RefreshExpiringTokensAsync(CancellationToken.None);
@@ -278,7 +279,7 @@ public class TokenRefreshServiceTests : IDisposable
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
-        Assert.Equal("needs_reauth", updatedHub.Status);
+        Assert.Equal(HubStatus.NeedsReauth, updatedHub.Status);
         Assert.True(updatedHub.UpdatedAt >= beforeRefresh);
     }
 }

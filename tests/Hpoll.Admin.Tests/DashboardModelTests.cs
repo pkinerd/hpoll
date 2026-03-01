@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Hpoll.Admin.Pages;
+using Hpoll.Core.Constants;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
@@ -19,7 +20,7 @@ public class DashboardModelTests : IDisposable
 
     public void Dispose() => _db.Dispose();
 
-    private async Task<Customer> SeedCustomerAsync(string status = "active")
+    private async Task<Customer> SeedCustomerAsync(string status = CustomerStatus.Active)
     {
         var customer = new Customer { Name = "Test User", Email = $"{Guid.NewGuid()}@test.com", TimeZoneId = "UTC", Status = status };
         _db.Customers.Add(customer);
@@ -27,7 +28,7 @@ public class DashboardModelTests : IDisposable
         return customer;
     }
 
-    private async Task<Hub> SeedHubAsync(int customerId, string status = "active", DateTime? tokenExpiresAt = null, int consecutiveFailures = 0)
+    private async Task<Hub> SeedHubAsync(int customerId, string status = HubStatus.Active, DateTime? tokenExpiresAt = null, int consecutiveFailures = 0)
     {
         var hub = new Hub
         {
@@ -48,14 +49,14 @@ public class DashboardModelTests : IDisposable
     [Fact]
     public async Task OnGetAsync_ReturnsCorrectCounts()
     {
-        var c1 = await SeedCustomerAsync("active");
-        var c2 = await SeedCustomerAsync("active");
-        var c3 = await SeedCustomerAsync("inactive");
+        var c1 = await SeedCustomerAsync(CustomerStatus.Active);
+        var c2 = await SeedCustomerAsync(CustomerStatus.Active);
+        var c3 = await SeedCustomerAsync(CustomerStatus.Inactive);
 
-        await SeedHubAsync(c1.Id, "active");
-        await SeedHubAsync(c1.Id, "active");
-        await SeedHubAsync(c2.Id, "inactive");
-        await SeedHubAsync(c3.Id, "needs_reauth");
+        await SeedHubAsync(c1.Id, HubStatus.Active);
+        await SeedHubAsync(c1.Id, HubStatus.Active);
+        await SeedHubAsync(c2.Id, HubStatus.Inactive);
+        await SeedHubAsync(c3.Id, HubStatus.NeedsReauth);
 
         var model = new IndexModel(_db);
         await model.OnGetAsync();
@@ -72,9 +73,9 @@ public class DashboardModelTests : IDisposable
     {
         var customer = await SeedCustomerAsync();
         // Expires in 24 hours (within 48h threshold)
-        await SeedHubAsync(customer.Id, "active", DateTime.UtcNow.AddHours(24));
+        await SeedHubAsync(customer.Id, HubStatus.Active, DateTime.UtcNow.AddHours(24));
         // Expires in 72 hours (outside 48h threshold)
-        await SeedHubAsync(customer.Id, "active", DateTime.UtcNow.AddHours(72));
+        await SeedHubAsync(customer.Id, HubStatus.Active, DateTime.UtcNow.AddHours(72));
 
         var model = new IndexModel(_db);
         await model.OnGetAsync();
@@ -86,8 +87,8 @@ public class DashboardModelTests : IDisposable
     public async Task OnGetAsync_ShowsFailingHubs()
     {
         var customer = await SeedCustomerAsync();
-        await SeedHubAsync(customer.Id, "active", consecutiveFailures: 3);
-        await SeedHubAsync(customer.Id, "active", consecutiveFailures: 0);
+        await SeedHubAsync(customer.Id, HubStatus.Active, consecutiveFailures: 3);
+        await SeedHubAsync(customer.Id, HubStatus.Active, consecutiveFailures: 0);
 
         var model = new IndexModel(_db);
         await model.OnGetAsync();

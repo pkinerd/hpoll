@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 using Hpoll.Email;
@@ -48,7 +49,7 @@ public class EmailRendererTests : IDisposable
             AccessToken = "token",
             RefreshToken = "refresh",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active"
+            Status = HubStatus.Active
         };
         _db.Hubs.Add(hub);
         await _db.SaveChangesAsync();
@@ -57,7 +58,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-001",
-            DeviceType = "motion_sensor",
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Sensor 1"
         };
         _db.Devices.Add(device);
@@ -88,14 +89,14 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = device.Id,
             Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
-            ReadingType = "motion",
+            ReadingType = ReadingTypes.Motion,
             Value = "{\"motion\":true,\"changed\":\"2026-02-27T10:00:00Z\"}"
         });
         _db.DeviceReadings.Add(new DeviceReading
         {
             DeviceId = device.Id,
             Timestamp = new DateTime(2026, 2, 27, 11, 0, 0, DateTimeKind.Utc),
-            ReadingType = "motion",
+            ReadingType = ReadingTypes.Motion,
             Value = "{\"motion\":true,\"changed\":\"2026-02-27T11:00:00Z\"}"
         });
         await _db.SaveChangesAsync();
@@ -116,14 +117,14 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = device.Id,
             Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
-            ReadingType = "temperature",
+            ReadingType = ReadingTypes.Temperature,
             Value = "{\"temperature\":19.5,\"changed\":\"2026-02-27T10:00:00Z\"}"
         });
         _db.DeviceReadings.Add(new DeviceReading
         {
             DeviceId = device.Id,
             Timestamp = new DateTime(2026, 2, 27, 11, 0, 0, DateTimeKind.Utc),
-            ReadingType = "temperature",
+            ReadingType = ReadingTypes.Temperature,
             Value = "{\"temperature\":22.0,\"changed\":\"2026-02-27T11:00:00Z\"}"
         });
         await _db.SaveChangesAsync();
@@ -145,7 +146,7 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = device.Id,
             Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
-            ReadingType = "motion",
+            ReadingType = ReadingTypes.Motion,
             Value = "{\"motion\":true,\"changed\":\"2026-02-27T10:00:00Z\"}"
         });
         await _db.SaveChangesAsync();
@@ -165,7 +166,7 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = device.Id,
             Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
-            ReadingType = "motion",
+            ReadingType = ReadingTypes.Motion,
             Value = "{\"motion\":true,\"changed\":\"2026-02-27T10:00:00Z\"}"
         });
         await _db.SaveChangesAsync();
@@ -192,14 +193,14 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = device.Id,
             Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
-            ReadingType = "motion",
+            ReadingType = ReadingTypes.Motion,
             Value = "not-valid-json"
         });
         _db.DeviceReadings.Add(new DeviceReading
         {
             DeviceId = device.Id,
             Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
-            ReadingType = "temperature",
+            ReadingType = ReadingTypes.Temperature,
             Value = "{invalid}"
         });
         await _db.SaveChangesAsync();
@@ -219,7 +220,7 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = device.Id,
             Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
-            ReadingType = "motion",
+            ReadingType = ReadingTypes.Motion,
             Value = "{\"motion\":false,\"changed\":\"2026-02-27T10:00:00Z\"}"
         });
         await _db.SaveChangesAsync();
@@ -254,7 +255,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-002",
-            DeviceType = "motion_sensor",
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Sensor 2"
         };
         _db.Devices.Add(device2);
@@ -264,7 +265,7 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = device1.Id,
             Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
-            ReadingType = "motion",
+            ReadingType = ReadingTypes.Motion,
             Value = "{\"motion\":true,\"changed\":\"2026-02-27T10:00:00Z\"}"
         });
         await _db.SaveChangesAsync();
@@ -285,7 +286,7 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = device.Id,
             Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
-            ReadingType = "motion",
+            ReadingType = ReadingTypes.Motion,
             Value = "{\"motion\":true,\"changed\":\"2026-02-27T10:00:00Z\"}"
         });
         await _db.SaveChangesAsync();
@@ -308,7 +309,7 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = device.Id,
             Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
-            ReadingType = "motion",
+            ReadingType = ReadingTypes.Motion,
             Value = "{\"motion\":true,\"changed\":\"2026-02-27T10:00:00Z\"}"
         });
         // Reading outside the window (Feb 27 07:00 — before the 28h window starts at 08:00)
@@ -316,7 +317,7 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = device.Id,
             Timestamp = new DateTime(2026, 2, 27, 7, 0, 0, DateTimeKind.Utc),
-            ReadingType = "motion",
+            ReadingType = ReadingTypes.Motion,
             Value = "{\"motion\":true,\"changed\":\"2026-02-27T07:00:00Z\"}"
         });
         await _db.SaveChangesAsync();
@@ -343,7 +344,7 @@ public class EmailRendererTests : IDisposable
             AccessToken = "token",
             RefreshToken = "refresh",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active"
+            Status = HubStatus.Active
         };
         _db.Hubs.Add(hub);
         await _db.SaveChangesAsync();
@@ -352,7 +353,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-au-001",
-            DeviceType = "motion_sensor",
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Lounge Sensor"
         };
         _db.Devices.Add(device);
@@ -368,7 +369,7 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = device.Id,
             Timestamp = new DateTime(2026, 2, 27, 6, 0, 0, DateTimeKind.Utc),
-            ReadingType = "motion",
+            ReadingType = ReadingTypes.Motion,
             Value = "{\"motion\":true,\"changed\":\"2026-02-27T06:00:00Z\"}"
         });
         await _db.SaveChangesAsync();
@@ -457,8 +458,8 @@ public class EmailRendererTests : IDisposable
     {
         var (customer, hub, device1) = await SeedBaseDataAsync();
 
-        var device2 = new Device { HubId = hub.Id, HueDeviceId = "device-002", DeviceType = "motion_sensor", Name = "Sensor 2" };
-        var device3 = new Device { HubId = hub.Id, HueDeviceId = "device-003", DeviceType = "motion_sensor", Name = "Sensor 3" };
+        var device2 = new Device { HubId = hub.Id, HueDeviceId = "device-002", DeviceType = DeviceTypes.MotionSensor, Name = "Sensor 2" };
+        var device3 = new Device { HubId = hub.Id, HueDeviceId = "device-003", DeviceType = DeviceTypes.MotionSensor, Name = "Sensor 3" };
         _db.Devices.AddRange(device2, device3);
         await _db.SaveChangesAsync();
 
@@ -512,7 +513,7 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = deviceId,
             Timestamp = timestamp,
-            ReadingType = "motion",
+            ReadingType = ReadingTypes.Motion,
             Value = $"{{\"motion\":true,\"changed\":\"{timestamp:O}\"}}"
         });
     }
@@ -523,7 +524,7 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = deviceId,
             Timestamp = timestamp,
-            ReadingType = "temperature",
+            ReadingType = ReadingTypes.Temperature,
             Value = $"{{\"temperature\":{temp},\"changed\":\"{timestamp:O}\"}}"
         });
     }
@@ -534,7 +535,7 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = deviceId,
             Timestamp = timestamp,
-            ReadingType = "battery",
+            ReadingType = ReadingTypes.Battery,
             Value = $"{{\"battery_level\":{level},\"battery_state\":\"{state}\"}}"
         });
     }
@@ -567,7 +568,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-xss",
-            DeviceType = "battery",
+            DeviceType = DeviceTypes.Battery,
             Name = "<script>alert('xss')</script>"
         };
         _db.Devices.Add(xssDevice);
@@ -598,7 +599,7 @@ public class EmailRendererTests : IDisposable
             AccessToken = "token2",
             RefreshToken = "refresh2",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active"
+            Status = HubStatus.Active
         };
         _db.Hubs.Add(hub2);
         await _db.SaveChangesAsync();
@@ -607,7 +608,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub2.Id,
             HueDeviceId = "device-hub2-001",
-            DeviceType = "motion_sensor",
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Hub2 Sensor"
         };
         _db.Devices.Add(device2);
@@ -654,7 +655,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-bad",
-            DeviceType = "battery",
+            DeviceType = DeviceTypes.Battery,
             Name = "Bad Battery Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -665,7 +666,7 @@ public class EmailRendererTests : IDisposable
         {
             DeviceId = batteryDevice.Id,
             Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
-            ReadingType = "battery",
+            ReadingType = ReadingTypes.Battery,
             Value = "not-valid-json"
         });
         await _db.SaveChangesAsync();
@@ -692,7 +693,7 @@ public class EmailRendererTests : IDisposable
             AccessToken = "token",
             RefreshToken = "refresh",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active"
+            Status = HubStatus.Active
         };
         _db.Hubs.Add(hub);
         await _db.SaveChangesAsync();
@@ -714,7 +715,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-001",
-            DeviceType = "battery",
+            DeviceType = DeviceTypes.Battery,
             Name = "Hallway Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -743,7 +744,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-002",
-            DeviceType = "battery",
+            DeviceType = DeviceTypes.Battery,
             Name = "Living Room Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -764,9 +765,9 @@ public class EmailRendererTests : IDisposable
     {
         var (customer, hub, device) = await SeedBaseDataAsync();
 
-        var lowDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-low", DeviceType = "battery", Name = "Garage Sensor" };
-        var midDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-mid", DeviceType = "battery", Name = "Kitchen Sensor" };
-        var highDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-high", DeviceType = "battery", Name = "Bedroom Sensor" };
+        var lowDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-low", DeviceType = DeviceTypes.Battery, Name = "Garage Sensor" };
+        var midDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-mid", DeviceType = DeviceTypes.Battery, Name = "Kitchen Sensor" };
+        var highDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-high", DeviceType = DeviceTypes.Battery, Name = "Bedroom Sensor" };
         _db.Devices.AddRange(lowDevice, midDevice, highDevice);
         await _db.SaveChangesAsync();
 
@@ -814,7 +815,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-003",
-            DeviceType = "battery",
+            DeviceType = DeviceTypes.Battery,
             Name = "Study Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -842,7 +843,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-boundary",
-            DeviceType = "battery",
+            DeviceType = DeviceTypes.Battery,
             Name = "Hallway Sensor"
         };
         _db.Devices.Add(batteryDevice);

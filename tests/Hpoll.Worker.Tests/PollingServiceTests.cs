@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Models;
 using Hpoll.Data;
@@ -74,7 +75,7 @@ public class PollingServiceTests : IDisposable
             AccessToken = "access-token",
             RefreshToken = "refresh-token",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active",
+            Status = HubStatus.Active,
             LastBatteryPollUtc = lastBatteryPollUtc
         };
         db.Hubs.Add(hub);
@@ -190,7 +191,7 @@ public class PollingServiceTests : IDisposable
         await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
 
         using var db = CreateDb();
-        var motionReadings = await db.DeviceReadings.Where(r => r.ReadingType == "motion").ToListAsync();
+        var motionReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Motion).ToListAsync();
         Assert.NotEmpty(motionReadings);
     }
 
@@ -204,7 +205,7 @@ public class PollingServiceTests : IDisposable
         await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
 
         using var db = CreateDb();
-        var tempReadings = await db.DeviceReadings.Where(r => r.ReadingType == "temperature").ToListAsync();
+        var tempReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Temperature).ToListAsync();
         Assert.NotEmpty(tempReadings);
     }
 
@@ -294,7 +295,7 @@ public class PollingServiceTests : IDisposable
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
-        Assert.Equal("active", updatedHub.Status);
+        Assert.Equal(HubStatus.Active, updatedHub.Status);
         Assert.Equal("refreshed-token", updatedHub.AccessToken);
         Assert.Equal("refreshed-refresh", updatedHub.RefreshToken);
     }
@@ -314,7 +315,7 @@ public class PollingServiceTests : IDisposable
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
-        Assert.Equal("needs_reauth", updatedHub.Status);
+        Assert.Equal(HubStatus.NeedsReauth, updatedHub.Status);
         Assert.True(updatedHub.ConsecutiveFailures > 0);
     }
 
@@ -379,7 +380,7 @@ public class PollingServiceTests : IDisposable
             {
                 HubId = hub.Id,
                 HueDeviceId = "device-001",
-                DeviceType = "motion_sensor",
+                DeviceType = DeviceTypes.MotionSensor,
                 Name = "Old Name"
             });
             await db.SaveChangesAsync();
@@ -443,7 +444,7 @@ public class PollingServiceTests : IDisposable
 
         using var db = CreateDb();
         var readings = await db.DeviceReadings.ToListAsync();
-        Assert.DoesNotContain(readings, r => r.ReadingType == "motion");
+        Assert.DoesNotContain(readings, r => r.ReadingType == ReadingTypes.Motion);
     }
 
     [Fact]
@@ -483,7 +484,7 @@ public class PollingServiceTests : IDisposable
 
         using var db = CreateDb();
         var readings = await db.DeviceReadings.ToListAsync();
-        Assert.DoesNotContain(readings, r => r.ReadingType == "motion");
+        Assert.DoesNotContain(readings, r => r.ReadingType == ReadingTypes.Motion);
     }
 
     [Fact]
@@ -523,7 +524,7 @@ public class PollingServiceTests : IDisposable
 
         using var db = CreateDb();
         var readings = await db.DeviceReadings.ToListAsync();
-        Assert.DoesNotContain(readings, r => r.ReadingType == "temperature");
+        Assert.DoesNotContain(readings, r => r.ReadingType == ReadingTypes.Temperature);
     }
 
     [Fact]
@@ -543,7 +544,7 @@ public class PollingServiceTests : IDisposable
                 AccessToken = "expired-token",
                 RefreshToken = "refresh",
                 TokenExpiresAt = DateTime.UtcNow.AddHours(-1),
-                Status = "active"
+                Status = HubStatus.Active
             });
             await db.SaveChangesAsync();
         }
@@ -571,7 +572,7 @@ public class PollingServiceTests : IDisposable
                 AccessToken = "token",
                 RefreshToken = "refresh",
                 TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-                Status = "needs_reauth"
+                Status = HubStatus.NeedsReauth
             });
             await db.SaveChangesAsync();
         }
@@ -620,7 +621,7 @@ public class PollingServiceTests : IDisposable
         await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
 
         using var db = CreateDb();
-        var reading = await db.DeviceReadings.FirstAsync(r => r.ReadingType == "motion");
+        var reading = await db.DeviceReadings.FirstAsync(r => r.ReadingType == ReadingTypes.Motion);
         Assert.Contains("\"motion\":true", reading.Value);
     }
 
@@ -659,7 +660,7 @@ public class PollingServiceTests : IDisposable
         await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
 
         using var db2 = CreateDb();
-        var reading = await db2.DeviceReadings.FirstAsync(r => r.ReadingType == "motion");
+        var reading = await db2.DeviceReadings.FirstAsync(r => r.ReadingType == ReadingTypes.Motion);
         Assert.Contains("\"motion\":false", reading.Value);
     }
 
@@ -670,12 +671,12 @@ public class PollingServiceTests : IDisposable
 
         using (var db = CreateDb())
         {
-            var device = new Device { HubId = hub.Id, HueDeviceId = "device-001", DeviceType = "motion_sensor", Name = "Sensor" };
+            var device = new Device { HubId = hub.Id, HueDeviceId = "device-001", DeviceType = DeviceTypes.MotionSensor, Name = "Sensor" };
             db.Devices.Add(device);
             await db.SaveChangesAsync();
 
-            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddDays(-8), ReadingType = "motion", Value = "{\"motion\":true}" });
-            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddHours(-1), ReadingType = "motion", Value = "{\"motion\":false}" });
+            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddDays(-8), ReadingType = ReadingTypes.Motion, Value = "{\"motion\":true}" });
+            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddHours(-1), ReadingType = ReadingTypes.Motion, Value = "{\"motion\":false}" });
             db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow.AddDays(-8), Success = true, ApiCallsMade = 3 });
             db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow.AddHours(-1), Success = true, ApiCallsMade = 3 });
             await db.SaveChangesAsync();
@@ -704,7 +705,7 @@ public class PollingServiceTests : IDisposable
         await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
 
         using var db = CreateDb();
-        var batteryReadings = await db.DeviceReadings.Where(r => r.ReadingType == "battery").ToListAsync();
+        var batteryReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Battery).ToListAsync();
         Assert.NotEmpty(batteryReadings);
         Assert.Contains("\"battery_level\":85", batteryReadings.First().Value);
     }
@@ -721,7 +722,7 @@ public class PollingServiceTests : IDisposable
         _mockHueClient.Verify(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
 
         using var db2 = CreateDb();
-        var batteryReadings = await db2.DeviceReadings.Where(r => r.ReadingType == "battery").ToListAsync();
+        var batteryReadings = await db2.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Battery).ToListAsync();
         Assert.NotEmpty(batteryReadings);
     }
 
@@ -819,7 +820,7 @@ public class PollingServiceTests : IDisposable
         await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
 
         using var db = CreateDb();
-        var batteryReadings = await db.DeviceReadings.Where(r => r.ReadingType == "battery").ToListAsync();
+        var batteryReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Battery).ToListAsync();
         Assert.Empty(batteryReadings);
     }
 

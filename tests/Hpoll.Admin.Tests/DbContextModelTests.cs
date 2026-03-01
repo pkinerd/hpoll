@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Hpoll.Core.Constants;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
@@ -59,7 +60,7 @@ public class DbContextModelTests : IDisposable
             AccessToken = "token1",
             RefreshToken = "refresh1",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active"
+            Status = HubStatus.Active
         });
         await _db.SaveChangesAsync();
 
@@ -71,7 +72,7 @@ public class DbContextModelTests : IDisposable
             AccessToken = "token2",
             RefreshToken = "refresh2",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active"
+            Status = HubStatus.Active
         });
 
         await Assert.ThrowsAsync<DbUpdateException>(() => _db.SaveChangesAsync());
@@ -89,15 +90,15 @@ public class DbContextModelTests : IDisposable
             AccessToken = "token",
             RefreshToken = "refresh",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active"
+            Status = HubStatus.Active
         };
         _db.Hubs.Add(hub);
         await _db.SaveChangesAsync();
 
-        _db.Devices.Add(new Device { HubId = hub.Id, HueDeviceId = "device-001", DeviceType = "motion_sensor", Name = "Sensor A" });
+        _db.Devices.Add(new Device { HubId = hub.Id, HueDeviceId = "device-001", DeviceType = DeviceTypes.MotionSensor, Name = "Sensor A" });
         await _db.SaveChangesAsync();
 
-        _db.Devices.Add(new Device { HubId = hub.Id, HueDeviceId = "device-001", DeviceType = "motion_sensor", Name = "Sensor B" });
+        _db.Devices.Add(new Device { HubId = hub.Id, HueDeviceId = "device-001", DeviceType = DeviceTypes.MotionSensor, Name = "Sensor B" });
 
         await Assert.ThrowsAsync<DbUpdateException>(() => _db.SaveChangesAsync());
     }
@@ -114,12 +115,12 @@ public class DbContextModelTests : IDisposable
             AccessToken = "token",
             RefreshToken = "refresh",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active"
+            Status = HubStatus.Active
         };
         _db.Hubs.Add(hub);
         await _db.SaveChangesAsync();
 
-        var device = new Device { HubId = hub.Id, HueDeviceId = "dev-001", DeviceType = "motion_sensor", Name = "Sensor" };
+        var device = new Device { HubId = hub.Id, HueDeviceId = "dev-001", DeviceType = DeviceTypes.MotionSensor, Name = "Sensor" };
         _db.Devices.Add(device);
         await _db.SaveChangesAsync();
 
@@ -127,7 +128,7 @@ public class DbContextModelTests : IDisposable
         {
             DeviceId = device.Id,
             Timestamp = DateTime.UtcNow,
-            ReadingType = "motion",
+            ReadingType = ReadingTypes.Motion,
             Value = "{\"motion\":true}"
         });
         await _db.SaveChangesAsync();
@@ -152,12 +153,12 @@ public class DbContextModelTests : IDisposable
             AccessToken = "token",
             RefreshToken = "refresh",
             TokenExpiresAt = DateTime.UtcNow.AddDays(7),
-            Status = "active"
+            Status = HubStatus.Active
         };
         _db.Hubs.Add(hub);
         await _db.SaveChangesAsync();
 
-        var device = new Device { HubId = hub.Id, HueDeviceId = "dev-002", DeviceType = "motion_sensor", Name = "Sensor" };
+        var device = new Device { HubId = hub.Id, HueDeviceId = "dev-002", DeviceType = DeviceTypes.MotionSensor, Name = "Sensor" };
         _db.Devices.Add(device);
         await _db.SaveChangesAsync();
 
@@ -165,7 +166,7 @@ public class DbContextModelTests : IDisposable
         {
             DeviceId = device.Id,
             Timestamp = DateTime.UtcNow,
-            ReadingType = "temperature",
+            ReadingType = ReadingTypes.Temperature,
             Value = "{\"temperature\":22.0}"
         });
         _db.PollingLogs.Add(new PollingLog

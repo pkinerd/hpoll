@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Hpoll.Admin.Pages.Customers;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Data;
 
 namespace Hpoll.Admin.Tests.Customers;
@@ -54,7 +55,7 @@ public class CreateModelTests : IDisposable
         var customer = await _db.Customers.FirstOrDefaultAsync(c => c.Email == "alice@example.com");
         Assert.NotNull(customer);
         Assert.Equal("Alice Smith", customer.Name);
-        Assert.Equal("active", customer.Status);
+        Assert.Equal(CustomerStatus.Active, customer.Status);
     }
 
     [Fact]

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Services;
 using Hpoll.Data;
@@ -85,7 +86,7 @@ public class EmailSchedulerService : BackgroundService
         var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
 
         var customers = await db.Customers
-            .Where(c => c.Status == "active" && c.NextSendTimeUtc == null)
+            .Where(c => c.Status == CustomerStatus.Active && c.NextSendTimeUtc == null)
             .ToListAsync(ct);
 
         if (customers.Count == 0) return;
@@ -111,7 +112,7 @@ public class EmailSchedulerService : BackgroundService
         var sender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
 
         var dueCustomers = await db.Customers
-            .Where(c => c.Status == "active" && c.NextSendTimeUtc != null && c.NextSendTimeUtc <= now)
+            .Where(c => c.Status == CustomerStatus.Active && c.NextSendTimeUtc != null && c.NextSendTimeUtc <= now)
             .ToListAsync(ct);
 
         if (dueCustomers.Count == 0)
@@ -210,7 +211,7 @@ public class EmailSchedulerService : BackgroundService
         var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
 
         return await db.Customers
-            .Where(c => c.Status == "active" && c.NextSendTimeUtc != null)
+            .Where(c => c.Status == CustomerStatus.Active && c.NextSendTimeUtc != null)
             .MinAsync(c => (DateTime?)c.NextSendTimeUtc, ct);
     }
 

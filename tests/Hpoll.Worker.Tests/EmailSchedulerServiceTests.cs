@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Services;
 using Hpoll.Data;
@@ -49,7 +50,7 @@ public class EmailSchedulerServiceTests : IDisposable
 
     private async Task SeedCustomerAsync(
         string email = "test@example.com",
-        string status = "active",
+        string status = CustomerStatus.Active,
         string ccEmails = "",
         string bccEmails = "",
         string sendTimesLocal = "",
@@ -102,8 +103,8 @@ public class EmailSchedulerServiceTests : IDisposable
     public async Task ProcessDueCustomers_SkipsInactiveCustomers()
     {
         var pastTime = DateTime.UtcNow.AddMinutes(-5);
-        await SeedCustomerAsync("active@example.com", "active", nextSendTimeUtc: pastTime);
-        await SeedCustomerAsync("inactive@example.com", "inactive", nextSendTimeUtc: pastTime);
+        await SeedCustomerAsync("active@example.com", CustomerStatus.Active, nextSendTimeUtc: pastTime);
+        await SeedCustomerAsync("inactive@example.com", CustomerStatus.Inactive, nextSendTimeUtc: pastTime);
 
         _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("<html>Summary</html>");
@@ -226,7 +227,7 @@ public class EmailSchedulerServiceTests : IDisposable
     public async Task ProcessDueCustomers_PassesCcBccFromCustomer()
     {
         var pastTime = DateTime.UtcNow.AddMinutes(-5);
-        await SeedCustomerAsync("main@example.com", "active", "cc1@example.com, cc2@example.com", "bcc@example.com", nextSendTimeUtc: pastTime);
+        await SeedCustomerAsync("main@example.com", CustomerStatus.Active, "cc1@example.com, cc2@example.com", "bcc@example.com", nextSendTimeUtc: pastTime);
 
         _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("<html>Summary</html>");
@@ -250,7 +251,7 @@ public class EmailSchedulerServiceTests : IDisposable
     public async Task InitializeNextSendTimes_SetsNextSendForActiveCustomersWithoutOne()
     {
         await SeedCustomerAsync("customer1@example.com"); // No NextSendTimeUtc
-        await SeedCustomerAsync("customer2@example.com", "inactive"); // Inactive, should be skipped
+        await SeedCustomerAsync("customer2@example.com", CustomerStatus.Inactive); // Inactive, should be skipped
 
         var service = CreateService(new EmailSettings { SendTimesUtc = new() { "08:00" }, FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
         await service.InitializeNextSendTimesAsync(CancellationToken.None);

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Data;
 
@@ -87,7 +88,7 @@ public class TokenRefreshService : BackgroundService
         var hueClient = scope.ServiceProvider.GetRequiredService<IHueApiClient>();
 
         var hubs = await db.Hubs
-            .Where(h => h.Status == "active")
+            .Where(h => h.Status == HubStatus.Active)
             .ToListAsync(ct);
 
         _logger.LogInformation("Checking tokens for {Count} active hubs", hubs.Count);
@@ -150,7 +151,7 @@ public class TokenRefreshService : BackgroundService
             {
                 _logger.LogError("Hub {BridgeId}: token refresh failed after {Max} retries. Marking as needs_reauth",
                     hub.HueBridgeId, _settings.TokenRefreshMaxRetries);
-                hub.Status = "needs_reauth";
+                hub.Status = HubStatus.NeedsReauth;
                 hub.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
                 await db.SaveChangesAsync(ct);
             }

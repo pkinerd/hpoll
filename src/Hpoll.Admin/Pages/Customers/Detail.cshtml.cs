@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Services;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
@@ -205,7 +206,7 @@ public class DetailModel : PageModel
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
 
-        customer.Status = customer.Status == "active" ? "inactive" : "active";
+        customer.Status = customer.Status == CustomerStatus.Active ? CustomerStatus.Inactive : CustomerStatus.Active;
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
@@ -280,7 +281,7 @@ public class DetailModel : PageModel
         var bucketStartLocal = bucketEndLocal.AddHours(-totalHours);
 
         var hubIds = await _db.Hubs
-            .Where(h => h.CustomerId == customer.Id && h.Status == "active")
+            .Where(h => h.CustomerId == customer.Id && h.Status == HubStatus.Active)
             .Select(h => h.Id)
             .ToListAsync();
 
@@ -290,13 +291,13 @@ public class DetailModel : PageModel
             .ToListAsync();
 
         MotionSensorCount = await _db.Devices
-            .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == "motion_sensor")
+            .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == DeviceTypes.MotionSensor)
             .CountAsync();
 
         var readings = await _db.DeviceReadings
             .Where(r => deviceIds.Contains(r.DeviceId)
                 && r.Timestamp >= startUtc && r.Timestamp < nowUtc
-                && (r.ReadingType == "motion" || r.ReadingType == "temperature"))
+                && (r.ReadingType == ReadingTypes.Motion || r.ReadingType == ReadingTypes.Temperature))
             .AsNoTracking()
             .ToListAsync();
 
@@ -308,8 +309,8 @@ public class DetailModel : PageModel
             var windowEndUtc = TimeZoneInfo.ConvertTimeToUtc(windowEndLocal, tz);
 
             var windowReadings = readings.Where(r => r.Timestamp >= windowStartUtc && r.Timestamp < windowEndUtc).ToList();
-            var motionReadings = windowReadings.Where(r => r.ReadingType == "motion").ToList();
-            var tempReadings = windowReadings.Where(r => r.ReadingType == "temperature").ToList();
+            var motionReadings = windowReadings.Where(r => r.ReadingType == ReadingTypes.Motion).ToList();
+            var tempReadings = windowReadings.Where(r => r.ReadingType == ReadingTypes.Temperature).ToList();
 
             var devicesWithMotion = motionReadings
                 .Where(r => {

@@ -1,5 +1,7 @@
 namespace Hpoll.Data.Entities;
 
+using Hpoll.Core.Constants;
+
 public class Hub
 {
     public int Id { get; set; }
@@ -10,7 +12,7 @@ public class Hub
     public string AccessToken { get; set; } = string.Empty;
     public string RefreshToken { get; set; } = string.Empty;
     public DateTime TokenExpiresAt { get; set; }
-    public string Status { get; set; } = "active"; // active, inactive, needs_reauth
+    public string Status { get; set; } = HubStatus.Active;
     public DateTime? DeactivatedAt { get; set; }
     public DateTime? LastPolledAt { get; set; }
     public DateTime? LastBatteryPollUtc { get; set; }

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Hpoll.Admin.Pages.Hubs;
+using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Models;
 using Hpoll.Data;
@@ -41,7 +42,7 @@ public class DetailModelTests : IDisposable
         return model;
     }
 
-    private async Task<(Customer customer, Hub hub)> SeedDataAsync(string hubStatus = "active")
+    private async Task<(Customer customer, Hub hub)> SeedDataAsync(string hubStatus = HubStatus.Active)
     {
         var customer = new Customer { Name = "Test User", Email = "test@example.com", TimeZoneId = "UTC" };
         _db.Customers.Add(customer);
@@ -88,7 +89,7 @@ public class DetailModelTests : IDisposable
     [Fact]
     public async Task OnPostToggleStatusAsync_ActiveToInactive_SetsDeactivatedAt()
     {
-        var (_, hub) = await SeedDataAsync("active");
+        var (_, hub) = await SeedDataAsync(HubStatus.Active);
 
         var model = CreatePageModel();
         var result = await model.OnPostToggleStatusAsync(hub.Id);
@@ -96,14 +97,14 @@ public class DetailModelTests : IDisposable
         Assert.IsType<RedirectToPageResult>(result);
 
         var updated = await _db.Hubs.FindAsync(hub.Id);
-        Assert.Equal("inactive", updated!.Status);
+        Assert.Equal(HubStatus.Inactive, updated!.Status);
         Assert.NotNull(updated.DeactivatedAt);
     }
 
     [Fact]
     public async Task OnPostToggleStatusAsync_InactiveToActive_ClearsDeactivatedAt()
     {
-        var (_, hub) = await SeedDataAsync("inactive");
+        var (_, hub) = await SeedDataAsync(HubStatus.Inactive);
         hub.DeactivatedAt = DateTime.UtcNow.AddDays(-2);
         await _db.SaveChangesAsync();
 
@@ -113,14 +114,14 @@ public class DetailModelTests : IDisposable
         Assert.IsType<RedirectToPageResult>(result);
 
         var updated = await _db.Hubs.FindAsync(hub.Id);
-        Assert.Equal("active", updated!.Status);
+        Assert.Equal(HubStatus.Active, updated!.Status);
         Assert.Null(updated.DeactivatedAt);
     }
 
     [Fact]
     public async Task OnPostDeleteAsync_InactiveOver10Minutes_DeletesHub()
     {
-        var (customer, hub) = await SeedDataAsync("inactive");
+        var (customer, hub) = await SeedDataAsync(HubStatus.Inactive);
         hub.DeactivatedAt = DateTime.UtcNow.AddMinutes(-11);
         await _db.SaveChangesAsync();
 
@@ -136,7 +137,7 @@ public class DetailModelTests : IDisposable
     [Fact]
     public async Task OnPostDeleteAsync_InactiveUnder10Minutes_DoesNotDelete()
     {
-        var (_, hub) = await SeedDataAsync("inactive");
+        var (_, hub) = await SeedDataAsync(HubStatus.Inactive);
         hub.DeactivatedAt = DateTime.UtcNow.AddMinutes(-5);
         await _db.SaveChangesAsync();
 
@@ -150,7 +151,7 @@ public class DetailModelTests : IDisposable
     [Fact]
     public async Task OnPostDeleteAsync_ActiveHub_DoesNotDelete()
     {
-        var (_, hub) = await SeedDataAsync("active");
+        var (_, hub) = await SeedDataAsync(HubStatus.Active);
 
         var model = CreatePageModel();
         var result = await model.OnPostDeleteAsync(hub.Id);
@@ -171,7 +172,7 @@ public class DetailModelTests : IDisposable
     [Fact]
     public async Task OnPostClearReauthAsync_ClearsNeedsReauth()
     {
-        var (_, hub) = await SeedDataAsync("needs_reauth");
+        var (_, hub) = await SeedDataAsync(HubStatus.NeedsReauth);
         hub.ConsecutiveFailures = 5;
         await _db.SaveChangesAsync();
 
@@ -181,14 +182,14 @@ public class DetailModelTests : IDisposable
         Assert.IsType<RedirectToPageResult>(result);
 
         var updated = await _db.Hubs.FindAsync(hub.Id);
-        Assert.Equal("active", updated!.Status);
+        Assert.Equal(HubStatus.Active, updated!.Status);
         Assert.Equal(0, updated.ConsecutiveFailures);
     }
 
     [Fact]
     public async Task OnPostClearReauthAsync_NotNeedsReauth_DoesNothing()
     {
-        var (_, hub) = await SeedDataAsync("active");
+        var (_, hub) = await SeedDataAsync(HubStatus.Active);
 
         var model = CreatePageModel();
         var result = await model.OnPostClearReauthAsync(hub.Id);
@@ -196,7 +197,7 @@ public class DetailModelTests : IDisposable
         Assert.IsType<RedirectToPageResult>(result);
 
         var updated = await _db.Hubs.FindAsync(hub.Id);
-        Assert.Equal("active", updated!.Status);
+        Assert.Equal(HubStatus.Active, updated!.Status);
     }
 
     [Fact]
