@@ -68,3 +68,10 @@
 | 0064 | Sanitize exception messages before persisting in PollingLog | open | medium | security |
 | 0065 | OAuth callback should use signed state parameter instead of session-based CSRF | open | medium | security, enhancement |
 | 0066 | Fix CLAUDE.md inaccuracies: CI trigger pattern and missing battery mention | open | low | documentation |
+| 0067 | Entity default values use DateTime.UtcNow at instantiation, not persistence time | open | medium | enhancement, code-quality |
+| 0068 | IEmailRenderer XML doc comment is misleading — hardcodes configurable values | open | medium | documentation |
+| 0069 | PollingService motion detection comment is inaccurate per Hue API docs | open | medium | documentation |
+| 0070 | DeviceReading inline comments outdated — missing battery reading type | open | medium | documentation |
+| 0071 | EmailSchedulerService.ExecuteAsync error retry path has 0% test coverage | open | medium | testing |
+| 0072 | OAuthCallback page is AllowAnonymous but performs sensitive operations | open | medium | security |
+| 0073 | Missing CancellationToken propagation in Admin page handlers | open | low | enhancement, code-quality |

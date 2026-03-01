@@ -21,3 +21,13 @@ Also, `TokenRefreshServiceTests` uses reflection to invoke a private method (`Bi
 **Recommendation:** Use `ISystemClock` (or similar time abstraction) and mock time advancement. Make the private method `internal` with `[InternalsVisibleTo]`.
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Comprehensive review update:** In addition to the `Task.Delay`-based timing issues, the `TokenRefreshServiceTests` also uses reflection to invoke a private method:
+
+```csharp
+typeof(TokenRefreshService).GetMethod("RefreshExpiringTokensAsync", BindingFlags.NonPublic | BindingFlags.Instance)
+```
+
+This is fragile — renaming the method will silently break tests (they throw `NullReferenceException` rather than a compile error). A consistent fix for all Worker tests would be to use `[InternalsVisibleTo("Hpoll.Worker.Tests")]` in `Hpoll.Worker.csproj` and change private methods to `internal`, giving compile-time safety while keeping methods non-public.

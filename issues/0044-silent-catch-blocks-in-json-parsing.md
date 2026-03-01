@@ -25,3 +25,12 @@ If `DeviceReading.Value` contains malformed JSON (realistic after a schema chang
 **Related:** #11 (extract JSON parsing)
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Comprehensive review update:** Additional bare `catch { }` blocks found beyond the locations already noted:
+
+- `src/Hpoll.Admin/Pages/Customers/Detail.cshtml.cs` lines 214-216, 223-225, 229-231 — motion, temperature, and battery JSON parsing in `LoadActivitySummaryAsync`
+- `src/Hpoll.Admin/Pages/Hubs/OAuthCallback.cshtml.cs` lines 137-139 — silently swallows any failure during the connectivity test after hub registration
+
+These catch **all** exceptions including `OutOfMemoryException`, `StackOverflowException`, etc. All should be narrowed to `catch (JsonException)` or the specific expected exception type.

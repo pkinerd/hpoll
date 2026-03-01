@@ -25,3 +25,11 @@ The class appears to be intended for hub health monitoring but was never integra
 3. **Add an interface** (`IHealthEvaluator`) and register it if it will be used in the future
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Comprehensive review update:** In addition to being dead code, `HealthEvaluator` also breaks the project's architectural convention by lacking a corresponding interface. All other services follow the `IFoo`/`Foo` pattern (`IHueApiClient`/`HueApiClient`, `IEmailRenderer`/`EmailRenderer`, `IEmailSender`/`SesEmailSender`), but `HealthEvaluator` is a concrete class with no `IHealthEvaluator` interface.
+
+Additionally, the class uses a different `using` directive style (inside the namespace block) compared to the rest of the codebase (file-scoped namespaces with `using` at top).
+
+When resolving this issue, either: (1) integrate it into the polling and dashboard code paths with a proper `IHealthEvaluator` interface, or (2) remove it entirely if it's not needed.

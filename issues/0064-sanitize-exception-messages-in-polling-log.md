@@ -28,3 +28,16 @@ Exception messages from `HttpRequestException`, EF Core, and other providers can
 **Source:** Comprehensive review -- security review finding
 
 ## Comments
+
+### claude — 2026-03-01
+
+**Comprehensive review update:** In addition to the `PollingLog.ErrorMessage` issue, `HueApiClient` also logs error response bodies at `Warning` level in multiple locations:
+
+- Lines 96-97: `GetMotionSensorsAsync` / `GetTemperatureSensorsAsync` (via `GetResourceAsync`)
+- Lines 120-121: `GetDevicesAsync` / `GetDevicePowerAsync` (via `GetResourceAsync`)
+- Lines 169-170: `GetResourceAsync` error path
+- Lines 200-201: `PostTokenRequestAsync` error path
+
+These responses could contain sensitive bridge configuration details, token fragments, or internal API error information. The error body truncation (`errorBody[..500]`) is applied, but the content itself may still be sensitive.
+
+**Recommendation:** Log only HTTP status code and a generic error category at Warning level. Log the full response body at Debug level only, and ensure Debug logging is disabled in production.

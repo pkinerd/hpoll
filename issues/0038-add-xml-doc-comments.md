@@ -44,3 +44,27 @@ Out of ~50+ public members across the codebase, only **one** has XML documentati
 4. **Configuration classes**: `BatteryPollIntervalHours` default of 84 (3.5 days), `DataRetentionHours`, `SendTimesUtc` format, and the relationship between `TokenRefreshCheckHours`/`TokenRefreshThresholdHours` all need documentation.
 
 5. **OAuthCallback**: No docs explaining why it's `[AllowAnonymous]` (OAuth callbacks can't carry auth cookies) or the 5-step registration sequence.
+
+### claude — 2026-03-01
+
+**Comprehensive review update:** The documentation review identified 32 specific findings across the codebase. Key highlights that add detail to this issue:
+
+**High-priority undocumented interfaces/classes:**
+1. `IHueApiClient` (9 public methods, zero XML docs) — most critical interface in the project
+2. `IEmailSender` (2 overloads, no param docs) — unclear whether CC/BCC accepts null vs empty
+3. `HueApiModels.cs` (13 model classes, zero docs) — should map to Hue CLIP v2 endpoints
+4. `HueApiClient.cs` — Remote API URL constants (`ClipV2BaseUrl`, `RemoteApiBaseUrl`) lack comments explaining cloud-routed vs local bridge distinction
+5. `HueTokenResponse` — `ExpiresIn` is in seconds (OAuth2 spec) but undocumented
+
+**Specific model documentation needs (from Hue API cross-reference):**
+- `HueMotionData.MotionReport` (nullable) — absence means motion data is invalid/unavailable, replacing the deprecated `motion_valid` boolean
+- `HuePowerState.BatteryState` — valid values are specifically `normal`, `low`, `critical` per API docs; only present for battery-powered devices
+- `HueApiClient.EnableLinkButtonAsync` uses v1 Remote API endpoint (`/api/0/config`) — needs comment explaining the `0` placeholder username
+- `HueApiClient.RegisterApplicationAsync` returns a `username` that becomes the `hue-application-key` for CLIP v2 — not documented
+
+**Configuration classes (all in `CustomerConfig.cs`):**
+- `BatteryPollIntervalHours` (default 84) — no comment explaining 3.5 days rationale
+- `HealthFailureThreshold`, `HealthMaxSilenceHours` — no units or range docs
+- `SummaryWindowHours`, `SummaryWindowCount` — no docs explaining windowed aggregation
+
+**Overall:** Only 1 XML doc comment exists in the entire `src/` directory, and even that one is inaccurate (see new issue for IEmailRenderer misleading comment).
