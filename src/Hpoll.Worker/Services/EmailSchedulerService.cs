@@ -19,7 +19,7 @@ public class EmailSchedulerService : BackgroundService
     private readonly ISystemInfoService _systemInfo;
     private readonly TimeProvider _timeProvider;
     private int _totalEmailsSent;
-    internal static readonly TimeSpan MaxSleepDuration = TimeSpan.FromMinutes(10);
+    internal static readonly TimeSpan MaxSleepDuration = TimeSpan.FromMinutes(1);
 
     public EmailSchedulerService(
         IServiceScopeFactory scopeFactory,

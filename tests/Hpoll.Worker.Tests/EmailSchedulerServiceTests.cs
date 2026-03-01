@@ -290,7 +290,7 @@ public class EmailSchedulerServiceTests : IDisposable
     [Fact]
     public async Task GetSleepDuration_ReturnsTimeTillNextDue_WhenLessThanMax()
     {
-        var futureTime = DateTime.UtcNow.AddMinutes(3);
+        var futureTime = DateTime.UtcNow.AddSeconds(30);
         await SeedCustomerAsync("test@example.com", nextSendTimeUtc: futureTime);
 
         var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
