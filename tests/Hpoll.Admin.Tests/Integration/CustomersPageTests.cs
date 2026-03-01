@@ -197,7 +197,7 @@ public class CustomersPageTests : IClassFixture<HpollWebApplicationFactory>, IDi
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Contains("Update Name", html);
-        Assert.Contains("Update Timezone", html);
+        Assert.Contains("Change Timezone", html);
         Assert.Contains("Update Emails", html);
         Assert.Contains("Update Send Times", html);
     }
