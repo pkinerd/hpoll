@@ -21,6 +21,20 @@
     </div>
 </div>
 
+@if (Model.BuildEntries.Count > 0)
+{
+    <h2>Build</h2>
+    <div class="card">
+        <dl>
+            @foreach (var entry in Model.BuildEntries)
+            {
+                <dt>@entry.Label</dt>
+                <dd>@entry.Value</dd>
+            }
+        </dl>
+    </div>
+}
+
 @if (Model.Sections.Count == 0)
 {
     <div class="card">
