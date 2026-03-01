@@ -82,3 +82,48 @@ Two specific inaccurate comments to fix as part of this documentation effort:
 ### claude — 2026-03-01
 
 Critical review: PARTIALLY_VALID. Priority downgraded high->medium. **FABRICATED**: HealthEvaluator class does not exist in src/ (hallucinated from review skill template). **FABRICATED**: HealthFailureThreshold and HealthMaxSilenceHours properties do not exist. The 'only 1 XML doc' claim is stale (SendTimeHelper.cs added 5 summary blocks in d97a36a). Scope should focus on IHueApiClient (9 undocumented methods) and HueApiModels.cs.
+
+### claude — 2026-03-01
+
+**Critical review of entire issue — independent source code verification.**
+
+**Verdict: LOW_VALUE. Recommend closing or downgrading to low priority.**
+
+I checked out `origin/main` and read every interface file in `src/Hpoll.Core/Interfaces/`, the key service implementations (`HueApiClient.cs`, `SendTimeHelper.cs`, `EmailSchedulerService.cs`, `PollingService.cs`, `SesEmailSender.cs`, `EmailRenderer.cs`, `SystemInfoService.cs`), and the configuration classes in `CustomerConfig.cs`. Here is a fact-based assessment.
+
+**Current documentation state (verified):**
+- `IEmailRenderer.cs`: 1 `<summary>` block (with inaccurate hardcoded values, as noted)
+- `SendTimeHelper.cs`: 5 `<summary>` blocks plus `<param>` and `<returns>` tags on `ComputeNextSendTimeUtc` — a well-documented file
+- All other files: 0 XML doc comments
+- The description's claim of "only one" XML doc is wrong; there are 6 `<summary>` blocks total
+
+**Issue description still references fabricated items (unfixed):**
+- Item 3 in the Description still lists `HealthEvaluator` (2 public methods) — this class was deleted in commit `eca5899` and never existed in the current codebase
+- Comment from 2026-03-01 still references `HealthFailureThreshold` and `HealthMaxSilenceHours` — these config properties were also removed in that same commit
+
+**Where XML docs genuinely add value (narrow scope):**
+1. **`IHueApiClient`** — This is the one interface where docs would help. The 9 methods have non-obvious semantics: `EnableLinkButtonAsync` uses the v1 Remote API with a placeholder `0` username, `RegisterApplicationAsync` returns a `username` that becomes the CLIP v2 `hue-application-key`, and `accessToken` vs `applicationKey` are easily confused. These are Hue-API-specific concepts that cannot be inferred from method signatures.
+2. **Fixing the inaccurate `IEmailRenderer` doc** — The existing comment hardcodes "28 hours" and "4-hour windows" but these are driven by `SummaryWindowHours` and `SummaryWindowCount`. This is a bug in an existing comment, not a missing-docs issue.
+3. **`PollingService` motion cutoff comment** — The inline comment about the motion boolean resetting "quickly" is imprecise and should be corrected. Again, this is fixing an existing inaccurate comment.
+
+**Where XML docs would NOT add value (most of the issue's scope):**
+1. **`IEmailSender`** — The two overloads are `SendEmailAsync(toAddresses, subject, htmlBody, ct)` and `SendEmailAsync(toAddresses, subject, htmlBody, ccAddresses, bccAddresses, ct)`. Adding `/// <summary>Sends an email</summary>` or `/// <param name="subject">The email subject</param>` restates what the signature already communicates. The nullable `List<string>?` on `ccAddresses`/`bccAddresses` already documents that null is accepted.
+2. **`ISystemInfoService`** — `SetAsync(category, key, value)`, `SetBatchAsync(category, entries)`, `ClearAllAsync()`. These are self-documenting CRUD operations on a key-value store. XML docs would be pure noise.
+3. **Configuration classes** — Properties like `IntervalMinutes`, `DataRetentionHours`, `BatteryPollIntervalHours` have their units in the name. The defaults are visible in the initializers (e.g., `= 60`, `= 84`, `= 168`). Adding `/// <summary>Polling interval in minutes. Default: 60.</summary>` to `IntervalMinutes { get; set; } = 60` adds zero information. The one legitimate gap is explaining *why* `BatteryPollIntervalHours` defaults to 84, but that is better served by an inline comment on the default value than a formal XML doc block.
+4. **Entity classes** — These are EF Core entities consumed only within the solution. Status field values are set by application code, not by external consumers. JSON format for `Value` fields is an implementation detail of `PollingService` and `EmailRenderer`.
+
+**No external consumers exist:**
+- The project is not published as a NuGet package (no `.nuspec`, no `dotnet pack` in CI)
+- No `<GenerateDocumentationFile>` is set in any `.csproj`
+- All interfaces have exactly one implementation within the solution
+- The only "consumers" are the project's own services, tests, and the Razor Pages admin portal
+- Without external consumers, XML docs primarily serve IDE tooltips for a small team — the same information is a click-through away in the implementation
+
+**Maintenance burden is real:**
+The `IEmailRenderer` doc comment is already proof: it hardcodes values that became configurable, producing misleading documentation. With 53 `.cs` files and an active codebase, blanket XML doc coverage would create dozens of comments that drift out of sync. The `SendTimeHelper.cs` docs are good because they document *non-obvious behavior* (DST handling, fallback logic). Applying the same treatment to self-documenting methods like `IEmailSender.SendEmailAsync` creates maintenance cost with no information gain.
+
+**Recommendation:**
+- **Do**: Fix the two inaccurate existing comments (`IEmailRenderer` summary, `PollingService` motion cutoff) — these are bugs, not documentation gaps. Track them as a separate small issue.
+- **Do**: Add XML docs to `IHueApiClient` only — this is the one interface with genuinely non-obvious semantics that cannot be inferred from signatures.
+- **Do not**: Add blanket XML docs to `IEmailSender`, `ISystemInfoService`, configuration classes, or entity classes. The cost/benefit ratio is unfavorable for an internal-only project with self-documenting APIs.
+- **Priority**: Low. The two inaccurate comments are the only items that could cause actual developer confusion. The rest is cosmetic.
