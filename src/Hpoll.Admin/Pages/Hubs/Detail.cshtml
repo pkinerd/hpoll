@@ -59,7 +59,7 @@
     }
     <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Hub.Id" style="display:inline;"
           onsubmit="return confirm('Delete this hub and all its data? This cannot be undone.');">
-        <button type="submit" class="btn btn-danger" @(canDelete ? "" : "disabled")>Delete Hub</button>
+        <button type="submit" class="btn @(canDelete ? "btn-danger" : "")" @(canDelete ? "" : "disabled")>Delete Hub</button>
     </form>
     @if (Model.Hub.Status == HubStatus.Inactive && Model.Hub.DeactivatedAt.HasValue && !canDelete)
     {
