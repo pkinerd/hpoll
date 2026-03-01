@@ -134,9 +134,10 @@ public class OAuthCallbackModel : PageModel
                     var devices = await _hueClient.GetDevicesAsync(tokenResponse.AccessToken, applicationKey);
                     DeviceCount = devices.Data.Count;
                 }
-                catch
+                catch (Exception ex)
                 {
                     // Non-fatal — hub is registered, devices will be discovered during polling
+                    _logger.LogWarning(ex, "Failed to get device count for newly registered hub {BridgeId}", bridgeId);
                 }
 
                 Message = $"Hub {bridgeId} registered successfully.";

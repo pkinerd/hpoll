@@ -93,7 +93,7 @@ public class DetailModel : PageModel
         if (hub == null) return NotFound();
 
         if (hub.Status != "inactive" || hub.DeactivatedAt == null ||
-            (DateTime.UtcNow - hub.DeactivatedAt.Value).TotalHours < 24)
+            (DateTime.UtcNow - hub.DeactivatedAt.Value).TotalMinutes < 10)
         {
             return RedirectToPage(new { id });
         }
