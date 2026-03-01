@@ -11,6 +11,7 @@ COPY src/Hpoll.Worker/Hpoll.Worker.csproj src/Hpoll.Worker/
 COPY src/Hpoll.Admin/Hpoll.Admin.csproj src/Hpoll.Admin/
 COPY tests/Hpoll.Core.Tests/Hpoll.Core.Tests.csproj tests/Hpoll.Core.Tests/
 COPY tests/Hpoll.Worker.Tests/Hpoll.Worker.Tests.csproj tests/Hpoll.Worker.Tests/
+COPY tests/Hpoll.Admin.Tests/Hpoll.Admin.Tests.csproj tests/Hpoll.Admin.Tests/
 
 RUN dotnet restore
 
