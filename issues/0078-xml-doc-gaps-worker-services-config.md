@@ -5,7 +5,7 @@ status: open
 created: 2026-03-01
 author: claude
 labels: [documentation]
-priority: medium
+priority: low
 ---
 
 ## Description
@@ -19,24 +19,27 @@ Follow-up to #38 (closed). The documentation review found extensive XML doc comm
 - `DatabaseBackupService` — VACUUM INTO backup strategy undocumented
 - `SystemInfoService` — ClearAllAsync uses raw SQL, unexplained
 
-**Configuration classes (all 6 have zero XML docs):**
+**Configuration classes (all 7 have zero XML docs):**
 - `HpollSettings`, `CustomerConfig`, `HubConfig`, `PollingSettings`, `EmailSettings`,
-  `HueAppSettings`, `BackupSettings` — ~30 properties with no doc comments explaining
-  valid ranges, defaults, or semantics. E.g., `BatteryPollIntervalHours = 84` (why 84?),
-  `BatteryAlertThreshold` vs `BatteryLevelWarning` (what's the difference?)
+  `HueAppSettings`, `BackupSettings` — 35 properties with no XML doc comments.
+  ~~E.g., `BatteryPollIntervalHours = 84` (why 84?),
+  `BatteryAlertThreshold` vs `BatteryLevelWarning` (what's the difference?)~~
+  _[Struck: already documented in README and `.env.example` — see critical reviews below.]_
 
 **Other gaps:**
 - `SesEmailSender` — no docs on AWS SES interaction or FromAddress requirement
-- `IEmailSender` interface — no XML docs at all (only undocumented interface)
+- `IEmailSender` interface — no XML docs at all ~~(only undocumented interface)~~
+  _[Struck: `ISystemInfoService` is also undocumented — 2 of 4 interfaces lack docs.]_
 - `ISystemInfoService` interface — no XML docs
 - All 6 entity classes — no XML docs
 - `HpollDbContext` — no docs on index rationale in OnModelCreating
 
 **Found by:** Comprehensive review — documentation review.
 
-**Recommendation:** Prioritize configuration classes (developers need to know valid values)
+~~**Recommendation:** Prioritize configuration classes (developers need to know valid values)
 and Worker services (complex business logic). Add `<summary>`, `<param>`, `<returns>`, and
-`<exception>` tags.
+`<exception>` tags.~~
+_[Struck: see critical reviews below for revised recommendation.]_
 
 ## Comments
 
@@ -112,3 +115,27 @@ The rest of the issue is "add XML docs to everything" which would create mainten
 **Recommendation:** Downgrade to low priority. Narrow scope to the 3 battery config properties and the `BatteryPollIntervalHours` default rationale. Close the remaining items as low-value for an internal project, or create a focused sub-issue for just the battery config docs.
 
 _Note: A second independent review reached the same PARTIALLY_VALID verdict, confirming the config class count error (says 6, lists 7), the self-contradictory "only undocumented interface" claim, and the failure to acknowledge #38's deliberate scoping decision. The second review additionally verified the exact property count (35 across all 7 classes) and noted that `SendTimeHelper.cs` already has 5 `<summary>` blocks, bringing the total existing XML doc count to ~27 `<summary>` blocks — not zero. Both reviews recommend downgrading to low priority._
+
+### claude (critical review #2) — 2026-03-01
+
+**Supplementary findings — priority downgraded medium → low, description corrected.**
+
+Independent re-verification confirms the previous review's PARTIALLY_VALID verdict. Description has been corrected inline (strikethroughs) to fix factual errors. Additional findings not covered by the prior review:
+
+**1. README documents phantom config properties (real bug, higher value than this issue).**
+
+README.md lines 37-38 document `Polling:HealthFailureThreshold` (default 3) and `Polling:HealthMaxSilenceHours` (default 6) as valid configuration properties. These properties **do not exist** in `PollingSettings` in `CustomerConfig.cs`. The README is actively misleading developers into believing they can configure health thresholds that the code will silently ignore. This is a real documentation *bug* — more harmful than the missing XML docs this issue tracks — and should be filed as a separate issue.
+
+**2. ".env.example" already explains "why 84?"**
+
+The issue rhetorically asks `BatteryPollIntervalHours = 84 (why 84?)`. The `.env.example` file (line 21, added in commit `4b8e8c8`) already answers: `# Battery poll interval — 84 hours polls roughly twice per week`. The README (line 31) also says `Hours between battery level polls (~twice per week)`. This question was answered before this issue was created.
+
+**3. Issue ignores parent #38's critical review entirely.**
+
+Issue #38's comments contain a detailed "LOW_VALUE" assessment arguing that blanket XML docs create maintenance burden disproportionate to value for an internal-only project. This issue was created *after* that assessment but does not engage with any of its arguments. It silently re-requests the same broad scope that #38's review explicitly recommended against.
+
+**4. The "BatteryAlertThreshold vs BatteryLevelWarning" framing omits the third property.**
+
+The issue presents two properties as confusingly named, but there are actually three: `BatteryAlertThreshold` (60), `BatteryLevelWarning` (50), `BatteryLevelCritical` (30). This trio forms a clear three-tier system for email rendering. All three are already documented in README.md lines 42-44 with descriptions explaining their distinct roles. The issue's framing of "what's the difference?" is answered by the README.
+
+**Revised scope:** The only genuinely actionable item remaining is `HpollDbContext` index rationale inline comments. Everything else is either already documented (README, `.env.example`), self-documenting (interfaces with descriptive signatures), or low-value for an internal project. The phantom README properties are a separate, higher-priority issue.
