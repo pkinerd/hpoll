@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Hpoll.Core.Configuration;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
@@ -8,10 +10,12 @@ namespace Hpoll.Admin.Pages;
 public class AboutModel : PageModel
 {
     private readonly HpollDbContext _db;
+    private readonly HueAppSettings _hueApp;
 
-    public AboutModel(HpollDbContext db)
+    public AboutModel(HpollDbContext db, IOptions<HueAppSettings> hueApp)
     {
         _db = db;
+        _hueApp = hueApp.Value;
     }
 
     public int CustomerCount { get; set; }
@@ -55,6 +59,36 @@ public class AboutModel : PageModel
         {
             if (!categoryOrder.Contains(kvp.Key))
                 Sections.Add((kvp.Key, kvp.Value));
+        }
+
+        // Always surface the Admin's own Hue callback URL from config
+        EnsureAdminCallbackUrl();
+    }
+
+    private void EnsureAdminCallbackUrl()
+    {
+        var callbackUrl = _hueApp.CallbackUrl;
+        if (string.IsNullOrEmpty(callbackUrl))
+            return;
+
+        var hueIndex = Sections.FindIndex(s => s.Category == "Hue");
+        if (hueIndex >= 0)
+        {
+            var hueEntries = Sections[hueIndex].Entries;
+            // Only add if the Worker hasn't already written callback_url to SystemInfo
+            if (!hueEntries.Any(e => e.Label == "Callback Url"))
+            {
+                hueEntries.Add(new SystemInfoEntry { Label = "Callback Url", Value = callbackUrl });
+            }
+        }
+        else
+        {
+            // Worker hasn't started yet — create a Hue section from Admin config
+            Sections.Add(("Hue", new List<SystemInfoEntry>
+            {
+                new() { Label = "App Configured", Value = (!string.IsNullOrEmpty(_hueApp.ClientId)).ToString() },
+                new() { Label = "Callback Url", Value = callbackUrl },
+            }));
         }
     }
 
