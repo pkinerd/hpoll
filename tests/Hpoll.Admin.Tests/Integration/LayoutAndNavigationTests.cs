@@ -67,7 +67,7 @@ public class LayoutAndNavigationTests : IClassFixture<HpollWebApplicationFactory
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Contains("<title>", html);
-        Assert.Contains("hpoll admin</title>", html);
+        Assert.Contains("hpoll admin - Testing</title>", html);
     }
 
     [Fact]
