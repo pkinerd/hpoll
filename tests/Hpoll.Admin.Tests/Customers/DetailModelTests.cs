@@ -28,15 +28,17 @@ public class DetailModelTests : IDisposable
 
     public void Dispose() => _db.Dispose();
 
-    private DetailModel CreatePageModel()
+    private DetailModel CreatePageModel(HueAppSettings? hueAppSettings = null)
     {
-        var hueApp = Options.Create(new HueAppSettings());
+        var hueApp = Options.Create(hueAppSettings ?? new HueAppSettings());
         var emailSettings = Options.Create(new EmailSettings());
         var model = new DetailModel(_db, hueApp, emailSettings, NullLogger<DetailModel>.Instance);
+        var httpContext = new DefaultHttpContext();
+        httpContext.Session = new TestSession();
         model.PageContext = new PageContext
         {
             ActionDescriptor = new CompiledPageActionDescriptor(),
-            HttpContext = new DefaultHttpContext(),
+            HttpContext = httpContext,
             RouteData = new RouteData()
         };
         return model;
@@ -489,5 +491,97 @@ public class DetailModelTests : IDisposable
         await model.OnPostUpdateTimeZoneAsync(customer.Id);
 
         Assert.False(model.EditingTimeZone);
+    }
+
+    [Fact]
+    public async Task OnPostRegisterHubAsync_InvalidCustomer_ReturnsNotFound()
+    {
+        var model = CreatePageModel(new HueAppSettings { ClientId = "id", CallbackUrl = "http://callback" });
+        var result = await model.OnPostRegisterHubAsync(999);
+
+        Assert.IsType<NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task OnPostRegisterHubAsync_MissingClientId_ReturnsPageWithError()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel(new HueAppSettings { ClientId = "", CallbackUrl = "http://callback" });
+        var result = await model.OnPostRegisterHubAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Contains("ClientId", model.SuccessMessage);
+        Assert.Equal(customer.Id, model.Customer.Id);
+    }
+
+    [Fact]
+    public async Task OnPostRegisterHubAsync_ValidConfig_SetsOAuthUrlAndSession()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel(new HueAppSettings
+        {
+            ClientId = "test-client-id",
+            CallbackUrl = "https://example.com/callback"
+        });
+
+        var result = await model.OnPostRegisterHubAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.NotNull(model.OAuthUrl);
+        Assert.Contains("test-client-id", model.OAuthUrl);
+        Assert.Contains("example.com%2Fcallback", model.OAuthUrl);
+        Assert.Contains("response_type=code", model.OAuthUrl);
+
+        // Verify session state was set
+        var session = model.PageContext.HttpContext.Session;
+        Assert.Equal(customer.Id, session.GetInt32("OAuthCustomerId"));
+        Assert.NotNull(session.GetString("OAuthCsrf"));
+    }
+
+    [Fact]
+    public async Task OnPostRegisterHubAsync_PopulatesEditFieldsFromCustomer()
+    {
+        var customer = await SeedCustomerAsync("Custom Name", "custom@example.com");
+        customer.CcEmails = "cc@test.com";
+        customer.BccEmails = "bcc@test.com";
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel(new HueAppSettings
+        {
+            ClientId = "test-client-id",
+            CallbackUrl = "https://example.com/callback"
+        });
+
+        await model.OnPostRegisterHubAsync(customer.Id);
+
+        Assert.Equal("custom@example.com", model.EditEmail);
+        Assert.Equal("Custom Name", model.EditName);
+        Assert.Equal("cc@test.com", model.EditCcEmails);
+        Assert.Equal("bcc@test.com", model.EditBccEmails);
+    }
+
+    private class TestSession : ISession
+    {
+        private readonly Dictionary<string, byte[]> _store = new();
+        public string Id => "test-session";
+        public bool IsAvailable => true;
+        public IEnumerable<string> Keys => _store.Keys;
+        public void Clear() => _store.Clear();
+        public Task CommitAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task LoadAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public void Remove(string key) => _store.Remove(key);
+        public void Set(string key, byte[] value) => _store[key] = value;
+        public bool TryGetValue(string key, out byte[] value)
+        {
+            if (_store.TryGetValue(key, out var stored))
+            {
+                value = stored;
+                return true;
+            }
+            value = Array.Empty<byte>();
+            return false;
+        }
     }
 }

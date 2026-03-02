@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -25,12 +26,16 @@ public class SystemInfoServiceTests : IDisposable
 
     public void Dispose()
     {
+        foreach (var scope in _scopes) scope.Dispose();
         _serviceProvider.Dispose();
     }
+
+    private readonly List<IServiceScope> _scopes = new();
 
     private HpollDbContext CreateDb()
     {
         var scope = _serviceProvider.CreateScope();
+        _scopes.Add(scope);
         return scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     }
 
@@ -166,17 +171,33 @@ public class SystemInfoServiceTests : IDisposable
     [Fact]
     public async Task ClearAllAsync_RemovesAllEntries()
     {
-        // ClearAllAsync uses ExecuteSqlRawAsync which requires a relational provider.
-        // Using InMemory database, this will throw. We verify the method doesn't crash silently
-        // by checking that it throws the expected NotSupportedException.
-        var service = CreateService();
+        // ClearAllAsync uses ExecuteSqlRawAsync which requires a relational provider,
+        // so use SQLite in-memory instead of the EF Core InMemory provider
+        using var connection = new SqliteConnection("DataSource=:memory:");
+        connection.Open();
+
+        var sqliteServices = new ServiceCollection();
+        sqliteServices.AddDbContext<HpollDbContext>(options => options.UseSqlite(connection));
+        sqliteServices.AddLogging();
+        using var sqliteProvider = sqliteServices.BuildServiceProvider();
+
+        using (var db = sqliteProvider.CreateScope().ServiceProvider.GetRequiredService<HpollDbContext>())
+            db.Database.EnsureCreated();
+
+        var service = new SystemInfoService(
+            sqliteProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<SystemInfoService>.Instance);
 
         await service.SetAsync("Cat", "key1", "value1");
         await service.SetAsync("Cat", "key2", "value2");
 
-        // InMemory provider doesn't support raw SQL, so ClearAllAsync will throw
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.ClearAllAsync());
+        using (var db = sqliteProvider.CreateScope().ServiceProvider.GetRequiredService<HpollDbContext>())
+            Assert.Equal(2, await db.SystemInfo.CountAsync());
+
+        await service.ClearAllAsync();
+
+        using (var db = sqliteProvider.CreateScope().ServiceProvider.GetRequiredService<HpollDbContext>())
+            Assert.Equal(0, await db.SystemInfo.CountAsync());
     }
 
     [Fact]

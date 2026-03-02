@@ -39,12 +39,16 @@ public class EmailSchedulerServiceTests : IDisposable
 
     public void Dispose()
     {
+        foreach (var scope in _scopes) scope.Dispose();
         _serviceProvider.Dispose();
     }
+
+    private readonly List<IServiceScope> _scopes = new();
 
     private HpollDbContext CreateDb()
     {
         var scope = _serviceProvider.CreateScope();
+        _scopes.Add(scope);
         return scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     }
 
@@ -155,6 +159,38 @@ public class EmailSchedulerServiceTests : IDisposable
 
         // Both customers should have been attempted
         _mockSender.Verify(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task ProcessDueCustomers_ContinuesOnRendererFailure_SkipsSender()
+    {
+        var pastTime = DateTime.UtcNow.AddMinutes(-5);
+        await SeedCustomerAsync("fail@example.com", nextSendTimeUtc: pastTime);
+        await SeedCustomerAsync("success@example.com", nextSendTimeUtc: pastTime);
+
+        var callCount = 0;
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .Returns<int, string, DateTime?, CancellationToken>((id, tz, dt, ct) =>
+            {
+                callCount++;
+                if (callCount == 1) throw new Exception("Database error during render");
+                return Task.FromResult("<html>Summary</html>");
+            });
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1", SendTimesUtc = new() { "08:00" } });
+        await service.ProcessDueCustomersAsync(CancellationToken.None);
+
+        // Renderer called for both customers
+        Assert.Equal(2, callCount);
+        // Sender only called for the second (successful) customer
+        _mockSender.Verify(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        // Both customers should have their NextSendTimeUtc advanced (no retry loops)
+        using var db = CreateDb();
+        var customers = await db.Customers.ToListAsync();
+        Assert.All(customers, c => Assert.True(c.NextSendTimeUtc > DateTime.UtcNow));
     }
 
     [Fact]

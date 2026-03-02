@@ -369,6 +369,17 @@ public class HueApiClientTests
     }
 
     [Fact]
+    public async Task ExchangeAuthorizationCodeAsync_OnFailure_ThrowsHttpRequestException()
+    {
+        _mockHandler.ConfigureResponse(HttpStatusCode.BadRequest, """{"error":"invalid_grant"}""");
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(
+            () => _client.ExchangeAuthorizationCodeAsync("bad-code", "http://localhost/callback"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
+    }
+
+    [Fact]
     public async Task EnableLinkButtonAsync_SendsPutWithBearerAuth()
     {
         _mockHandler.ConfigureResponse(HttpStatusCode.OK, "[]");

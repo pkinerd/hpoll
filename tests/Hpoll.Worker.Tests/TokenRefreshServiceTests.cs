@@ -36,12 +36,16 @@ public class TokenRefreshServiceTests : IDisposable
 
     public void Dispose()
     {
+        foreach (var scope in _scopes) scope.Dispose();
         _serviceProvider.Dispose();
     }
+
+    private readonly List<IServiceScope> _scopes = new();
 
     private HpollDbContext CreateDb()
     {
         var scope = _serviceProvider.CreateScope();
+        _scopes.Add(scope);
         return scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     }
 
@@ -376,8 +380,8 @@ public class TokenRefreshServiceTests : IDisposable
         var service = CreateService(settings);
         await service.RefreshExpiringTokensAsync(CancellationToken.None);
 
-        // At exactly the threshold, the timeUntilExpiry will be <= threshold, so it should refresh
-        // (due to time passing between SeedHubAsync and the check)
-        _mockHueClient.Verify(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtMostOnce);
+        // At exactly the threshold, time always advances between seed and check,
+        // so timeUntilExpiry < threshold and the token is always refreshed
+        _mockHueClient.Verify(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

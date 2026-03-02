@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Interfaces;
@@ -42,7 +43,7 @@ public class DatabaseBackupServiceTests : IDisposable
         try { Directory.Delete(_tempDir, recursive: true); } catch { }
     }
 
-    private DatabaseBackupService CreateService(BackupSettings? settings = null, Mock<ISystemInfoService>? systemInfoMock = null)
+    private DatabaseBackupService CreateService(BackupSettings? settings = null, Mock<ISystemInfoService>? systemInfoMock = null, TimeProvider? timeProvider = null)
     {
         var backupSettings = settings ?? new BackupSettings
         {
@@ -63,7 +64,8 @@ public class DatabaseBackupServiceTests : IDisposable
             NullLogger<DatabaseBackupService>.Instance,
             Options.Create(backupSettings),
             (systemInfoMock ?? new Mock<ISystemInfoService>()).Object,
-            config);
+            config,
+            timeProvider);
     }
 
     [Fact]
@@ -270,10 +272,11 @@ public class DatabaseBackupServiceTests : IDisposable
     [Fact]
     public async Task CreateBackupAsync_MultipleBackups_CreatesSeparateFiles()
     {
-        var service = CreateService();
+        var fakeTime = new FakeTimeProvider(new DateTimeOffset(2026, 3, 1, 12, 0, 0, TimeSpan.Zero));
+        var service = CreateService(timeProvider: fakeTime);
 
         await service.CreateBackupAsync(CancellationToken.None);
-        await Task.Delay(1100); // Wait for different timestamp
+        fakeTime.Advance(TimeSpan.FromMinutes(1));
         await service.CreateBackupAsync(CancellationToken.None);
 
         var backupFiles = Directory.GetFiles(_backupDir, "hpoll-*.db");

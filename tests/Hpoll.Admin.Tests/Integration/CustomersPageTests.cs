@@ -7,7 +7,7 @@ using Hpoll.Data.Entities;
 
 namespace Hpoll.Admin.Tests.Integration;
 
-public class CustomersPageTests : IClassFixture<HpollWebApplicationFactory>, IDisposable
+public class CustomersPageTests : IClassFixture<HpollWebApplicationFactory>, IAsyncLifetime, IDisposable
 {
     private readonly HpollWebApplicationFactory _factory;
     private readonly HttpClient _client;
@@ -17,6 +17,9 @@ public class CustomersPageTests : IClassFixture<HpollWebApplicationFactory>, IDi
         _factory = factory;
         _client = _factory.CreateClient();
     }
+
+    public async Task InitializeAsync() => await _factory.ResetDatabaseAsync();
+    public Task DisposeAsync() => Task.CompletedTask;
 
     // --- Customers/Index ---
 
@@ -63,10 +66,7 @@ public class CustomersPageTests : IClassFixture<HpollWebApplicationFactory>, IDi
     [Fact]
     public async Task CustomersIndex_ShowsNoCustomersMessage_WhenEmpty()
     {
-        using var db = _factory.CreateDbContext();
-        db.Customers.RemoveRange(db.Customers);
-        await db.SaveChangesAsync();
-
+        // Database is reset before each test via IAsyncLifetime, so no customers exist
         var response = await _client.GetAsync("/Customers");
         var html = await response.Content.ReadAsStringAsync();
 
