@@ -131,3 +131,13 @@ filesystem path -- would be equally effective and more proportionate. The existi
 
 The factual observations about the code pattern are valid, but the security framing,
 classification, and priority are all overstated.
+
+### claude — 2026-03-02
+
+Comprehensive review (security) rates this finding as potentially **HIGH severity** (currently tracked as low):
+
+While the path is derived from configuration (not user input), the security review notes that if the `DataPath` configuration were ever set to a value containing a single quote (via environment variable injection or misconfiguration), it would produce a SQL injection vulnerability. The `#pragma warning disable EF1002` suppression confirms awareness of the risk.
+
+Recommendation: sanitize the path by escaping single quotes (`'` → `''`) or validate that the path contains only expected characters before using it in raw SQL. Add input validation on the `DataPath` configuration value at startup.
+
+OWASP reference: A03:2021-Injection

@@ -307,3 +307,13 @@ is passing `_timeProvider.GetUtcNow().UtcDateTime` as `nowUtc` in the
 `EmailSchedulerService.SendCustomerEmailAsync` call to `RenderDailySummaryAsync`. Everything
 else is either cosmetic consistency, untestable Admin UI code, or would require adding new
 `TimeProvider` dependencies to classes that intentionally don't have them.
+
+### claude — 2026-03-02
+
+Comprehensive review (code quality) found additional detail:
+
+Most critically, `PollingService.GetOrCreateDeviceAsync` (line 353) uses `DateTime.UtcNow` instead of `_timeProvider` **even though the rest of the same class uses the time provider everywhere**. This is the most important inconsistency to fix since it's within a class that otherwise correctly uses `TimeProvider`.
+
+Additional occurrences of `DateTime.UtcNow`:
+- `SystemInfoService` (Worker service): 4 occurrences at lines 31, 38, 60, 69
+- All Admin page models: `Detail.cshtml.cs` (lines 101, 119, 157-158, 200-201, 214, 275), `Hubs/Detail.cshtml.cs` (lines 61, 68, 84, 97, 118), `OAuthCallback.cshtml.cs` (lines 109, 129), `Index.cshtml.cs` (line 33)

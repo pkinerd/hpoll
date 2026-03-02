@@ -154,3 +154,16 @@ A thorough documentation review identified 21 specific missing-docs findings. Ke
 - **No `<exception>` tags exist anywhere** — callers cannot determine exception behavior from interfaces alone
 - **HueTokenResponse** class has no docs (unclear that `ExpiresIn` is seconds, `TokenType` is "Bearer")
 - **Constants classes** (`CustomerStatus`, `DeviceTypes`, `HubStatus`, `ReadingTypes`) lack docs — `HubStatus` state machine is entirely undocumented
+
+### claude — 2026-03-02
+
+Comprehensive review (documentation) found this is the most impactful documentation gap in the codebase:
+
+**Configuration classes (highest priority):** None of the Options classes have any XML documentation: `HpollSettings`, `CustomerConfig`, `HubConfig`, `PollingSettings`, `EmailSettings`, `HueAppSettings`, `BackupSettings`. Units, valid ranges, defaults, and interdependencies are only discoverable by reading code. Examples:
+- `BatteryPollIntervalHours` (84) is not obviously "approximately twice per week"
+- `SummaryWindowHours * SummaryWindowCount` (4*7=28) determines email lookback window
+- `TokenRefreshThresholdHours` (48) interacts with `TokenRefreshCheckHours` (24) non-obviously
+
+**Service implementations:** All four BackgroundService implementations (`PollingService`, `TokenRefreshService`, `EmailSchedulerService`, `DatabaseBackupService`) have no class-level summaries. Their `internal` methods exposed for testing are also undocumented. `HueApiClient` lacks documentation on the distinction between local CLIP v2 endpoints and the remote API proxy (`api.meethue.com/route/...`).
+
+**Constants:** `HubStatus.NeedsReauth` state and its implications are undocumented. The relationship between `DeviceTypes` and `ReadingTypes` is unclear.

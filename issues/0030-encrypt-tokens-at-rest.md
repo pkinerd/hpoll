@@ -147,3 +147,15 @@ Keep this issue open at **medium** priority with the following specific actions:
 2. **Do not implement Data Protection API encryption** with filesystem-backed keys on the same volume. The operational risk (key loss destroying all tokens, migration complexity, debugging difficulty) outweighs the marginal security benefit for a colocated key scenario.
 3. **If external backup of the data volume is ever added** (e.g., shipping SQLite files to S3, NAS backups), re-evaluate with SQLCipher or external KMS, as that changes the threat model significantly.
 4. **Consider removing token seeding from ConfigSeeder** or adding a startup warning when tokens are provided via configuration, as the second comment suggested. This reduces the surface area for token leakage through config files.
+
+### claude — 2026-03-02
+
+Comprehensive review (security) found additional detail:
+
+The security review rates this issue as **HIGH severity** (currently tracked as medium). Key additional findings:
+- The `data/` volume is shared between worker and admin containers via a bind mount, increasing exposure surface
+- Database backup files (`hpoll-*.db`) created by `DatabaseBackupService` also contain these tokens in plaintext
+- If an attacker gains read access to the SQLite file (via backup leak, container escape, or volume mount exposure), they gain full access to all connected Hue Bridges
+- Recommended approach: encrypt sensitive columns using ASP.NET Core Data Protection (`IDataProtector`), and ensure SQLite file and backup directory have strict file permissions (600)
+
+OWASP reference: A02:2021-Cryptographic Failures

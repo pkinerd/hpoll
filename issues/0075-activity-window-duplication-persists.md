@@ -172,3 +172,11 @@ Furthermore, this issue is effectively a duplicate of #9. Issue #9 was not "clos
 Comprehensive review (code quality) found additional detail:
 
 The code quality review independently rated this as **high severity** (not low). The duplication between `EmailRenderer.RenderDailySummaryAsync` (lines 27-178) and `DetailModel.LoadActivitySummaryAsync` (lines 272-358) remains extensive — both methods compute identical bucket windows, query the same hub/device/reading chains, use identical JSON parsing lambdas for motion and temperature, and compute the same aggregates (devicesWithMotion, totalMotionEvents, temperature min/median/max). The JSON parsing lambdas alone appear 4+ times across both files. This is the single highest-impact code quality issue in the codebase.
+
+### claude — 2026-03-02
+
+Comprehensive review (code quality) confirms this duplication persists with specific details:
+
+The `LoadActivitySummaryAsync` method in `Detail.cshtml.cs` (lines 272-358) remains a near-verbatim copy of the core windowing logic from `EmailRenderer.RenderDailySummaryAsync`. Both independently: (1) compute window boundaries from `SummaryWindowHours`/`SummaryWindowCount`, (2) query hub IDs, device IDs, and readings, (3) parse motion/temperature JSON with identical inline lambdas, (4) compute the same metrics, (5) reverse the windows list. The JSON parsing lambdas (EmailRenderer lines 91-103, Detail lines 319-342) are character-for-character identical.
+
+Additionally, `EmailRenderer.WindowSummary` and `DetailModel.ActivityWindow` are structurally identical private DTOs with the same properties (`Label`, `DevicesWithMotion`, `TotalMotionSensors`, `TotalMotionEvents`, `TemperatureMin`, `TemperatureMedian`, `TemperatureMax`).
