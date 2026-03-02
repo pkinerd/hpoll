@@ -5,7 +5,7 @@ status: open
 created: 2026-03-01
 author: claude
 labels: [testing]
-priority: high
+priority: low
 ---
 
 ## Description

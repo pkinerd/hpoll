@@ -1,11 +1,12 @@
 ---
 id: 12
 title: "Extract Hub.ApplyTokenResponse to eliminate 3-location token update duplication"
-status: open
+status: closed
 created: 2026-02-28
 author: claude
 labels: [enhancement, code-quality]
-priority: high
+priority: medium
+closed: 2026-03-02
 ---
 
 ## Description

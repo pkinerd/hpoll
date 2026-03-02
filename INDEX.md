@@ -13,7 +13,7 @@
 | [0009](issues/0009-extract-shared-activity-summary-builder.md) | Extract shared ActivitySummaryBuilder to eliminate duplicated window aggregation logic | closed | high | enhancement, code-quality |
 | [0010](issues/0010-introduce-status-readingtype-devicetype-constants.md) | Introduce string constants or enums for Status, ReadingType, and DeviceType fields | closed | medium | enhancement, code-quality |
 | [0011](issues/0011-extract-device-reading-json-parsing.md) | Extract DeviceReading JSON parsing into typed accessor methods | closed | medium | enhancement, code-quality |
-| [0012](issues/0012-extract-hub-apply-token-response.md) | Extract Hub.ApplyTokenResponse to eliminate 3-location token update duplication | open | high | enhancement, code-quality |
+| [0012](issues/0012-extract-hub-apply-token-response.md) | Extract Hub.ApplyTokenResponse to eliminate 3-location token update duplication | closed | medium | enhancement, code-quality |
 | [0013](issues/0013-extract-load-customer-helper-detail-page.md) | Extract shared LoadCustomerAsync helper in Detail page model | closed | low | enhancement, code-quality |
 | [0014](issues/0014-extract-http-error-formatting-helper.md) | Extract HttpRequestException error formatting helper | open | low | enhancement, code-quality |
 | [0015](issues/0015-replace-magic-numbers-with-constants.md) | Replace magic numbers and hardcoded color codes with named constants | open | low | enhancement, code-quality |
@@ -76,7 +76,7 @@
 | [0072](issues/0072-oauthcallback-allowanonymous-sensitive-operations.md) | OAuthCallback page is AllowAnonymous but performs sensitive operations | closed | medium | security |
 | [0073](issues/0073-missing-cancellationtoken-in-admin-handlers.md) | Missing CancellationToken propagation in Admin page handlers | open | low | enhancement, code-quality |
 | [0074](issues/0074-refactor-inline-js-css-and-add-csp.md) | Refactor inline JS/CSS out of Razor pages and add Content-Security-Policy header | open | low | security, enhancement |
-| [0075](issues/0075-activity-window-duplication-persists.md) | Activity window duplication persists — ActivitySummaryBuilder never extracted | open | low | enhancement, code-quality |
+| [0075](issues/0075-activity-window-duplication-persists.md) | Activity window duplication persists — ActivitySummaryBuilder never extracted | open | medium | enhancement, code-quality |
 | [0076](issues/0076-inconsistent-timeprovider-usage.md) | Inconsistent TimeProvider vs DateTime.UtcNow usage across codebase | open | low | enhancement, code-quality |
 | [0077](issues/0077-oauthcallback-razor-view-zero-coverage.md) | OAuthCallback Razor view has 0% test coverage | open | low | testing |
 | [0078](issues/0078-xml-doc-gaps-worker-services-config.md) | XML doc gaps remain on Worker services and configuration classes | open | low | documentation |

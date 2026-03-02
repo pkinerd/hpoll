@@ -5,7 +5,7 @@ status: open
 created: 2026-03-01
 author: claude
 labels: [enhancement, code-quality]
-priority: high
+priority: medium
 ---
 
 ## Description
