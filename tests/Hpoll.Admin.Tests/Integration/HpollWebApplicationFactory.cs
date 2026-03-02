@@ -90,6 +90,24 @@ public class HpollWebApplicationFactory : WebApplicationFactory<Program>
         return scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     }
 
+    /// <summary>
+    /// Clears all data from every table, restoring the database to a clean
+    /// schema-only state. Call this between tests to prevent intra-class
+    /// data leakage.
+    /// </summary>
+    public async Task ResetDatabaseAsync()
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
+        db.PollingLogs.RemoveRange(db.PollingLogs);
+        db.DeviceReadings.RemoveRange(db.DeviceReadings);
+        db.Devices.RemoveRange(db.Devices);
+        db.Hubs.RemoveRange(db.Hubs);
+        db.Customers.RemoveRange(db.Customers);
+        db.SystemInfo.RemoveRange(db.SystemInfo);
+        await db.SaveChangesAsync();
+    }
+
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
