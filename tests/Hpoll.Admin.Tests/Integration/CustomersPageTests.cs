@@ -344,5 +344,53 @@ public class CustomersPageTests : IClassFixture<HpollWebApplicationFactory>, IAs
         Assert.Contains("Show Activity Summary", html);
     }
 
+    [Fact]
+    public async Task CustomersDetail_TimezoneReadOnly_ByDefault()
+    {
+        using var db = _factory.CreateDbContext();
+        var customer = new Customer
+        {
+            Name = "TZ Readonly Customer",
+            Email = "tzreadonly@test.com",
+            TimeZoneId = "UTC",
+            Status = CustomerStatus.Active
+        };
+        db.Customers.Add(customer);
+        await db.SaveChangesAsync();
+
+        var response = await _client.GetAsync($"/Customers/Detail/{customer.Id}");
+        var html = await response.Content.ReadAsStringAsync();
+
+        // Should show read-only input and "Change Timezone" link, not a <select> dropdown
+        Assert.Contains("Change Timezone", html);
+        Assert.Contains("readonly", html);
+        Assert.DoesNotContain("Update Timezone", html);
+    }
+
+    [Fact]
+    public async Task CustomersDetail_TimezoneDropdown_ShownWhenEditTzTrue()
+    {
+        using var db = _factory.CreateDbContext();
+        var customer = new Customer
+        {
+            Name = "TZ Edit Customer",
+            Email = "tzedit@test.com",
+            TimeZoneId = "UTC",
+            Status = CustomerStatus.Active
+        };
+        db.Customers.Add(customer);
+        await db.SaveChangesAsync();
+
+        var response = await _client.GetAsync($"/Customers/Detail/{customer.Id}?editTz=true");
+        var html = await response.Content.ReadAsStringAsync();
+
+        // Should show the <select> dropdown and Update/Cancel buttons
+        Assert.Contains("<select", html);
+        Assert.Contains("Update Timezone", html);
+        Assert.Contains("Cancel", html);
+        // Should NOT show the read-only "Change Timezone" link
+        Assert.DoesNotContain("Change Timezone", html);
+    }
+
     public void Dispose() => _client.Dispose();
 }
