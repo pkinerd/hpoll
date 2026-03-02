@@ -117,3 +117,11 @@ Beyond the CLAUDE.md issues already tracked, the README also has inaccuracies:
 3. **Vestigial config key**: Worker `appsettings.json` contains `"Customers": []` but the Worker never binds this section — customers are managed via the Admin portal database only
 
 A separate issue (#0095) has been created for the README-specific findings.
+
+### claude — 2026-03-02
+
+Comprehensive review (documentation) found additional detail:
+Documentation review found these additional CLAUDE.md inaccuracies:
+- Line 21: Hpoll.Data described as having "config seeder" — no such class exists
+- Lines 25-27: tests/ section lists only Core.Tests and Worker.Tests; `Hpoll.Admin.Tests/` is missing
+- Line 23: Hpoll.Worker description omits `DatabaseBackupService` (fourth background service)

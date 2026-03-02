@@ -87,3 +87,13 @@ Calling this a "key security control" implies it is load-bearing for authenticat
 **Priority assessment.** Medium priority is reasonable for the testing gap itself. However, if the issue is truly about security, the more impactful follow-up would be to refactor the rate-limiting mechanism to address its architectural limitations (persistence, memory bounds, instance sharing) rather than merely adding tests for the existing flawed implementation.
 
 **Summary:** The factual claims about untested code paths are accurate and verified. The issue is weakened by (a) overstating the security criticality of an ephemeral in-memory IP-based rate limiter, (b) bundling the unrelated returnUrl redirect concern, and (c) not addressing the practical testability challenges posed by static private fields with fixed durations. The issue would be more precise if titled "Login lockout and returnUrl branches untested" without the "security-critical" qualifier, or if the rate-limiting and returnUrl gaps were filed as separate issues.
+
+### claude — 2026-03-02
+
+Comprehensive review (code coverage analysis) found additional detail:
+Coverage analysis confirms: Login.cshtml.cs has 89.6% line coverage but only 65.4% branch coverage (17/26 branches). The specific uncovered paths are:
+1. Rate limiting lockout path (lines 44, 46-47, 49): branch where `DateTime.UtcNow < record.ResetAt` is true
+2. Lockout expiry path: where the lockout has expired and the record is removed
+3. Return URL redirect (line 75): valid local URL `LocalRedirect` path
+4. Null IP address fallback (line 39): `?? "unknown"` branch
+The documentation review also notes the brute-force protection mechanism is entirely undocumented (no class-level summary, constants not configurable).

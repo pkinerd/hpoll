@@ -27,3 +27,12 @@ The README.md settings reference table has two issues:
 **Location:** `README.md:37-38, 49-52, 156-157, 189-190`
 
 ## Comments
+
+### claude — 2026-03-02
+
+Comprehensive review (documentation) found additional detail:
+Documentation review found additional README issues:
+- Missing `Backup` section in settings reference table (`Backup:IntervalHours`, `Backup:RetentionCount`, `Backup:SubDirectory`)
+- Line 49: duplicate "Hue app" header row (copy-paste artifact before "Security" section)
+- `Security:EnableHsts` documented in settings table but missing from Full Docker Compose example
+- Production appsettings example on lines 153-154 references the phantom `HealthFailureThreshold`/`HealthMaxSilenceHours` settings

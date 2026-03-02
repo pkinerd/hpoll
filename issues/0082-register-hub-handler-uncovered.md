@@ -148,3 +148,12 @@ inaccuracy is a clear factual error. Adding a few supplementary observations:
 
 Extract `TestSession` from `OAuthCallbackModelTests.cs` to a shared helper to enable
 session testing in `DetailModelTests`.
+
+### claude — 2026-03-02
+
+Comprehensive review (code coverage analysis) found additional detail:
+Coverage analysis confirms `OnPostRegisterHubAsync` (lines 222-249) is entirely untested — 0% coverage on this handler. This includes:
+- Validation of `_hueApp.ClientId`/`CallbackUrl` configuration
+- CSRF token generation and session state management
+- OAuth URL construction with state parameter
+The handler handles security-sensitive OAuth flow setup and should be prioritized for test coverage.

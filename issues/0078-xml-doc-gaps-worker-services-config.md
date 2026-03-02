@@ -167,3 +167,15 @@ Comprehensive review (documentation) found this is the most impactful documentat
 **Service implementations:** All four BackgroundService implementations (`PollingService`, `TokenRefreshService`, `EmailSchedulerService`, `DatabaseBackupService`) have no class-level summaries. Their `internal` methods exposed for testing are also undocumented. `HueApiClient` lacks documentation on the distinction between local CLIP v2 endpoints and the remote API proxy (`api.meethue.com/route/...`).
 
 **Constants:** `HubStatus.NeedsReauth` state and its implications are undocumented. The relationship between `DeviceTypes` and `ReadingTypes` is unclear.
+
+### claude — 2026-03-02
+
+Comprehensive review (documentation) found additional detail:
+Documentation review identified specific gaps across multiple areas:
+- `IEmailSender` interface: zero XML doc comments (both overloads undocumented)
+- `ISystemInfoService` interface: zero XML doc comments (3 methods undocumented)
+- All configuration classes in `CustomerConfig.cs`: zero XML docs on 7 classes (~35 properties)
+- All 5 Worker background services: no class-level `<summary>` tags
+- `EmailRenderer`: 329-line class with no class or method documentation
+- `HpollDbContext.OnModelCreating`: no docs explaining index purposes
+- All entity classes: inline comments exist but not as XML doc tags
