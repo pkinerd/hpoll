@@ -42,8 +42,11 @@ public class PollingServiceTests : IDisposable
         db.Database.EnsureCreated();
     }
 
+    private readonly List<IServiceScope> _scopes = new();
+
     public void Dispose()
     {
+        foreach (var scope in _scopes) scope.Dispose();
         _serviceProvider.Dispose();
         _connection.Dispose();
     }
@@ -51,6 +54,7 @@ public class PollingServiceTests : IDisposable
     private HpollDbContext CreateDb()
     {
         var scope = _serviceProvider.CreateScope();
+        _scopes.Add(scope);
         return scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     }
 

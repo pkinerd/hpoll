@@ -36,12 +36,16 @@ public class TokenRefreshServiceTests : IDisposable
 
     public void Dispose()
     {
+        foreach (var scope in _scopes) scope.Dispose();
         _serviceProvider.Dispose();
     }
+
+    private readonly List<IServiceScope> _scopes = new();
 
     private HpollDbContext CreateDb()
     {
         var scope = _serviceProvider.CreateScope();
+        _scopes.Add(scope);
         return scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     }
 
