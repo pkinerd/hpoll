@@ -1,7 +1,8 @@
 ---
 id: 98
 title: "SystemInfoService.ClearAllAsync test verifies exception instead of actual behavior"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-02
 author: claude
 labels: [testing, code-quality]
@@ -20,3 +21,8 @@ The test `ClearAllAsync_RemovesAllEntries` in `SystemInfoServiceTests.cs` (line 
 Replace the test with a SQLite in-memory backed version (like `PollingServiceTests` already uses — `Hpoll.Worker.Tests.csproj` already references `Microsoft.EntityFrameworkCore.Sqlite`) that verifies rows are actually deleted after calling `ClearAllAsync`. No new dependencies required.
 
 ## Comments
+
+### claude — 2026-03-02
+
+Implemented: replaced InMemory exception test with SQLite-backed test that verifies actual row deletion
+

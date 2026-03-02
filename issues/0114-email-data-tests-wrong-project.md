@@ -29,3 +29,8 @@ Tests for `Hpoll.Email` classes are located in `Hpoll.Core.Tests`, and a `Hpoll.
 Create `Hpoll.Email.Tests` and move `EmailRendererTests.cs` and `SesEmailSenderTests.cs` there. The `HubExtensions` placement is more defensible since it bridges Core and Data types. Consider moving `DbContextModelTests` to a `Hpoll.Data.Tests` project if the Data layer grows. Low priority since tests exist and provide good coverage — this is organizational only.
 
 ## Comments
+
+### claude — 2026-03-02
+
+Skipping: Moving tests between projects is a structural reorganization that doesn't improve test quality or coverage. The existing tests work correctly in their current locations despite the organizational inconsistency.
+

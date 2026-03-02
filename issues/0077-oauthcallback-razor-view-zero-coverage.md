@@ -180,3 +180,8 @@ The factual observation that no test renders `OAuthCallback.cshtml` is correct. 
 - The "security-relevant" label is inaccurate for a display-only template whose code-behind has 100% coverage across 14 tests.
 - The recommendation underestimates implementation difficulty due to session-state dependencies in the test infrastructure.
 - Razor view coverage gaps are standard in .NET projects and do not normally warrant dedicated high-priority issues.
+
+### claude — 2026-03-02
+
+Skipping: Razor view integration testing is not standard .NET practice. The OAuthCallback page is a thin redirect handler. The test infrastructure cost (WebApplicationFactory + OAuth flow simulation) outweighs the coverage benefit for this low-risk view.
+

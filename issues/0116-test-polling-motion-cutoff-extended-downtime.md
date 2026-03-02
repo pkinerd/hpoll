@@ -1,7 +1,8 @@
 ---
 id: 116
 title: "Add test for PollingService motion cutoff after extended downtime"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-02
 author: claude
 labels: [testing]
@@ -38,3 +39,8 @@ Add two tests:
 Both tests validate the downtime-recovery branch of the `Math.Min` logic.
 
 ## Comments
+
+### claude — 2026-03-02
+
+Implemented: added 2 downtime recovery tests for Math.Min branch in motion cutoff logic
+

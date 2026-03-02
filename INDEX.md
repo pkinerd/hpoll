@@ -82,36 +82,36 @@
 | [0078](issues/0078-xml-doc-gaps-worker-services-config.md) | XML doc gaps remain on Worker services and configuration classes | open | low | documentation |
 | [0079](issues/0079-vacuum-into-sql-injection-risk.md) | VACUUM INTO uses string interpolation creating SQL injection risk | open | low | security |
 | [0080](issues/0080-claude-md-project-structure-inaccuracies.md) | CLAUDE.md project structure has multiple inaccuracies | closed | medium | documentation |
-| [0081](issues/0081-login-rate-limiting-lockout-untested.md) | Login rate-limiting lockout path is untested (security-critical) | open | high | testing, security |
-| [0082](issues/0082-register-hub-handler-uncovered.md) | OnPostRegisterHubAsync OAuth handler entirely uncovered by tests | open | medium | testing, security |
+| [0081](issues/0081-login-rate-limiting-lockout-untested.md) | Login rate-limiting lockout path is untested (security-critical) | closed | high | testing, security |
+| [0082](issues/0082-register-hub-handler-uncovered.md) | OnPostRegisterHubAsync OAuth handler entirely uncovered by tests | closed | medium | testing, security |
 | [0083](issues/0083-misleading-motion-report-changed-comment.md) | Misleading HueMotionReport.Changed XML doc comment | closed | medium | documentation |
 | [0084](issues/0084-loginmodel-tests-global-env-isolation.md) | LoginModel tests use global Environment creating test isolation risk | open | medium | testing, code-quality |
 | [0085](issues/0085-cookie-auth-no-absolute-expiration.md) | Cookie authentication lacks absolute session expiration | open | low | security |
 | [0086](issues/0086-hue-api-error-bodies-logged.md) | Hue API error response bodies logged with potential sensitive data | open | low | security |
 | [0087](issues/0087-pollingservice-executeasync-loop-untested.md) | PollingService.ExecuteAsync main service loop has no test coverage | open | medium | testing |
-| [0088](issues/0088-pollingservicetests-createdb-leaks-scopes.md) | PollingServiceTests.CreateDb() leaks service scopes | open | low | testing, code-quality |
-| [0090](issues/0090-integration-tests-share-database-state.md) | Integration tests share intra-class database state creating fragile tests | open | medium | testing, code-quality |
+| [0088](issues/0088-pollingservicetests-createdb-leaks-scopes.md) | PollingServiceTests.CreateDb() leaks service scopes | closed | low | testing, code-quality |
+| [0090](issues/0090-integration-tests-share-database-state.md) | Integration tests share intra-class database state creating fragile tests | closed | medium | testing, code-quality |
 | [0091](issues/0091-databasebackupservice-error-paths-untested.md) | DatabaseBackupService error handling paths untested | open | low | testing |
 | [0094](issues/0094-oauth-registration-flow-lacks-architectural-docs.md) | OAuth hub registration flow lacks architectural documentation | closed | low | documentation |
 | [0095](issues/0095-readme-phantom-settings-and-duplicate-header.md) | README references nonexistent PollingSettings and has duplicate section header | closed | medium | documentation |
 | [0096](issues/0096-token-reveal-cacheable-get.md) | Token reveal endpoint uses cacheable GET request | open | low | security |
 | [0097](issues/0097-setup-mode-hash-generator-exposed.md) | Setup mode hash generator lacks server-side guard when password already configured | open | low | enhancement |
-| [0098](issues/0098-clearallasync-test-wrong-behavior.md) | SystemInfoService.ClearAllAsync test verifies exception instead of actual behavior | open | low | testing, code-quality |
-| [0099](issues/0099-emailscheduler-renderer-failure-untested.md) | EmailSchedulerService lacks test for renderer failure path | open | low | testing |
-| [0100](issues/0100-exchange-auth-code-error-untested.md) | ExchangeAuthorizationCodeAsync error path has no test coverage | open | low | testing |
+| [0098](issues/0098-clearallasync-test-wrong-behavior.md) | SystemInfoService.ClearAllAsync test verifies exception instead of actual behavior | closed | low | testing, code-quality |
+| [0099](issues/0099-emailscheduler-renderer-failure-untested.md) | EmailSchedulerService lacks test for renderer failure path | closed | low | testing |
+| [0100](issues/0100-exchange-auth-code-error-untested.md) | ExchangeAuthorizationCodeAsync error path has no test coverage | closed | low | testing |
 | [0102](issues/0102-tokenrefresh-executeasync-untested.md) | TokenRefreshService.ExecuteAsync outer exception catch untested | open | low | testing |
-| [0103](issues/0103-tokenrefresh-boundary-test-flaky.md) | TokenRefreshService boundary test has overly weak assertion | open | low | testing, code-quality |
+| [0103](issues/0103-tokenrefresh-boundary-test-flaky.md) | TokenRefreshService boundary test has overly weak assertion | closed | low | testing, code-quality |
 | [0104](issues/0104-customer-detail-error-success-styling.md) | Customer Detail error message displayed with success styling | open | low | bug |
 | [0105](issues/0105-email-renderer-incomplete-html-encoding.md) | Timezone display name not HTML-encoded in email renderer | open | low | security |
 | [0106](issues/0106-hueapiclient-intermediate-string-deserialization.md) | HueApiClient deserializes JSON via intermediate string allocation | open | low | enhancement, performance |
-| [0107](issues/0107-backup-test-task-delay-timing.md) | DatabaseBackupService test uses Task.Delay for timestamp separation | open | low | testing, code-quality |
+| [0107](issues/0107-backup-test-task-delay-timing.md) | DatabaseBackupService test uses Task.Delay for timestamp separation | closed | low | testing, code-quality |
 | [0108](issues/0108-unused-customers-config-appsettings.md) | Unused Customers configuration key in appsettings.json | open | low | code-quality |
 | [0109](issues/0109-emailrenderer-dbcontext-tight-coupling.md) | EmailRenderer directly references DbContext rather than abstraction | open | low | enhancement, code-quality |
 | [0110](issues/0110-background-service-loop-duplication.md) | SystemInfo metric update pattern duplicated across 3 background services | open | low | enhancement, code-quality |
 | [0111](issues/0111-devicereading-readingtype-composite-index.md) | Consider composite index on DeviceReading for ReadingType filtering | open | low | enhancement, performance |
 | [0112](issues/0112-backup-counter-drift-after-pruning.md) | DatabaseBackupService total backups counter produces meaningless hybrid value | open | low | bug, code-quality |
 | [0114](issues/0114-email-data-tests-wrong-project.md) | Email and Data tests placed in unrelated test projects | open | low | testing, code-quality |
-| [0116](issues/0116-test-polling-motion-cutoff-extended-downtime.md) | Add test for PollingService motion cutoff after extended downtime | open | medium | testing |
+| [0116](issues/0116-test-polling-motion-cutoff-extended-downtime.md) | Add test for PollingService motion cutoff after extended downtime | closed | medium | testing |
 | [0120](issues/0120-admin-missing-asnotracking.md) | Missing AsNoTracking on read-only Admin queries wastes change-tracker memory | open | low | enhancement, performance |
 | [0121](issues/0121-admin-missing-exception-handler.md) | Admin portal lacks UseExceptionHandler middleware for production errors | open | low | enhancement |
 | [0122](issues/0122-about-page-info-leakage.md) | About page exposes detailed system and deployment information | open | low | security |

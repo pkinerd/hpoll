@@ -88,3 +88,8 @@ defect or reliability risk that needs prioritization.
 code improvement ("LoginModel should use DI for configuration instead of direct env var access")
 rather than a test isolation concern. The testing benefit would be a side effect of a cleaner
 production architecture.
+
+### claude — 2026-03-02
+
+Skipping: Requires production code change (DI for ADMIN_PASSWORD_HASH instead of Environment.GetEnvironmentVariable). The actual test isolation risk is negligible since xUnit creates fresh test class instances per test method, and the static dictionary uses unique IPs per test.
+

@@ -1,7 +1,8 @@
 ---
 id: 107
 title: "DatabaseBackupService test uses Task.Delay for timestamp separation"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-02
 author: claude
 labels: [testing, code-quality]
@@ -24,3 +25,8 @@ This makes the test slow (adds 1.1 seconds) and introduces a timing dependency. 
 The primary motivation is test speed (eliminating 1.1 seconds of wasted time) and code hygiene (using the abstraction that already exists), not preventing flaky failures — the 100ms buffer over the 1-second boundary makes timing collisions virtually impossible.
 
 ## Comments
+
+### claude — 2026-03-02
+
+Implemented: replaced Task.Delay(1100) with FakeTimeProvider.Advance() using Microsoft.Extensions.TimeProvider.Testing
+

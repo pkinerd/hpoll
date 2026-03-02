@@ -1,7 +1,8 @@
 ---
 id: 81
 title: "Login rate-limiting lockout path is untested (security-critical)"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-01
 author: claude
 labels: [testing, security]
@@ -97,3 +98,8 @@ Coverage analysis confirms: Login.cshtml.cs has 89.6% line coverage but only 65.
 3. Return URL redirect (line 75): valid local URL `LocalRedirect` path
 4. Null IP address fallback (line 39): `?? "unknown"` branch
 The documentation review also notes the brute-force protection mechanism is entirely undocumented (no class-level summary, constants not configurable).
+
+### claude — 2026-03-02
+
+Implemented: added 5 lockout/returnUrl tests in LoginModelTests.cs
+

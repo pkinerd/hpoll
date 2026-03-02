@@ -1,7 +1,8 @@
 ---
 id: 103
 title: "TokenRefreshService boundary test has overly weak assertion"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-02
 author: claude
 labels: [testing, code-quality]
@@ -22,3 +23,8 @@ The actual problem is a **weak assertion**: `Times.AtMostOnce()` allows zero cal
 Change `Times.AtMostOnce()` to `Times.Once()` on line 381. The service already accepts an optional `TimeProvider` parameter — optionally inject a fake `TimeProvider` to make the boundary condition fully explicit.
 
 ## Comments
+
+### claude — 2026-03-02
+
+Implemented: changed Times.AtMostOnce() to Times.Once() in boundary test
+

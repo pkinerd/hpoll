@@ -1,7 +1,8 @@
 ---
 id: 82
 title: "OnPostRegisterHubAsync OAuth handler entirely uncovered by tests"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-01
 author: claude
 labels: [testing, security]
@@ -157,3 +158,8 @@ Coverage analysis confirms `OnPostRegisterHubAsync` (lines 222-249) is entirely 
 - CSRF token generation and session state management
 - OAuth URL construction with state parameter
 The handler handles security-sensitive OAuth flow setup and should be prioritized for test coverage.
+
+### claude — 2026-03-02
+
+Implemented: added 4 OnPostRegisterHubAsync tests in DetailModelTests.cs
+

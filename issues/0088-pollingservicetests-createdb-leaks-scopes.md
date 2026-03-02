@@ -1,7 +1,8 @@
 ---
 id: 88
 title: "PollingServiceTests.CreateDb() leaks service scopes"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-02
 author: claude
 labels: [testing, code-quality]
@@ -41,3 +42,8 @@ private (IServiceScope Scope, HpollDbContext Db) CreateDb()
 **Location:** `tests/Hpoll.Worker.Tests/PollingServiceTests.cs:51-55`
 
 ## Comments
+
+### claude — 2026-03-02
+
+Implemented: fixed scope leaks in CreateDb() helpers across 4 test files using scope tracking list
+

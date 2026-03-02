@@ -1,7 +1,8 @@
 ---
 id: 90
 title: "Integration tests share database state creating fragile tests"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-02
 author: claude
 labels: [testing, code-quality]
@@ -25,3 +26,8 @@ Additionally, `EmailRendererTests` uses `UseInMemoryDatabase` (EF Core in-memory
 **Location:** `tests/Hpoll.Admin.Tests/Integration/HpollWebApplicationFactory.cs`
 
 ## Comments
+
+### claude — 2026-03-02
+
+Implemented: added ResetDatabaseAsync() to HpollWebApplicationFactory with IAsyncLifetime in 4 integration test classes
+

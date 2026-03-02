@@ -80,3 +80,8 @@ The issue recommends injecting a mock `IEmailRenderer` that throws, then verifyi
 - **The ROI is very low.** The code under test is identical in structure to the equivalent paths in `TokenRefreshService` (lines 65-68) and `PollingService` (lines 70-73), which were explicitly left untested when those issues (#32, #36) were closed in commit f142a28. Testing this one instance while leaving the other two untested would be inconsistent.
 
 **Recommendation:** Close as won't-fix. The error path is trivial boilerplate with no branching logic. The testing approach would reintroduce the `StartAsync`/`StopAsync` timing-dependent test style that was deliberately removed. All three BackgroundService `ExecuteAsync` error paths follow the same pattern and were left untested as a deliberate project decision. If the pattern ever grows more complex (e.g., exponential backoff, circuit breaker, error classification), testing would become warranted at that point.
+
+### claude — 2026-03-02
+
+Skipping: ExecuteAsync error retry path is standard BackgroundService boilerplate (11 lines). Prior review recommended closing as won't-fix. Sibling issues #0032/#0036 were deliberately closed without testing this pattern per commit f142a28.
+

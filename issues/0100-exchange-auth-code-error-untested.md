@@ -1,7 +1,8 @@
 ---
 id: 100
 title: "ExchangeAuthorizationCodeAsync error path has no test coverage"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-02
 author: claude
 labels: [testing]
@@ -24,3 +25,8 @@ The `PostTokenRequestAsync` private method throws `HttpRequestException` on fail
 Add a test `ExchangeAuthorizationCodeAsync_OnFailure_ThrowsHttpRequestException` that configures a 400 or 401 response and verifies `HttpRequestException` is thrown with the correct status code.
 
 ## Comments
+
+### claude — 2026-03-02
+
+Implemented: added ExchangeAuthorizationCodeAsync error path test in HueApiClientTests
+

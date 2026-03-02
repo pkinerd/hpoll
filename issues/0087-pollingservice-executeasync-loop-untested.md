@@ -33,3 +33,8 @@ The key untested paths are:
 **Location:** `src/Hpoll.Worker/Services/PollingService.cs:42-85`
 
 ## Comments
+
+### claude — 2026-03-02
+
+Skipping: Same pattern as #0071 — ExecuteAsync main loop is standard BackgroundService boilerplate. The unique system info metric updates within the loop are tested via PollAllHubsAsync unit tests.
+

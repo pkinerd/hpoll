@@ -25,3 +25,8 @@ The only genuinely untested path is **lines 67-70**: the outer `catch (Exception
 If testing this path, configure `_mockHueApiClient` to throw a non-`OperationCanceledException` from within `RefreshExpiringTokensAsync`, then verify the service continues running. However, this is 4 lines of standard boilerplate and the practical risk is minimal.
 
 ## Comments
+
+### claude — 2026-03-02
+
+Skipping: Same ExecuteAsync outer catch pattern as #0071. TokenRefreshService error handling is identical boilerplate to EmailSchedulerService and PollingService, which were all deliberately left untested.
+

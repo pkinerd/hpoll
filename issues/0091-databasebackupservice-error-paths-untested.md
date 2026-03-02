@@ -27,3 +27,8 @@ All uncovered paths are purely defensive — they log the error and continue ope
 **Location:** `src/Hpoll.Worker/Services/DatabaseBackupService.cs:64-70, 101-104, 134-141, 190-203`
 
 ## Comments
+
+### claude — 2026-03-02
+
+Skipping: DatabaseBackupService error handling paths are catch-log-continue blocks identical to the pattern in #0071/#0087. These were deliberately left untested as a project design decision.
+

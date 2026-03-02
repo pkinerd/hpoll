@@ -1,7 +1,8 @@
 ---
 id: 99
 title: "EmailSchedulerService lacks test for renderer failure path"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-02
 author: claude
 labels: [testing]
@@ -25,3 +26,8 @@ Add a test that configures `_mockRenderer` to throw on the first customer and su
 3. The first customer's `NextSendTimeUtc` was still advanced (to prevent retry loops)
 
 ## Comments
+
+### claude — 2026-03-02
+
+Implemented: added renderer failure path test verifying sender is skipped and NextSendTimeUtc still advances
+
