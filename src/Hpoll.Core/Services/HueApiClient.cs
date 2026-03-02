@@ -11,7 +11,9 @@ namespace Hpoll.Core.Services;
 
 public class HueApiClient : IHueApiClient
 {
+    /// <summary>CLIP v2 API via the Hue cloud-to-bridge proxy. The /route/ prefix proxies requests through the Hue cloud to the local bridge.</summary>
     private const string ClipV2BaseUrl = "https://api.meethue.com/route/clip/v2";
+    /// <summary>Remote API base for v1-style endpoints (e.g. link button, app registration). CLIP v2 has no equivalent for these operations.</summary>
     private const string RemoteApiBaseUrl = "https://api.meethue.com/route";
     private const string TokenUrl = "https://api.meethue.com/v2/oauth2/token";
     private const string HttpClientName = "HueApi";

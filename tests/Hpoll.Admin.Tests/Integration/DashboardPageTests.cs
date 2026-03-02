@@ -6,7 +6,7 @@ using Hpoll.Data.Entities;
 
 namespace Hpoll.Admin.Tests.Integration;
 
-public class DashboardPageTests : IClassFixture<HpollWebApplicationFactory>, IDisposable
+public class DashboardPageTests : IClassFixture<HpollWebApplicationFactory>, IAsyncLifetime, IDisposable
 {
     private readonly HpollWebApplicationFactory _factory;
     private readonly HttpClient _client;
@@ -16,6 +16,9 @@ public class DashboardPageTests : IClassFixture<HpollWebApplicationFactory>, IDi
         _factory = factory;
         _client = _factory.CreateClient();
     }
+
+    public async Task InitializeAsync() => await _factory.ResetDatabaseAsync();
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task Dashboard_ReturnsSuccessAndContainsTitle()
@@ -193,12 +196,11 @@ public class DashboardPageTests : IClassFixture<HpollWebApplicationFactory>, IDi
     [Fact]
     public async Task Dashboard_ShowsNoPollActivityMessage_WhenEmpty()
     {
-        // If all logs are from other tests, this may still contain entries.
-        // Just verify the section header is present.
         var response = await _client.GetAsync("/");
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Contains("Recent Polling Activity", html);
+        Assert.Contains("No polling activity yet", html);
     }
 
     public void Dispose() => _client.Dispose();

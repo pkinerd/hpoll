@@ -66,8 +66,8 @@ public class HueMotionData
 /// <summary>
 /// Motion sensor report. <see cref="Motion"/> indicates whether motion is currently
 /// detected. <see cref="Changed"/> is the last time the <c>motion</c> property value
-/// changed (not when motion was first detected). The sensor returns to <c>false</c>
-/// after its configured timeout period.
+/// changed (transitions both to <c>true</c> and back to <c>false</c>). The sensor
+/// may return to <c>false</c> after a device-specific cooldown period.
 /// </summary>
 public class HueMotionReport
 {

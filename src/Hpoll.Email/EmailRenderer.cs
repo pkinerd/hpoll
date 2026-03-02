@@ -13,6 +13,9 @@ using System.Text.Json;
 
 public class EmailRenderer : IEmailRenderer
 {
+    /// <summary>Minimum minutes of data required to display the newest time window; windows with less data are omitted as likely incomplete.</summary>
+    private const int MinimumWindowDisplayMinutes = 60;
+
     private readonly HpollDbContext _db;
     private readonly ILogger<EmailRenderer> _logger;
     private readonly EmailSettings _emailSettings;
@@ -165,8 +168,8 @@ public class EmailRenderer : IEmailRenderer
 
         windows.Reverse(); // newest window first for readability
 
-        // Omit the newest window if it has less than 60 minutes of data (likely incomplete)
-        if (windows.Count > 0 && (windows[0].DisplayEndLocal - windows[0].WindowStartLocal).TotalMinutes < 60)
+        // Omit the newest window if it has less than the minimum threshold of data (likely incomplete)
+        if (windows.Count > 0 && (windows[0].DisplayEndLocal - windows[0].WindowStartLocal).TotalMinutes < MinimumWindowDisplayMinutes)
         {
             _logger.LogInformation(
                 "Omitting newest window {Label} for customer {CustomerId} — only {Minutes:F0} minutes of data",
