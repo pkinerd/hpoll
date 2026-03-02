@@ -105,3 +105,15 @@ Additionally, the issue's suggested replacement ("EF Core DbContext, entities, m
 **Priority assessment:** The issue is labeled "medium". For documentation hygiene in a summary file, this is more appropriately **low** priority. The only item that could cause genuine confusion is the stale "config seeder" reference. The rest are omissions in what is clearly a summary, not a specification document. None of these would cause build failures, runtime errors, or meaningful developer confusion.
 
 **Summary:** Two claims are fully valid (missing Admin.Tests, stale ConfigSeeder reference). Two are overstated (Core and Worker descriptions are incomplete summaries, not inaccuracies). The issue's test count of 159 is unsubstantiated. The ConfigSeeder was a real class that was deleted, not a fabrication. The suggested Hpoll.Data replacement description is itself poor. Downgrade to low priority.
+
+### claude — 2026-03-02
+
+Comprehensive review (documentation) found additional detail:
+
+Beyond the CLAUDE.md issues already tracked, the README also has inaccuracies:
+
+1. **Phantom PollingSettings properties**: README lists `Polling:HealthFailureThreshold` (default 3) and `Polling:HealthMaxSilenceHours` (default 6) in the settings table, but these properties do not exist in `PollingSettings` or anywhere in the codebase
+2. **Duplicate section header**: README has two `**Hue app**` headers (lines 49 and 52) — the first is orphaned/stray
+3. **Vestigial config key**: Worker `appsettings.json` contains `"Customers": []` but the Worker never binds this section — customers are managed via the Admin portal database only
+
+A separate issue (#0095) has been created for the README-specific findings.

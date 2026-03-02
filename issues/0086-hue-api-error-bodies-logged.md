@@ -88,3 +88,14 @@ The issue correctly identifies that HueApiClient logs error response bodies at W
 - Acknowledge the overlap with #64's analysis
 - Simplify the recommendation to just: move response body logging from Warning to Debug level
 - Consider closing as a duplicate of the logging hygiene concern already documented in #64's comments
+
+### claude — 2026-03-02
+
+Comprehensive review (security) found additional detail:
+
+Beyond the Hue API error bodies, there is also PII exposure in logs:
+
+- **EmailSchedulerService** (lines 143, 189): Customer email addresses are logged in full when emails are sent or fail
+- **SesEmailSender** (lines 59, 63): Email addresses logged on send success and failure
+
+While useful for debugging, full email addresses constitute PII that may flow to centralized logging systems. Consider masking addresses in logs (e.g., `j***@example.com`) or using customer IDs only.

@@ -88,3 +88,9 @@
 | [0084](issues/0084-loginmodel-tests-global-env-isolation.md) | LoginModel tests use global Environment creating test isolation risk | open | medium | testing, code-quality |
 | [0085](issues/0085-cookie-auth-no-absolute-expiration.md) | Cookie authentication lacks absolute session expiration | open | low | security |
 | [0086](issues/0086-hue-api-error-bodies-logged.md) | Hue API error response bodies logged with potential sensitive data | open | low | security |
+| [0087](issues/0087-pollingservice-executeasync-loop-untested.md) | PollingService.ExecuteAsync main service loop has no test coverage | open | medium | testing |
+| [0088](issues/0088-pollingservicetests-createdb-leaks-scopes.md) | PollingServiceTests.CreateDb() leaks service scopes | open | low | testing, code-quality |
+| [0090](issues/0090-integration-tests-share-database-state.md) | Integration tests share intra-class database state creating fragile tests | open | medium | testing, code-quality |
+| [0091](issues/0091-databasebackupservice-error-paths-untested.md) | DatabaseBackupService error handling paths untested | open | low | testing |
+| [0094](issues/0094-oauth-registration-flow-lacks-architectural-docs.md) | OAuth hub registration flow lacks architectural documentation | open | low | documentation |
+| [0095](issues/0095-readme-phantom-settings-and-duplicate-header.md) | README references nonexistent PollingSettings and has duplicate section header | open | medium | documentation |

@@ -166,3 +166,9 @@ The core claim -- that duplicated activity window aggregation logic exists betwe
 The "high" priority is not justified. Issue #9 was deliberately deferred -- its second comment explicitly states: "The duplication, while not ideal, is stable and well-tested. Deferring until there's a stronger driver for the refactor." This issue (#75) reopens the same concern without citing any new driver -- no bugs caused by the duplication, no new consumer of the logic, no drift between the two implementations. The duplication is a maintenance risk, not an active problem. **Medium** priority would be appropriate.
 
 Furthermore, this issue is effectively a duplicate of #9. Issue #9 was not "closed as resolved" -- it was deferred. Creating a new issue number for the same concern obscures the history and loses the valuable context in #9's comments (which describe the consolidation plan from #11 and #56 and the explicit deferral rationale). The appropriate action would have been to reopen #9 with a comment explaining why the deferral should be revisited.
+
+### claude — 2026-03-02
+
+Comprehensive review (code quality) found additional detail:
+
+The code quality review independently rated this as **high severity** (not low). The duplication between `EmailRenderer.RenderDailySummaryAsync` (lines 27-178) and `DetailModel.LoadActivitySummaryAsync` (lines 272-358) remains extensive — both methods compute identical bucket windows, query the same hub/device/reading chains, use identical JSON parsing lambdas for motion and temperature, and compute the same aggregates (devicesWithMotion, totalMotionEvents, temperature min/median/max). The JSON parsing lambdas alone appear 4+ times across both files. This is the single highest-impact code quality issue in the codebase.

@@ -139,3 +139,18 @@ Issue #38's comments contain a detailed "LOW_VALUE" assessment arguing that blan
 The issue presents two properties as confusingly named, but there are actually three: `BatteryAlertThreshold` (60), `BatteryLevelWarning` (50), `BatteryLevelCritical` (30). This trio forms a clear three-tier system for email rendering. All three are already documented in README.md lines 42-44 with descriptions explaining their distinct roles. The issue's framing of "what's the difference?" is answered by the README.
 
 **Revised scope:** The only genuinely actionable item remaining is `HpollDbContext` index rationale inline comments. Everything else is either already documented (README, `.env.example`), self-documenting (interfaces with descriptive signatures), or low-value for an internal project. The phantom README properties are a separate, higher-priority issue.
+
+### claude — 2026-03-02
+
+Comprehensive review (documentation) found additional detail:
+
+A thorough documentation review identified 21 specific missing-docs findings. Key gaps that remain:
+
+- **All 7 Configuration/Options classes** (`HpollSettings`, `CustomerConfig`, `HubConfig`, `PollingSettings`, `EmailSettings`, `HueAppSettings`, `BackupSettings`) have zero XML doc comments on any class or property
+- **All 5 Background Services** (`PollingService`, `TokenRefreshService`, `EmailSchedulerService`, `DatabaseBackupService`, `SystemInfoService`) have no class-level docs and no method-level docs on key methods
+- **All Admin page models** except `OAuthCallbackModel` lack class-level docs
+- **EmailRenderer** and **SesEmailSender** have no class-level docs
+- **No `<param>` tags exist anywhere** in the codebase — even the well-documented `IHueApiClient` methods lack parameter documentation
+- **No `<exception>` tags exist anywhere** — callers cannot determine exception behavior from interfaces alone
+- **HueTokenResponse** class has no docs (unclear that `ExpiresIn` is seconds, `TokenType` is "Bearer")
+- **Constants classes** (`CustomerStatus`, `DeviceTypes`, `HubStatus`, `ReadingTypes`) lack docs — `HubStatus` state machine is entirely undocumented
