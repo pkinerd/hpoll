@@ -6,7 +6,7 @@ using Hpoll.Data.Entities;
 
 namespace Hpoll.Admin.Tests.Integration;
 
-public class HubsPageTests : IClassFixture<HpollWebApplicationFactory>, IDisposable
+public class HubsPageTests : IClassFixture<HpollWebApplicationFactory>, IAsyncLifetime, IDisposable
 {
     private readonly HpollWebApplicationFactory _factory;
     private readonly HttpClient _client;
@@ -16,6 +16,9 @@ public class HubsPageTests : IClassFixture<HpollWebApplicationFactory>, IDisposa
         _factory = factory;
         _client = _factory.CreateClient();
     }
+
+    public async Task InitializeAsync() => await _factory.ResetDatabaseAsync();
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task HubDetail_ReturnsSuccessForExistingHub()

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
 using Moq;
@@ -157,5 +158,107 @@ public class LoginModelTests : IDisposable
 
         Assert.IsType<PageResult>(result);
         Assert.Contains("required", model.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task OnPostAsync_LockoutAfterMaxFailedAttempts()
+    {
+        Environment.SetEnvironmentVariable("ADMIN_PASSWORD_HASH", _testHash);
+
+        // Use a unique IP to avoid cross-test interference (static dictionary)
+        var ip = "10.0.0.1";
+
+        // Submit 5 wrong passwords
+        for (int i = 0; i < 5; i++)
+        {
+            var model = CreatePageModel(ip);
+            await model.OnPostAsync("wrongpassword");
+        }
+
+        // 6th attempt should be locked out
+        var lockedModel = CreatePageModel(ip);
+        var result = await lockedModel.OnPostAsync("wrongpassword");
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal("Too many failed attempts. Please try again later.", lockedModel.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task OnPostAsync_LockoutDoesNotAffectOtherIps()
+    {
+        Environment.SetEnvironmentVariable("ADMIN_PASSWORD_HASH", _testHash);
+
+        var lockedIp = "10.0.0.2";
+        var freeIp = "10.0.0.3";
+
+        // Lock out one IP
+        for (int i = 0; i < 5; i++)
+        {
+            var model = CreatePageModel(lockedIp);
+            await model.OnPostAsync("wrongpassword");
+        }
+
+        // Another IP should still be able to attempt login
+        var freeModel = CreatePageModel(freeIp);
+        var result = await freeModel.OnPostAsync("wrongpassword");
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal("Invalid password.", freeModel.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task OnPostAsync_CorrectPasswordWithReturnUrl_RedirectsToReturnUrl()
+    {
+        Environment.SetEnvironmentVariable("ADMIN_PASSWORD_HASH", _testHash);
+
+        var model = CreatePageModel("10.0.0.4");
+        model.PageContext.HttpContext.Request.QueryString = new QueryString("?ReturnUrl=/Customers");
+
+        var urlHelper = new Mock<IUrlHelper>();
+        urlHelper.Setup(u => u.IsLocalUrl("/Customers")).Returns(true);
+        model.Url = urlHelper.Object;
+
+        var result = await model.OnPostAsync("correctpassword");
+
+        var redirect = Assert.IsType<LocalRedirectResult>(result);
+        Assert.Equal("/Customers", redirect.Url);
+    }
+
+    [Fact]
+    public async Task OnPostAsync_CorrectPasswordClearsLockoutRecord()
+    {
+        Environment.SetEnvironmentVariable("ADMIN_PASSWORD_HASH", _testHash);
+
+        var ip = "10.0.0.5";
+
+        // Submit 4 wrong passwords (just under lockout threshold)
+        for (int i = 0; i < 4; i++)
+        {
+            var model = CreatePageModel(ip);
+            await model.OnPostAsync("wrongpassword");
+        }
+
+        // Successful login clears the failed attempts
+        var successModel = CreatePageModel(ip);
+        await successModel.OnPostAsync("correctpassword");
+
+        // Should be able to fail again without hitting lockout
+        var afterModel = CreatePageModel(ip);
+        var result = await afterModel.OnPostAsync("wrongpassword");
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal("Invalid password.", afterModel.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task OnPostAsync_NullRemoteIpAddress_UsesUnknownFallback()
+    {
+        Environment.SetEnvironmentVariable("ADMIN_PASSWORD_HASH", _testHash);
+
+        var model = CreatePageModel(ipAddress: null);
+        var result = await model.OnPostAsync("wrongpassword");
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal("Invalid password.", model.ErrorMessage);
     }
 }

@@ -5,7 +5,7 @@ using Hpoll.Data.Entities;
 
 namespace Hpoll.Admin.Tests.Integration;
 
-public class AboutPageTests : IClassFixture<HpollWebApplicationFactory>, IDisposable
+public class AboutPageTests : IClassFixture<HpollWebApplicationFactory>, IAsyncLifetime, IDisposable
 {
     private readonly HpollWebApplicationFactory _factory;
     private readonly HttpClient _client;
@@ -15,6 +15,9 @@ public class AboutPageTests : IClassFixture<HpollWebApplicationFactory>, IDispos
         _factory = factory;
         _client = _factory.CreateClient();
     }
+
+    public async Task InitializeAsync() => await _factory.ResetDatabaseAsync();
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task About_ReturnsSuccessAndContainsTitle()
@@ -67,12 +70,7 @@ public class AboutPageTests : IClassFixture<HpollWebApplicationFactory>, IDispos
     [Fact]
     public async Task About_ShowsNoSystemInfoMessage_WhenWorkerNotStarted()
     {
-        // With an empty SystemInfo table, should show a message
-        using var db = _factory.CreateDbContext();
-        // Remove all SystemInfo entries
-        db.SystemInfo.RemoveRange(db.SystemInfo);
-        await db.SaveChangesAsync();
-
+        // Database is reset before each test via IAsyncLifetime, so SystemInfo is empty
         var response = await _client.GetAsync("/About");
         var html = await response.Content.ReadAsStringAsync();
 
