@@ -10,6 +10,10 @@ using Hpoll.Core.Configuration;
 using Hpoll.Core.Interfaces;
 using Hpoll.Data;
 
+/// <summary>
+/// Periodically creates SQLite database backups using VACUUM INTO and prunes old
+/// backup files beyond the configured retention count.
+/// </summary>
 public class DatabaseBackupService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;

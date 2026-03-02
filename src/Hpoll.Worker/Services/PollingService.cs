@@ -13,6 +13,11 @@ using Hpoll.Data;
 using Hpoll.Data.Entities;
 using System.Text.Json;
 
+/// <summary>
+/// Periodically polls all active Hue Bridge hubs for motion, temperature, and battery
+/// sensor data, stores readings in the database, and cleans up old data beyond the
+/// configured retention window.
+/// </summary>
 public class PollingService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;

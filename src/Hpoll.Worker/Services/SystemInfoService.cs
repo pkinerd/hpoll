@@ -7,6 +7,10 @@ using Hpoll.Core.Interfaces;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
+/// <summary>
+/// Persists key-value system information entries to the database. Used by background
+/// services to record runtime stats displayed on the admin About page.
+/// </summary>
 public class SystemInfoService : ISystemInfoService
 {
     private readonly IServiceScopeFactory _scopeFactory;

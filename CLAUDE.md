@@ -18,14 +18,15 @@ hpoll is a Philips Hue monitoring service that polls Hue Bridge hubs for motion,
 
 ```
 src/
-  Hpoll.Core/          # Interfaces, models, configuration, core services (HueApiClient)
-  Hpoll.Data/          # EF Core DbContext, entities, migrations, config seeder
-  Hpoll.Worker/        # Background services (polling, token refresh, email scheduler)
+  Hpoll.Core/          # Interfaces, models, constants, configuration, core services (HueApiClient, SendTimeHelper)
+  Hpoll.Data/          # EF Core DbContext, entities, migrations
+  Hpoll.Worker/        # Background services (polling, token refresh, email scheduler, backup, system info)
   Hpoll.Email/         # Email rendering (HTML) and SES sending
   Hpoll.Admin/         # Razor Pages web admin portal
 tests/
   Hpoll.Core.Tests/    # Unit tests for core logic
   Hpoll.Worker.Tests/  # Unit tests for worker services
+  Hpoll.Admin.Tests/   # Unit and integration tests for admin portal
 ```
 
 ## Environment Setup

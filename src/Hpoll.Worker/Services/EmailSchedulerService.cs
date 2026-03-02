@@ -12,6 +12,11 @@ using Hpoll.Core.Services;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
+/// <summary>
+/// Sends daily summary emails to active customers at their configured send times.
+/// Sleeps in short intervals and checks for due customers, advancing each customer's
+/// next send time after a successful send.
+/// </summary>
 public class EmailSchedulerService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
