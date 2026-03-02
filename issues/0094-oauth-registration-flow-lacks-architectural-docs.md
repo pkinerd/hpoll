@@ -1,7 +1,8 @@
 ---
 id: 94
 title: "OAuth hub registration flow lacks architectural documentation"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-02
 author: claude
 labels: [documentation]
@@ -27,3 +28,7 @@ The class-level `<summary>` on `OAuthCallbackModel` is good (explains `[AllowAno
 **Location:** `src/Hpoll.Core/Services/HueApiClient.cs` (URL constants), `src/Hpoll.Core/Interfaces/IHueApiClient.cs`
 
 ## Comments
+
+### claude — 2026-03-02
+
+Fixed: Added XML doc comments to ClipV2BaseUrl and RemoteApiBaseUrl constants in HueApiClient.cs explaining the /route/ proxy prefix and dual-API architecture. Expanded EnableLinkButtonAsync and RegisterApplicationAsync summaries in IHueApiClient to document why v1-style endpoints are required.

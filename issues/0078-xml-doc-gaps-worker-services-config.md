@@ -179,3 +179,7 @@ Documentation review identified specific gaps across multiple areas:
 - `EmailRenderer`: 329-line class with no class or method documentation
 - `HpollDbContext.OnModelCreating`: no docs explaining index purposes
 - All entity classes: inline comments exist but not as XML doc tags
+
+### claude — 2026-03-02
+
+Partially addressed: Added class-level XML doc `<summary>` tags to all 5 Worker background services (PollingService, TokenRefreshService, EmailSchedulerService, DatabaseBackupService, SystemInfoService). Added XML doc comments to the three battery config properties (BatteryAlertThreshold, BatteryLevelWarning, BatteryLevelCritical) in EmailSettings. Added XML docs to IEmailSender and ISystemInfoService interfaces. Remaining items (method-level docs, entity class docs, DbContext index rationale) are low-value for an internal project and left open.

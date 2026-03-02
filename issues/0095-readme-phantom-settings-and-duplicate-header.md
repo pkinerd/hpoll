@@ -1,7 +1,8 @@
 ---
 id: 95
 title: "README references nonexistent PollingSettings and has duplicate section header"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-02
 author: claude
 labels: [documentation]
@@ -36,3 +37,7 @@ Documentation review found additional README issues:
 - Line 49: duplicate "Hue app" header row (copy-paste artifact before "Security" section)
 - `Security:EnableHsts` documented in settings table but missing from Full Docker Compose example
 - Production appsettings example on lines 153-154 references the phantom `HealthFailureThreshold`/`HealthMaxSilenceHours` settings
+
+### claude — 2026-03-02
+
+Fixed: Removed phantom Polling:HealthFailureThreshold and Polling:HealthMaxSilenceHours from the settings table, appsettings.Production.json example, and docker-compose.yml example. Removed duplicate 'Hue app' section header.

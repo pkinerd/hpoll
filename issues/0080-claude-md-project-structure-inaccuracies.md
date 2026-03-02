@@ -1,7 +1,8 @@
 ---
 id: 80
 title: "CLAUDE.md project structure has multiple inaccuracies"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-01
 author: claude
 labels: [documentation]
@@ -125,3 +126,7 @@ Documentation review found these additional CLAUDE.md inaccuracies:
 - Line 21: Hpoll.Data described as having "config seeder" — no such class exists
 - Lines 25-27: tests/ section lists only Core.Tests and Worker.Tests; `Hpoll.Admin.Tests/` is missing
 - Line 23: Hpoll.Worker description omits `DatabaseBackupService` (fourth background service)
+
+### claude — 2026-03-02
+
+Fixed: Updated CLAUDE.md project structure — added Hpoll.Admin.Tests, added Constants and SendTimeHelper to Core description, removed stale 'config seeder' reference from Data description, added backup and system info to Worker description.

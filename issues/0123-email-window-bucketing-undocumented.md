@@ -1,7 +1,8 @@
 ---
 id: 123
 title: "Extract 60-minute incomplete-window threshold into named constant"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-02
 author: claude
 labels: [documentation]
@@ -23,3 +24,7 @@ Note: The window snapping formula (line 42) already has a comment ("Snap to the 
 Extract the `60` literal on line 169 into a named constant (e.g., `MinimumWindowDisplayMinutes = 60`) with a comment explaining the chosen threshold value. Note: the threshold is not architecturally coupled to `PollingSettings.IntervalMinutes` — `EmailRenderer` only depends on `EmailSettings`.
 
 ## Comments
+
+### claude — 2026-03-02
+
+Fixed: Extracted the magic number 60 into a named constant `MinimumWindowDisplayMinutes` in EmailRenderer with an XML doc comment explaining its purpose. Updated the usage site to reference the constant.

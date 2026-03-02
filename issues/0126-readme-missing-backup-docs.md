@@ -1,7 +1,8 @@
 ---
 id: 126
 title: "README missing Backup configuration documentation"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-02
 author: claude
 labels: [documentation]
@@ -28,3 +29,7 @@ Add a `**Backup**` section to the README settings reference table documenting:
 Also add `Backup__*` entries to `.env.example` and the full `docker-compose.yml` and `appsettings.Production.json` examples in the README for consistency with other settings sections.
 
 ## Comments
+
+### claude — 2026-03-02
+
+Fixed: Added Backup section to README settings reference table (IntervalHours, RetentionCount, SubDirectory). Added Backup entries to .env.example, appsettings.Production.json example, and docker-compose.yml example in README.

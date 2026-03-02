@@ -1,7 +1,8 @@
 ---
 id: 83
 title: "Misleading HueMotionReport.Changed XML doc comment"
-status: open
+status: closed
+closed: 2026-03-02
 created: 2026-03-01
 author: claude
 labels: [documentation]
@@ -60,3 +61,7 @@ The issue is labeled as "medium" priority with a "documentation" label. Given th
 - The issue overstates the problem by calling the parenthetical "incorrect" when it is more accurately "imprecise" or "misleadingly worded." The comment is trying to convey a real nuance (that `Changed` may not reflect the most recent motion-start event) but does so poorly.
 - The recommended replacement text ("transitions both to true and back to false") is a reasonable improvement but could itself be more precise by noting the practical implication for polling-based consumers.
 - Priority should be "low" rather than "medium" for a documentation-only issue with no functional impact.
+
+### claude — 2026-03-02
+
+Fixed: Revised HueMotionReport.Changed XML doc comment — replaced misleading parenthetical with 'transitions both to true and back to false' and changed 'configured timeout period' to 'device-specific cooldown period'.
