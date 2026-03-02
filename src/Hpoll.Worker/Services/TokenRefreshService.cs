@@ -11,6 +11,10 @@ using Hpoll.Core.Interfaces;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
+/// <summary>
+/// Periodically checks hub OAuth tokens and refreshes any that will expire within the
+/// configured threshold. Uses exponential backoff on refresh failures.
+/// </summary>
 public class TokenRefreshService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;

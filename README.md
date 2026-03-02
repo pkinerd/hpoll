@@ -34,8 +34,6 @@ variables use `__` (double underscore) as section separators.
 | `Polling:TokenRefreshCheckHours` | `Polling__TokenRefreshCheckHours` | `24` | Hours between token refresh checks |
 | `Polling:TokenRefreshThresholdHours` | `Polling__TokenRefreshThresholdHours` | `48` | Hours before token expiry to trigger a refresh |
 | `Polling:TokenRefreshMaxRetries` | `Polling__TokenRefreshMaxRetries` | `3` | Maximum retry attempts for token refresh |
-| `Polling:HealthFailureThreshold` | `Polling__HealthFailureThreshold` | `3` | Consecutive poll failures before a hub is flagged unhealthy |
-| `Polling:HealthMaxSilenceHours` | `Polling__HealthMaxSilenceHours` | `6` | Hours since last successful poll before a hub needs attention |
 | **Email** | | | |
 | `Email:SendTimesUtc` | `Email__SendTimesUtc__0`, `__1`, … | `["08:00"]` | List of times (UTC, `HH:mm`) to send summary emails |
 | `Email:FromAddress` | `Email__FromAddress` | _(required)_ | Sender address for daily emails (must be SES-verified) |
@@ -46,7 +44,10 @@ variables use `__` (double underscore) as section separators.
 | `Email:SummaryWindowCount` | `Email__SummaryWindowCount` | `7` | Number of time windows in the daily summary email |
 | `Email:ErrorRetryDelayMinutes` | `Email__ErrorRetryDelayMinutes` | `5` | Minutes to wait before retrying after an email scheduler error |
 | `Email:AwsRegion` | `Email__AwsRegion` | `us-east-1` | AWS region for SES |
-| **Hue app** | | | |
+| **Backup** | | | |
+| `Backup:IntervalHours` | `Backup__IntervalHours` | `24` | Hours between automatic database backups |
+| `Backup:RetentionCount` | `Backup__RetentionCount` | `7` | Maximum number of backup files to retain |
+| `Backup:SubDirectory` | `Backup__SubDirectory` | `backups` | Subdirectory within DataPath for backup files |
 | **Security** | | | |
 | `Security:EnableHsts` | `Security__EnableHsts` | `true` | Emit `Strict-Transport-Security` header. Disable for local/debug environments not behind TLS. |
 | **Hue app** | | | |
@@ -152,9 +153,12 @@ Where `appsettings.Production.json` contains:
     "HttpTimeoutSeconds": 30,
     "TokenRefreshCheckHours": 24,
     "TokenRefreshThresholdHours": 48,
-    "TokenRefreshMaxRetries": 3,
-    "HealthFailureThreshold": 3,
-    "HealthMaxSilenceHours": 6
+    "TokenRefreshMaxRetries": 3
+  },
+  "Backup": {
+    "IntervalHours": 24,
+    "RetentionCount": 7,
+    "SubDirectory": "backups"
   }
 }
 ```
@@ -186,8 +190,6 @@ services:
       Polling__TokenRefreshCheckHours: "24"
       Polling__TokenRefreshThresholdHours: "48"
       Polling__TokenRefreshMaxRetries: "3"
-      Polling__HealthFailureThreshold: "3"
-      Polling__HealthMaxSilenceHours: "6"
 
       # ── Email ────────────────────────────────────────────
       Email__FromAddress: "alerts@example.com"
@@ -200,6 +202,11 @@ services:
       Email__SummaryWindowHours: "4"
       Email__SummaryWindowCount: "7"
       Email__ErrorRetryDelayMinutes: "5"
+
+      # ── Backup ───────────────────────────────────────────
+      Backup__IntervalHours: "24"
+      Backup__RetentionCount: "7"
+      Backup__SubDirectory: "backups"
 
       # ── AWS credentials (SES) ───────────────────────────
       AWS_ACCESS_KEY_ID: ""

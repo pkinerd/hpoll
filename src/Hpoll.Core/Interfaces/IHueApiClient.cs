@@ -27,10 +27,17 @@ public interface IHueApiClient
     /// <summary>Exchanges an OAuth authorization code for an initial token pair during hub registration.</summary>
     Task<HueTokenResponse> ExchangeAuthorizationCodeAsync(string code, string redirectUri, CancellationToken ct = default);
 
-    /// <summary>Activates the bridge link button remotely, required before registering an application key.</summary>
+    /// <summary>
+    /// Activates the bridge link button remotely via the v1-style PUT /route/api/0/config endpoint.
+    /// This virtual link button eliminates the need for physical bridge access during remote registration.
+    /// </summary>
     Task EnableLinkButtonAsync(string accessToken, CancellationToken ct = default);
 
-    /// <summary>Registers a new application key (hue-application-key) with the bridge.</summary>
+    /// <summary>
+    /// Registers a new application key (hue-application-key) via the v1-style POST /route/api endpoint.
+    /// CLIP v2 has no equivalent for application key registration, so this v1 endpoint is required
+    /// even when all other operations use the CLIP v2 API.
+    /// </summary>
     Task<string> RegisterApplicationAsync(string accessToken, string deviceType = "hpoll", CancellationToken ct = default);
 
     /// <summary>Discovers the bridge's unique identifier via the bridge resource endpoint.</summary>

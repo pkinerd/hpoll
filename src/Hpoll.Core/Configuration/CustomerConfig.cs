@@ -41,8 +41,11 @@ public class EmailSettings
     public List<string> SendTimesUtc { get; set; } = new();
     public string FromAddress { get; set; } = string.Empty;
     public string AwsRegion { get; set; } = "us-east-1";
+    /// <summary>Battery % below which devices appear in the email alert section.</summary>
     public int BatteryAlertThreshold { get; set; } = 60;
+    /// <summary>Battery % below which the email battery bar is rendered red.</summary>
     public int BatteryLevelCritical { get; set; } = 30;
+    /// <summary>Battery % below which the email battery bar is rendered yellow (green above this level).</summary>
     public int BatteryLevelWarning { get; set; } = 50;
     public int SummaryWindowHours { get; set; } = 4;
     public int SummaryWindowCount { get; set; } = 7;
