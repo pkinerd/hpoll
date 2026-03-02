@@ -539,5 +539,112 @@ public class HubsPageTests : IClassFixture<HpollWebApplicationFactory>, IDisposa
         Assert.Contains("Available in", html);
     }
 
+    [Fact]
+    public async Task HubDetail_DeleteButton_NoBtnDanger_WhenDisabled()
+    {
+        using var db = _factory.CreateDbContext();
+        var customer = new Customer
+        {
+            Name = "No Danger Customer",
+            Email = "nodanger@test.com",
+            TimeZoneId = "UTC",
+            Status = CustomerStatus.Active
+        };
+        db.Customers.Add(customer);
+        await db.SaveChangesAsync();
+
+        var hub = new Hub
+        {
+            CustomerId = customer.Id,
+            HueBridgeId = "NODNG001",
+            HueApplicationKey = "key",
+            AccessToken = "token",
+            RefreshToken = "refresh",
+            TokenExpiresAt = DateTime.UtcNow.AddDays(7),
+            Status = HubStatus.Inactive,
+            DeactivatedAt = DateTime.UtcNow // Just now = can't delete yet
+        };
+        db.Hubs.Add(hub);
+        await db.SaveChangesAsync();
+
+        var response = await _client.GetAsync($"/Hubs/Detail/{hub.Id}");
+        var html = await response.Content.ReadAsStringAsync();
+
+        // Delete button should NOT have btn-danger class when disabled
+        Assert.Contains("Delete Hub</button>", html);
+        Assert.DoesNotContain("btn btn-danger\" disabled", html);
+    }
+
+    [Fact]
+    public async Task HubDetail_DeleteButton_HasBtnDanger_WhenDeletable()
+    {
+        using var db = _factory.CreateDbContext();
+        var customer = new Customer
+        {
+            Name = "Danger Customer",
+            Email = "danger@test.com",
+            TimeZoneId = "UTC",
+            Status = CustomerStatus.Active
+        };
+        db.Customers.Add(customer);
+        await db.SaveChangesAsync();
+
+        var hub = new Hub
+        {
+            CustomerId = customer.Id,
+            HueBridgeId = "DNGR001",
+            HueApplicationKey = "key",
+            AccessToken = "token",
+            RefreshToken = "refresh",
+            TokenExpiresAt = DateTime.UtcNow.AddDays(7),
+            Status = HubStatus.Inactive,
+            DeactivatedAt = DateTime.UtcNow.AddMinutes(-15) // 15 min ago = can delete
+        };
+        db.Hubs.Add(hub);
+        await db.SaveChangesAsync();
+
+        var response = await _client.GetAsync($"/Hubs/Detail/{hub.Id}");
+        var html = await response.Content.ReadAsStringAsync();
+
+        // Delete button SHOULD have btn-danger class and NOT be disabled
+        Assert.Contains("btn btn-danger", html);
+        Assert.DoesNotContain("Available in", html);
+    }
+
+    [Fact]
+    public async Task HubDetail_DeleteButton_Disabled_ForActiveHub()
+    {
+        using var db = _factory.CreateDbContext();
+        var customer = new Customer
+        {
+            Name = "Active Delete Customer",
+            Email = "activedel@test.com",
+            TimeZoneId = "UTC",
+            Status = CustomerStatus.Active
+        };
+        db.Customers.Add(customer);
+        await db.SaveChangesAsync();
+
+        var hub = new Hub
+        {
+            CustomerId = customer.Id,
+            HueBridgeId = "ACTDEL001",
+            HueApplicationKey = "key",
+            AccessToken = "token",
+            RefreshToken = "refresh",
+            TokenExpiresAt = DateTime.UtcNow.AddDays(7),
+            Status = HubStatus.Active
+        };
+        db.Hubs.Add(hub);
+        await db.SaveChangesAsync();
+
+        var response = await _client.GetAsync($"/Hubs/Detail/{hub.Id}");
+        var html = await response.Content.ReadAsStringAsync();
+
+        // Active hub: delete button should be disabled and NOT have btn-danger
+        Assert.Contains("Delete Hub</button>", html);
+        Assert.Contains("disabled", html);
+    }
+
     public void Dispose() => _client.Dispose();
 }

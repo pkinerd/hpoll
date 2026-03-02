@@ -65,5 +65,25 @@ public class LoginPageTests : IClassFixture<HpollWebApplicationFactory>, IDispos
             "Login page should show either sign-in form or setup form");
     }
 
+    [Fact]
+    public async Task Login_HeaderUsesEnvironmentColor()
+    {
+        var response = await _client.GetAsync("/Login");
+        var html = await response.Content.ReadAsStringAsync();
+
+        // Testing environment uses the default switch branch color (green)
+        Assert.Contains("login-header", html);
+        Assert.Contains("#1d3317", html);
+    }
+
+    [Fact]
+    public async Task Login_TitleIncludesEnvironmentName()
+    {
+        var response = await _client.GetAsync("/Login");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Contains("- Testing</title>", html);
+    }
+
     public void Dispose() => _client.Dispose();
 }
