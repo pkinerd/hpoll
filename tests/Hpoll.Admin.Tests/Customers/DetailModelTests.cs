@@ -417,4 +417,77 @@ public class DetailModelTests : IDisposable
         Assert.NotNull(updated!.NextSendTimeUtc);
         Assert.Equal(45, updated.NextSendTimeUtc!.Value.Minute);
     }
+
+    [Fact]
+    public async Task OnGetAsync_DefaultEditTz_SetsEditingTimeZoneFalse()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.False(model.EditingTimeZone);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_EditTzTrue_SetsEditingTimeZoneTrue()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id, editTz: true);
+
+        Assert.True(model.EditingTimeZone);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_EditTzFalse_SetsEditingTimeZoneFalse()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id, editTz: false);
+
+        Assert.False(model.EditingTimeZone);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateTimeZoneAsync_EmptyTimezone_SetsEditingTimeZoneTrue()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditTimeZoneId = "";
+
+        await model.OnPostUpdateTimeZoneAsync(customer.Id);
+
+        Assert.True(model.EditingTimeZone);
+        Assert.True(model.ModelState.ContainsKey("EditTimeZoneId"));
+    }
+
+    [Fact]
+    public async Task OnPostUpdateTimeZoneAsync_InvalidTimezone_SetsEditingTimeZoneTrue()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditTimeZoneId = "Invalid/Timezone";
+
+        await model.OnPostUpdateTimeZoneAsync(customer.Id);
+
+        Assert.True(model.EditingTimeZone);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateTimeZoneAsync_ValidTimezone_DoesNotSetEditingTimeZone()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditTimeZoneId = "UTC";
+
+        await model.OnPostUpdateTimeZoneAsync(customer.Id);
+
+        Assert.False(model.EditingTimeZone);
+    }
 }

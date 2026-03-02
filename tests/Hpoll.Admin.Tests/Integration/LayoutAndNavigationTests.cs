@@ -70,6 +70,19 @@ public class LayoutAndNavigationTests : IClassFixture<HpollWebApplicationFactory
         Assert.Contains("hpoll admin - Testing</title>", html);
     }
 
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/About")]
+    [InlineData("/Customers")]
+    public async Task AuthenticatedPages_NavbarUsesEnvironmentColor(string path)
+    {
+        var response = await _client.GetAsync(path);
+        var html = await response.Content.ReadAsStringAsync();
+
+        // Testing environment uses the default switch branch color (green)
+        Assert.Contains("#1d3317", html);
+    }
+
     [Fact]
     public async Task LogoutEndpoint_IsPostOnly()
     {
