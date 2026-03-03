@@ -1233,4 +1233,76 @@ public class PollingServiceTests : IDisposable
         Assert.Equal(2, await db2.DeviceReadings.CountAsync());
         Assert.Equal(1, await db2.PollingLogs.CountAsync());
     }
+
+    [Fact]
+    public async Task PollHub_DeviceNameChanged_UpdatedAtUsesTimeProvider()
+    {
+        // Use a fixed time that is clearly distinguishable from DateTime.UtcNow
+        var fixedTime = new DateTimeOffset(2025, 6, 15, 12, 0, 0, TimeSpan.Zero);
+        var mockTimeProvider = new Mock<TimeProvider>();
+        mockTimeProvider.Setup(tp => tp.GetUtcNow()).Returns(fixedTime);
+
+        var hub = await SeedHubAsync();
+
+        // Pre-create a device with a different name so the name-change branch is hit
+        using (var db = CreateDb())
+        {
+            db.Devices.Add(new Device
+            {
+                HubId = hub.Id,
+                HueDeviceId = "device-001",
+                DeviceType = DeviceTypes.MotionSensor,
+                Name = "Old Name"
+            });
+            await db.SaveChangesAsync();
+        }
+
+        SetupSuccessfulHueResponses();
+
+        var service = new PollingService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<PollingService>.Instance,
+            Options.Create(new PollingSettings { IntervalMinutes = 60 }),
+            new Mock<ISystemInfoService>().Object,
+            mockTimeProvider.Object);
+
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db2 = CreateDb();
+        var device = await db2.Devices.FirstAsync(d => d.HueDeviceId == "device-001" && d.HubId == hub.Id);
+
+        // Device name should be updated
+        Assert.Equal("Kitchen Sensor", device.Name);
+        // UpdatedAt should use the TimeProvider's time, not DateTime.UtcNow
+        Assert.Equal(fixedTime.UtcDateTime, device.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task PollHub_NewDevice_DoesNotSetUpdatedAtFromTimeProvider()
+    {
+        // When creating a new device (not renaming), UpdatedAt should remain at default
+        var fixedTime = new DateTimeOffset(2025, 6, 15, 12, 0, 0, TimeSpan.Zero);
+        var mockTimeProvider = new Mock<TimeProvider>();
+        mockTimeProvider.Setup(tp => tp.GetUtcNow()).Returns(fixedTime);
+
+        await SeedHubAsync();
+        SetupSuccessfulHueResponses();
+
+        var service = new PollingService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<PollingService>.Instance,
+            Options.Create(new PollingSettings { IntervalMinutes = 60 }),
+            new Mock<ISystemInfoService>().Object,
+            mockTimeProvider.Object);
+
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db = CreateDb();
+        var device = await db.Devices.FirstAsync(d => d.HueDeviceId == "device-001");
+
+        // New device creation should not hit the name-change branch
+        Assert.Equal("Kitchen Sensor", device.Name);
+        // UpdatedAt should NOT be the fixed time (it wasn't renamed)
+        Assert.NotEqual(fixedTime.UtcDateTime, device.UpdatedAt);
+    }
 }

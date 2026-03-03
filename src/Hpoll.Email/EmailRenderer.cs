@@ -134,16 +134,19 @@ public class EmailRenderer : IEmailRenderer
         // Format the timezone name for display
         var tzAbbrev = tz.IsDaylightSavingTime(nowLocal) ? tz.DaylightName : tz.StandardName;
 
-        // Query latest battery reading per device (most recent "battery" reading for each device)
-        var allBatteryReadings = await _db.DeviceReadings
+        // Query latest battery reading per device — aggregation pushed into SQL
+        var batteryCutoff = effectiveNowUtc.AddDays(-7);
+        var batteryReadings = await _db.DeviceReadings
             .Include(r => r.Device)
-            .Where(r => deviceIds.Contains(r.DeviceId) && r.ReadingType == ReadingTypes.Battery)
+            .Where(r => deviceIds.Contains(r.DeviceId) && r.ReadingType == ReadingTypes.Battery
+                && r.Timestamp >= batteryCutoff
+                && r.Timestamp == _db.DeviceReadings
+                    .Where(r2 => r2.DeviceId == r.DeviceId
+                        && r2.ReadingType == ReadingTypes.Battery
+                        && r2.Timestamp >= batteryCutoff)
+                    .Max(r2 => r2.Timestamp))
+            .AsNoTracking()
             .ToListAsync(ct);
-
-        var batteryReadings = allBatteryReadings
-            .GroupBy(r => r.DeviceId)
-            .Select(g => g.OrderByDescending(r => r.Timestamp).First())
-            .ToList();
 
         var batteryStatuses = new List<BatteryStatus>();
         foreach (var reading in batteryReadings)
@@ -192,7 +195,7 @@ public class EmailRenderer : IEmailRenderer
         // Header
         sb.AppendLine("<tr><td style=\"background-color:#2c3e50;color:#ffffff;padding:20px;text-align:center;\">");
         sb.AppendLine($"<h1 style=\"margin:0;font-size:22px;\">Daily Activity Summary</h1>");
-        sb.AppendLine($"<p style=\"margin:5px 0 0;font-size:14px;opacity:0.8;\">{startLocal:d MMM yyyy HH:mm} \u2013 {endLocal:d MMM yyyy HH:mm} ({tzName})</p>");
+        sb.AppendLine($"<p style=\"margin:5px 0 0;font-size:14px;opacity:0.8;\">{startLocal:d MMM yyyy HH:mm} \u2013 {endLocal:d MMM yyyy HH:mm} ({Encode(tzName)})</p>");
         sb.AppendLine("</td></tr>");
 
         // Visual section

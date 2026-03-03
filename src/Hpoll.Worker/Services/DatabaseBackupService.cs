@@ -1,5 +1,6 @@
 namespace Hpoll.Worker.Services;
 
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,8 @@ using Hpoll.Data;
 /// </summary>
 public class DatabaseBackupService : BackgroundService
 {
+    private static readonly Regex SafePathSegment = new(@"^[a-zA-Z0-9_-][a-zA-Z0-9_\-/]{0,49}$", RegexOptions.Compiled);
+
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<DatabaseBackupService> _logger;
     private readonly BackupSettings _settings;
@@ -39,7 +42,17 @@ public class DatabaseBackupService : BackgroundService
         _timeProvider = timeProvider ?? TimeProvider.System;
 
         var dataPath = configuration.GetValue<string>("DataPath") ?? "data";
+        ValidatePathSegment(dataPath, "DataPath");
+        ValidatePathSegment(_settings.SubDirectory, "Backup:SubDirectory");
         _backupDirectory = Path.Combine(dataPath, _settings.SubDirectory);
+    }
+
+    private static void ValidatePathSegment(string value, string name)
+    {
+        if (!SafePathSegment.IsMatch(value))
+            throw new ArgumentException(
+                $"Configuration value '{name}' contains disallowed characters or exceeds 50 characters. " +
+                $"Only alphanumeric, hyphen, underscore, and forward slash (non-leading) are permitted. Got: '{value}'");
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -94,10 +107,12 @@ public class DatabaseBackupService : BackgroundService
                 lastCompleted = fi.LastWriteTimeUtc.ToString("O");
             }
 
-            await _systemInfo.SetAsync("Backup", "backup.last_backup_completed", lastCompleted);
-            await _systemInfo.SetAsync("Backup", "backup.next_backup_due",
-                now.AddHours(_settings.IntervalHours).ToString("O"));
-            await _systemInfo.SetAsync("Backup", "backup.total_backups", _totalBackups.ToString());
+            await _systemInfo.SetBatchAsync("Backup", new Dictionary<string, string>
+            {
+                ["backup.last_backup_completed"] = lastCompleted,
+                ["backup.next_backup_due"] = now.AddHours(_settings.IntervalHours).ToString("O"),
+                ["backup.total_backups"] = _totalBackups.ToString()
+            });
 
             _logger.LogInformation(
                 "Backup stats initialized from existing files: {Count} backups found", _totalBackups);
@@ -122,18 +137,13 @@ public class DatabaseBackupService : BackgroundService
             PruneOldBackups();
             _totalBackups++;
 
-            try
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            await _systemInfo.TrySetBatchAsync("Backup", new Dictionary<string, string>
             {
-                var now = _timeProvider.GetUtcNow().UtcDateTime;
-                await _systemInfo.SetAsync("Backup", "backup.last_backup_completed", now.ToString("O"));
-                await _systemInfo.SetAsync("Backup", "backup.next_backup_due",
-                    now.AddHours(_settings.IntervalHours).ToString("O"));
-                await _systemInfo.SetAsync("Backup", "backup.total_backups", _totalBackups.ToString());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to update system info metrics");
-            }
+                ["backup.last_backup_completed"] = now.ToString("O"),
+                ["backup.next_backup_due"] = now.AddHours(_settings.IntervalHours).ToString("O"),
+                ["backup.total_backups"] = _totalBackups.ToString()
+            }, _logger, stoppingToken);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
@@ -158,7 +168,8 @@ public class DatabaseBackupService : BackgroundService
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<HpollDbContext>();
 
-        // VACUUM INTO requires a string literal, not a parameter — path is from configuration, not user input
+        // VACUUM INTO requires a string literal, not a parameter — path segments are validated
+        // against a whitelist regex in the constructor (no SQL metacharacters possible)
 #pragma warning disable EF1002
         await db.Database.ExecuteSqlRawAsync($"VACUUM INTO '{backupPath}'", ct);
 #pragma warning restore EF1002

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Net.Mail;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
@@ -31,13 +32,30 @@ public class CreateModel : PageModel
     public string TimeZoneId { get; set; } = "Australia/Sydney";
 
     [BindProperty]
-    public string SendTimesLocal { get; set; } = "19:30";
+    public string SendTimesLocal { get; set; } = string.Empty;
 
-    public void OnGet() { }
+    public string DefaultSendTimesDisplay { get; set; } = string.Empty;
+
+    public void OnGet()
+    {
+        DefaultSendTimesDisplay = _emailSettings.SendTimesUtc.Count > 0
+            ? string.Join(", ", _emailSettings.SendTimesUtc) + " UTC"
+            : "08:00 UTC";
+    }
 
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid) return Page();
+
+        var invalidEmails = Email
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(e => !MailAddress.TryCreate(e, out _))
+            .ToList();
+        if (invalidEmails.Count > 0)
+        {
+            ModelState.AddModelError(nameof(Email), $"Invalid email address(es): {string.Join(", ", invalidEmails)}");
+            return Page();
+        }
 
         try
         {

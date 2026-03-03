@@ -25,6 +25,7 @@ public class HueApiClientTests
     };
 
     private readonly MockHttpMessageHandler _mockHandler;
+    private readonly Mock<ILogger<HueApiClient>> _mockLogger;
     private readonly HueApiClient _client;
 
     public HueApiClientTests()
@@ -41,9 +42,9 @@ public class HueApiClientTests
             ClientSecret = TestClientSecret
         });
 
-        var logger = new Mock<ILogger<HueApiClient>>();
+        _mockLogger = new Mock<ILogger<HueApiClient>>();
 
-        _client = new HueApiClient(mockFactory.Object, hueAppSettings, logger.Object);
+        _client = new HueApiClient(mockFactory.Object, hueAppSettings, _mockLogger.Object);
     }
 
     [Fact]
@@ -505,6 +506,91 @@ public class HueApiClientTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _client.RefreshTokenAsync(TestRefreshToken));
+    }
+
+    [Fact]
+    public async Task GetMotionSensorsAsync_WithErrors_LogsWarning()
+    {
+        var json = """
+        {
+            "errors": [
+                { "description": "resource not available" },
+                { "description": "internal error" }
+            ],
+            "data": []
+        }
+        """;
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, json);
+
+        var result = await _client.GetMotionSensorsAsync(TestAccessToken, TestApplicationKey);
+
+        Assert.Empty(result.Data);
+        Assert.Equal(2, result.Errors.Count);
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("resource not available") && v.ToString()!.Contains("internal error")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetMotionSensorsAsync_WithEmptyErrors_DoesNotLogWarning()
+    {
+        var json = """{"errors": [], "data": []}""";
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, json);
+
+        await _client.GetMotionSensorsAsync(TestAccessToken, TestApplicationKey);
+
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetTemperatureSensorsAsync_WithErrors_LogsWarningAndReturnsResponse()
+    {
+        var json = """
+        {
+            "errors": [{ "description": "sensor timeout" }],
+            "data": [
+                {
+                    "id": "temp-001",
+                    "type": "temperature",
+                    "owner": { "rid": "dev-001", "rtype": "device" },
+                    "enabled": true,
+                    "temperature": {
+                        "temperature_report": {
+                            "temperature": 21.5,
+                            "changed": "2026-02-27T14:00:00Z"
+                        }
+                    }
+                }
+            ]
+        }
+        """;
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, json);
+
+        var result = await _client.GetTemperatureSensorsAsync(TestAccessToken, TestApplicationKey);
+
+        Assert.Single(result.Data);
+        Assert.Equal(21.5, result.Data[0].Temperature.TemperatureReport!.Temperature);
+        Assert.Single(result.Errors);
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("sensor timeout")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     /// <summary>

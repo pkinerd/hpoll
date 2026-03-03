@@ -312,4 +312,17 @@ public class DetailModelTests : IDisposable
 
         Assert.IsType<BadRequestResult>(result);
     }
+
+    [Fact]
+    public async Task OnGetTokenAsync_SetsCacheControlNoStore()
+    {
+        var (_, hub) = await SeedDataAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetTokenAsync(hub.Id, "access");
+
+        var cacheControl = model.PageContext.HttpContext.Response.Headers.CacheControl.ToString();
+        Assert.Contains("no-store", cacheControl);
+        Assert.Contains("no-cache", cacheControl);
+    }
 }

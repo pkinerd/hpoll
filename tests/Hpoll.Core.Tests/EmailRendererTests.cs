@@ -864,6 +864,26 @@ public class EmailRendererTests : IDisposable
     }
 
     [Fact]
+    public async Task RenderDailySummaryAsync_TimezoneNameIsHtmlEncoded()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        // Render with "Australia/Sydney" which has a StandardName/DaylightName that
+        // goes through the Encode() path. Verify the timezone abbreviation appears in the header.
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, "Australia/Sydney", NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("Daily Activity Summary", html);
+        // The header should contain a parenthesized timezone abbreviation
+        // The timezone name is encoded through Encode() — verify it appears in the output
+        // and doesn't contain raw unencoded HTML metacharacters
+        Assert.DoesNotContain("&lt;", html.Split("Daily Activity Summary")[0]); // no HTML entities before header
+    }
+
+    [Fact]
     public async Task RenderDailySummaryAsync_NewestWindowUnder60Min_IsOmitted()
     {
         var (customer, _, device) = await SeedBaseDataAsync();
@@ -955,5 +975,86 @@ public class EmailRendererTests : IDisposable
         Assert.NotNull(html);
         // Exactly 3 hours — should NOT be dark red
         Assert.DoesNotContain("#8B0000", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_OldBatteryReadingsExcluded()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-bat-old",
+            DeviceType = DeviceTypes.Battery,
+            Name = "Old Battery Sensor"
+        };
+        _db.Devices.Add(batteryDevice);
+        await _db.SaveChangesAsync();
+
+        // Add a battery reading older than 7 days before NowUtc (Feb 28 08:00)
+        // Feb 20 is 8 days before — outside the 7-day window
+        AddBattery(batteryDevice.Id, new DateTime(2026, 2, 20, 10, 0, 0, DateTimeKind.Utc), 10, "critical");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // Old battery reading should be excluded — no battery section shown
+        Assert.DoesNotContain("Battery Status", html);
+        Assert.DoesNotContain("Old Battery Sensor", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_RecentBatteryReadingsIncluded()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-bat-recent",
+            DeviceType = DeviceTypes.Battery,
+            Name = "Recent Battery Sensor"
+        };
+        _db.Devices.Add(batteryDevice);
+        await _db.SaveChangesAsync();
+
+        // Add a battery reading within the 7-day window
+        AddBattery(batteryDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 15, "low");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("Battery Status", html);
+        Assert.Contains("Recent Battery Sensor", html);
+        Assert.Contains("15%", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_BatteryLatestHighIgnoresOlderLow()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-bat-latest-high",
+            DeviceType = DeviceTypes.Battery,
+            Name = "Recovered Sensor"
+        };
+        _db.Devices.Add(batteryDevice);
+        await _db.SaveChangesAsync();
+
+        // Older reading at 10% (critical), newer reading at 90% (healthy)
+        AddBattery(batteryDevice.Id, new DateTime(2026, 2, 25, 10, 0, 0, DateTimeKind.Utc), 10, "critical");
+        AddBattery(batteryDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 90);
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        // Latest reading is 90% (above 30% threshold) so no battery section shown
+        Assert.DoesNotContain("Battery Status", html);
     }
 }

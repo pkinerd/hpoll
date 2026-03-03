@@ -39,6 +39,7 @@ public class AboutModel : PageModel
         var entries = await _db.SystemInfo
             .OrderBy(e => e.Category)
             .ThenBy(e => e.Key)
+            .AsNoTracking()
             .ToListAsync();
 
         var grouped = entries

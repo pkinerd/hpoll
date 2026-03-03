@@ -16,15 +16,20 @@ public class DatabaseBackupServiceTests : IDisposable
 {
     private readonly ServiceProvider _serviceProvider;
     private readonly string _tempDir;
+    private readonly string _dataPath;
     private readonly string _backupDir;
 
     public DatabaseBackupServiceTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), $"hpoll-test-{Guid.NewGuid()}");
         Directory.CreateDirectory(_tempDir);
-        _backupDir = Path.Combine(_tempDir, "backups");
+        // Use a regex-safe relative name for DataPath (no leading slash, no special chars)
+        _dataPath = $"td-{Guid.NewGuid().ToString("N")[..8]}";
+        var dataFullPath = Path.Combine(_tempDir, _dataPath);
+        Directory.CreateDirectory(dataFullPath);
+        _backupDir = Path.Combine(dataFullPath, "backups");
 
-        var dbPath = Path.Combine(_tempDir, "hpoll.db");
+        var dbPath = Path.Combine(dataFullPath, "hpoll.db");
 
         var services = new ServiceCollection();
         services.AddDbContext<HpollDbContext>(options =>
@@ -45,6 +50,9 @@ public class DatabaseBackupServiceTests : IDisposable
 
     private DatabaseBackupService CreateService(BackupSettings? settings = null, Mock<ISystemInfoService>? systemInfoMock = null, TimeProvider? timeProvider = null)
     {
+        // Set CWD so relative _dataPath resolves to the actual temp directory
+        Directory.SetCurrentDirectory(_tempDir);
+
         var backupSettings = settings ?? new BackupSettings
         {
             IntervalHours = 24,
@@ -55,7 +63,7 @@ public class DatabaseBackupServiceTests : IDisposable
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["DataPath"] = _tempDir
+                ["DataPath"] = _dataPath
             })
             .Build();
 
@@ -222,9 +230,12 @@ public class DatabaseBackupServiceTests : IDisposable
         catch (OperationCanceledException) { }
         finally { await service.StopAsync(CancellationToken.None); }
 
-        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.total_backups", "3", It.IsAny<CancellationToken>()), Times.Once);
-        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.last_backup_completed", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.Once);
-        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.next_backup_due", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        systemInfoMock.Verify(s => s.SetBatchAsync("Backup",
+            It.Is<Dictionary<string, string>>(d =>
+                d.ContainsKey("backup.total_backups") && d["backup.total_backups"] == "3"
+                && d.ContainsKey("backup.last_backup_completed")
+                && d.ContainsKey("backup.next_backup_due")),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -243,16 +254,19 @@ public class DatabaseBackupServiceTests : IDisposable
             : Array.Empty<string>();
         Assert.Single(backupFiles);
 
-        // Verify system info was updated after backup
-        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.last_backup_completed", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
-        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.total_backups", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        // Verify system info was updated after backup via SetBatchAsync
+        systemInfoMock.Verify(s => s.SetBatchAsync("Backup",
+            It.Is<Dictionary<string, string>>(d =>
+                d.ContainsKey("backup.last_backup_completed")
+                && d.ContainsKey("backup.total_backups")),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
     public async Task ExecuteAsync_SystemInfoFailure_DoesNotCrashService()
     {
         var systemInfoMock = new Mock<ISystemInfoService>();
-        systemInfoMock.Setup(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        systemInfoMock.Setup(s => s.SetBatchAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("System info write failed"));
 
         var service = CreateService(systemInfoMock: systemInfoMock);
@@ -308,6 +322,83 @@ public class DatabaseBackupServiceTests : IDisposable
 
         var service = CreateService();
         Assert.False(service.HasExistingBackups());
+    }
+
+    [Theory]
+    [InlineData("data")]
+    [InlineData("my-backups")]
+    [InlineData("path/to/dir")]
+    [InlineData("a_b-c/d")]
+    public void Constructor_ValidDataPath_DoesNotThrow(string dataPath)
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["DataPath"] = dataPath })
+            .Build();
+
+        var service = new DatabaseBackupService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<DatabaseBackupService>.Instance,
+            Options.Create(new BackupSettings { SubDirectory = "backups" }),
+            new Mock<ISystemInfoService>().Object,
+            config);
+
+        Assert.NotNull(service);
+    }
+
+    [Theory]
+    [InlineData("data'; DROP TABLE", "DataPath")]
+    [InlineData("/absolute/path", "DataPath")]
+    [InlineData("path with spaces", "DataPath")]
+    [InlineData("", "DataPath")]
+    public void Constructor_InvalidDataPath_ThrowsArgumentException(string dataPath, string expectedParamRef)
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["DataPath"] = dataPath })
+            .Build();
+
+        var ex = Assert.Throws<ArgumentException>(() => new DatabaseBackupService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<DatabaseBackupService>.Instance,
+            Options.Create(new BackupSettings { SubDirectory = "backups" }),
+            new Mock<ISystemInfoService>().Object,
+            config));
+
+        Assert.Contains(expectedParamRef, ex.Message);
+    }
+
+    [Theory]
+    [InlineData("sub'; --")]
+    [InlineData("/leading-slash")]
+    public void Constructor_InvalidSubDirectory_ThrowsArgumentException(string subDir)
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["DataPath"] = "data" })
+            .Build();
+
+        var ex = Assert.Throws<ArgumentException>(() => new DatabaseBackupService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<DatabaseBackupService>.Instance,
+            Options.Create(new BackupSettings { SubDirectory = subDir }),
+            new Mock<ISystemInfoService>().Object,
+            config));
+
+        Assert.Contains("Backup:SubDirectory", ex.Message);
+    }
+
+    [Fact]
+    public void Constructor_DataPathExceeding50Chars_ThrowsArgumentException()
+    {
+        var longPath = new string('a', 51);
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["DataPath"] = longPath })
+            .Build();
+
+        Assert.Throws<ArgumentException>(() => new DatabaseBackupService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<DatabaseBackupService>.Instance,
+            Options.Create(new BackupSettings { SubDirectory = "backups" }),
+            new Mock<ISystemInfoService>().Object,
+            config));
     }
 
     [Fact]

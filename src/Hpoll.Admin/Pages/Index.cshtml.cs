@@ -35,12 +35,14 @@ public class IndexModel : PageModel
             .Include(h => h.Customer)
             .Where(h => h.Status == HubStatus.Active && h.TokenExpiresAt < threshold)
             .OrderBy(h => h.TokenExpiresAt)
+            .AsNoTracking()
             .ToListAsync();
 
         FailingHubs = await _db.Hubs
             .Include(h => h.Customer)
             .Where(h => h.ConsecutiveFailures > 0)
             .OrderByDescending(h => h.ConsecutiveFailures)
+            .AsNoTracking()
             .ToListAsync();
 
         RecentLogs = await _db.PollingLogs
@@ -48,6 +50,7 @@ public class IndexModel : PageModel
             .ThenInclude(h => h.Customer)
             .OrderByDescending(l => l.Timestamp)
             .Take(10)
+            .AsNoTracking()
             .ToListAsync();
     }
 }

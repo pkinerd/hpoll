@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Net.Mail;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -49,14 +50,14 @@ public class DetailModel : PageModel
     public string? EditTimeZoneId { get; set; }
 
     public string? SuccessMessage { get; set; }
+    public string? ErrorMessage { get; set; }
     public string DefaultSendTimesDisplay { get; set; } = string.Empty;
     public string? OAuthUrl { get; set; }
-    public bool ShowActivitySummary { get; set; }
     public bool EditingTimeZone { get; set; }
     public List<ActivityWindow> ActivityWindows { get; set; } = new();
     public int MotionSensorCount { get; set; }
 
-    public async Task<IActionResult> OnGetAsync(int id, bool? activity = null, bool editTz = false)
+    public async Task<IActionResult> OnGetAsync(int id, bool editTz = false)
     {
         var customer = await _db.Customers
             .Include(c => c.Hubs)
@@ -72,12 +73,7 @@ public class DetailModel : PageModel
         EditTimeZoneId = customer.TimeZoneId;
         EditingTimeZone = editTz;
         DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
-
-        if (activity == true)
-        {
-            ShowActivitySummary = true;
-            await LoadActivitySummaryAsync(customer);
-        }
+        await LoadActivitySummaryAsync(customer);
 
         return Page();
     }
@@ -110,6 +106,14 @@ public class DetailModel : PageModel
         if (customer == null) return NotFound();
         Customer = customer;
         EditName = customer.Name;
+
+        if (string.IsNullOrWhiteSpace(EditEmail))
+            ModelState.AddModelError(nameof(EditEmail), "At least one email address is required.");
+        else
+            ValidateEmailField(EditEmail, nameof(EditEmail));
+
+        ValidateEmailField(EditCcEmails, nameof(EditCcEmails));
+        ValidateEmailField(EditBccEmails, nameof(EditBccEmails));
 
         if (!ModelState.IsValid) return Page();
 
@@ -229,7 +233,7 @@ public class DetailModel : PageModel
 
         if (string.IsNullOrEmpty(_hueApp.ClientId) || string.IsNullOrEmpty(_hueApp.CallbackUrl))
         {
-            SuccessMessage = "HueApp:ClientId and HueApp:CallbackUrl must be configured.";
+            ErrorMessage = "HueApp:ClientId and HueApp:CallbackUrl must be configured.";
             return Page();
         }
 
@@ -246,6 +250,17 @@ public class DetailModel : PageModel
             $"&redirect_uri={Uri.EscapeDataString(_hueApp.CallbackUrl)}";
 
         return Page();
+    }
+
+    private void ValidateEmailField(string? commaDelimited, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(commaDelimited)) return;
+        var invalid = commaDelimited
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(e => !MailAddress.TryCreate(e, out _))
+            .ToList();
+        if (invalid.Count > 0)
+            ModelState.AddModelError(fieldName, $"Invalid email address(es): {string.Join(", ", invalid)}");
     }
 
     private async Task<List<string>> GetEffectiveDefaultSendTimesUtcAsync()
