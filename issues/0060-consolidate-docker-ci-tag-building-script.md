@@ -1,11 +1,12 @@
 ---
 id: 60
 title: "Consolidate Docker CI tag-building script into reusable action or shared script"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [enhancement]
 priority: low
+closed: 2026-03-03
 ---
 
 ## Description
@@ -63,3 +64,7 @@ Option 1 (composite action) adds a layer of indirection (a new directory, a new 
 With only 2 Docker targets and a total of ~56 duplicated lines, this is a legitimate but low-impact improvement. The duplication is unlikely to cause a real maintenance bug because changes to the tag logic would naturally be applied to both jobs during review. That said, if a third Docker target were added (which is plausible if the project grows additional services), the matrix approach would pay for itself immediately. The issue is correctly marked as low priority.
 
 **Verdict:** Valid, low priority. The matrix strategy (option 2) is the right recommendation. The issue should note the `push-build-logs` coupling as a secondary consideration. Not urgent -- the current duplication is manageable and unlikely to cause drift with only 2 targets.
+
+### claude — 2026-03-03
+
+**Closed as wontfix — minor duplication.** With only 2 Docker targets and ~56 duplicated lines, the duplication is unlikely to cause maintenance bugs since changes to the tag logic would naturally be applied to both jobs during review. The `push-build-logs` job coupling adds refactoring friction disproportionate to the benefit. If a third Docker target is ever added, a matrix strategy can be introduced at that time with full knowledge of the actual requirements. Not worth the churn for the current scale.

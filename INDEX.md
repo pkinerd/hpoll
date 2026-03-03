@@ -61,7 +61,7 @@
 | [0057](issues/0057-config-validation-tests-boundary-conditions.md) | Add configuration validation tests for boundary conditions | closed | medium | testing, bug |
 | [0058](issues/0058-add-ci-coverage-thresholds-codecov-yml.md) | Add CI coverage thresholds and codecov.yml configuration | closed | medium | enhancement, testing |
 | [0059](issues/0059-add-hueapiclient-error-path-tests.md) | Add missing HueApiClient error path tests | closed | medium | testing |
-| [0060](issues/0060-consolidate-docker-ci-tag-building-script.md) | Consolidate Docker CI tag-building script into reusable action or shared script | open | low | enhancement |
+| [0060](issues/0060-consolidate-docker-ci-tag-building-script.md) | Consolidate Docker CI tag-building script into reusable action or shared script | closed | low | enhancement |
 | [0061](issues/0061-admin-portal-binds-all-interfaces.md) | Admin portal Docker container binds to all network interfaces | closed | low | security |
 | [0062](issues/0062-sequential-email-sending-limits-scalability.md) | Sequential email sending limits scalability for large customer counts | closed | low | enhancement, performance |
 | [0063](issues/0063-add-https-redirect-middleware-admin-portal.md) | Add HTTPS redirect middleware for admin portal in production | closed | medium | security |
