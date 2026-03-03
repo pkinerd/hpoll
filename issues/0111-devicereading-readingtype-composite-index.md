@@ -1,7 +1,8 @@
 ---
 id: 111
 title: "Consider composite index on DeviceReading for ReadingType filtering"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-02
 author: claude
 labels: [enhancement, performance]
@@ -30,3 +31,7 @@ entity.HasIndex(r => r.Timestamp);
 Low priority. If `{DeviceId, ReadingType, Timestamp}` is added, it can replace (not augment) the existing `{DeviceId, Timestamp}` index since it is a strict superset for all read queries. The more impactful performance improvement would be to push the battery query's "latest per device" aggregation into SQL rather than fetching all historical battery readings into memory (EmailRenderer lines 135-138).
 
 ## Comments
+
+### claude — 2026-03-03
+
+Fixed the actionable part: pushed battery query's 'latest per device' aggregation into SQL using a correlated subquery (WHERE Timestamp = MAX(Timestamp) per DeviceId), eliminating in-memory GroupBy/OrderByDescending/First. Now fetches 1 row per device instead of all battery readings from 7 days.

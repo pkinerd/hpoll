@@ -108,7 +108,7 @@
 | [0108](issues/0108-unused-customers-config-appsettings.md) | Unused Customers configuration key in appsettings.json | closed | low | code-quality |
 | [0109](issues/0109-emailrenderer-dbcontext-tight-coupling.md) | EmailRenderer directly references DbContext rather than abstraction | closed | low | enhancement, code-quality |
 | [0110](issues/0110-background-service-loop-duplication.md) | SystemInfo metric update pattern duplicated across 3 background services | closed | low | enhancement, code-quality |
-| [0111](issues/0111-devicereading-readingtype-composite-index.md) | Consider composite index on DeviceReading for ReadingType filtering | open | low | enhancement, performance |
+| [0111](issues/0111-devicereading-readingtype-composite-index.md) | Consider composite index on DeviceReading for ReadingType filtering | closed | low | enhancement, performance |
 | [0112](issues/0112-backup-counter-drift-after-pruning.md) | DatabaseBackupService total backups counter produces meaningless hybrid value | closed | low | bug, code-quality |
 | [0114](issues/0114-email-data-tests-wrong-project.md) | Email and Data tests placed in unrelated test projects | closed | low | testing, code-quality |
 | [0116](issues/0116-test-polling-motion-cutoff-extended-downtime.md) | Add test for PollingService motion cutoff after extended downtime | closed | medium | testing |
