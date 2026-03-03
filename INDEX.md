@@ -26,7 +26,7 @@
 | [0022](issues/0022-add-polling-log-timestamp-index.md) | Add standalone Timestamp index on PollingLog for cleanup queries | closed | medium | enhancement, performance |
 | [0023](issues/0023-cache-parsed-send-times.md) | Cache parsed SendTimesUtc in EmailSchedulerService constructor | closed | low | enhancement, performance |
 | [0024](issues/0024-tokens-in-html-page-source.md) | Tokens embedded in HTML page source on Hub detail page | closed | high | security |
-| [0025](issues/0025-logout-csrf-antiforgery.md) | Logout endpoint lacks antiforgery validation (CSRF logout) | open | low | security |
+| [0025](issues/0025-logout-csrf-antiforgery.md) | Logout endpoint lacks antiforgery validation (CSRF logout) | closed | low | security |
 | [0026](issues/0026-cookie-secure-policy-same-as-request.md) | Cookie SecurePolicy set to SameAsRequest allows HTTP transmission | closed | medium | security |
 | [0027](issues/0027-rate-limiting-unbounded-dictionary.md) | Rate limiting dictionary has no size bounds (DoS risk) | closed | low | security |
 | [0028](issues/0028-forwarded-headers-trust-all-proxies.md) | Forwarded headers trust all proxies — IP spoofing possible | closed | low | security |

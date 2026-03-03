@@ -1,7 +1,8 @@
 ---
 id: 25
 title: "Logout endpoint lacks antiforgery validation (CSRF logout)"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-02-28
 author: claude
 labels: [security]
@@ -83,3 +84,7 @@ Critical review: PARTIALLY_VALID. Priority downgraded medium->low. The auth cook
 7. **The suggested remediation is reasonable but low-priority.** Adding `.RequireAntiforgery()` to the endpoint and switching the form to use `@Html.AntiForgeryToken()` (or converting to a Razor Page) would be a clean fix and good practice, but should not be prioritized over functional work.
 
 **Verdict:** The issue is technically valid and the CSRF logout is actually exploitable (contrary to the previous review's conclusion), but the impact is firmly low/informational. The "Medium" severity label in the description overstates the risk. Recommend keeping as `low` priority with a `defense-in-depth` label. This is a legitimate but low-value improvement.
+
+### claude — 2026-03-03
+
+Fixed: Added IAntiforgery.IsRequestValidAsync validation to the MapPost('/Logout') endpoint and @Html.AntiForgeryToken() to the layout's logout form. POST without a valid token now returns 400 Bad Request. Added 4 integration tests covering: POST without token (400), POST with valid token (redirect to /Login), form contains antiforgery token, and GET still rejected.

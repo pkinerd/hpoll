@@ -2,7 +2,7 @@
 
 *Last updated: 2026-03-03*
 
-**10 open issues** | 1 medium | 9 low
+**9 open issues** | 1 medium | 8 low
 
 ## By Priority
 
@@ -13,7 +13,6 @@
 
 ### Low
 
-- [#0025](issues/0025-logout-csrf-antiforgery.md) — Logout endpoint lacks antiforgery validation (CSRF logout) `security`
 - [#0048](issues/0048-persist-data-protection-keys-secure-session-cookie.md) — Persist Data Protection keys and add Secure flag to session cookie `security`
 - [#0052](issues/0052-pin-dependency-versions-reproducible-builds.md) — Pin NuGet and Docker dependency versions for reproducible builds `security` `enhancement`
 - [#0073](issues/0073-missing-cancellationtoken-in-admin-handlers.md) — Missing CancellationToken propagation in Admin page handlers `enhancement` `code-quality`
@@ -26,7 +25,6 @@
 
 ### security
 
-- [#0025](issues/0025-logout-csrf-antiforgery.md) — Logout endpoint lacks antiforgery validation (CSRF logout) (low)
 - [#0030](issues/0030-encrypt-tokens-at-rest.md) — Encrypt OAuth tokens at rest in SQLite database (medium)
 - [#0048](issues/0048-persist-data-protection-keys-secure-session-cookie.md) — Persist Data Protection keys and add Secure flag to session cookie (low)
 - [#0052](issues/0052-pin-dependency-versions-reproducible-builds.md) — Pin NuGet and Docker dependency versions for reproducible builds (low)
