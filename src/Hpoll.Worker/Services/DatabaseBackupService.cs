@@ -17,7 +17,7 @@ using Hpoll.Data;
 /// </summary>
 public class DatabaseBackupService : BackgroundService
 {
-    private static readonly Regex SafePathSegment = new(@"^[a-zA-Z0-9_-][a-zA-Z0-9_\-/]{0,49}$", RegexOptions.Compiled);
+    private static readonly Regex SafePath = new(@"^[a-zA-Z0-9_./-][a-zA-Z0-9_./-]{0,199}$", RegexOptions.Compiled);
 
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<DatabaseBackupService> _logger;
@@ -49,10 +49,10 @@ public class DatabaseBackupService : BackgroundService
 
     private static void ValidatePathSegment(string value, string name)
     {
-        if (!SafePathSegment.IsMatch(value))
+        if (!SafePath.IsMatch(value))
             throw new ArgumentException(
-                $"Configuration value '{name}' contains disallowed characters or exceeds 50 characters. " +
-                $"Only alphanumeric, hyphen, underscore, and forward slash (non-leading) are permitted. Got: '{value}'");
+                $"Configuration value '{name}' contains disallowed characters or exceeds 200 characters. " +
+                $"Only alphanumeric, dot, hyphen, underscore, and forward slash are permitted. Got: '{value}'");
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

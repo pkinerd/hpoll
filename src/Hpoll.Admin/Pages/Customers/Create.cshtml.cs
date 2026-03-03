@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Net.Mail;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
@@ -32,19 +33,19 @@ public class CreateModel : PageModel
     public string TimeZoneId { get; set; } = "Australia/Sydney";
 
     [BindProperty]
-    public string SendTimesLocal { get; set; } = string.Empty;
+    public string? SendTimesLocal { get; set; }
 
     public string DefaultSendTimesDisplay { get; set; } = string.Empty;
 
-    public void OnGet()
+    public async Task OnGetAsync()
     {
-        DefaultSendTimesDisplay = _emailSettings.SendTimesUtc.Count > 0
-            ? string.Join(", ", _emailSettings.SendTimesUtc) + " UTC"
-            : "08:00 UTC";
+        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
+        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
+
         if (!ModelState.IsValid) return Page();
 
         var invalidEmails = Email
@@ -89,12 +90,34 @@ public class CreateModel : PageModel
             Status = CustomerStatus.Active
         };
 
+        var effectiveDefaults = await GetEffectiveDefaultSendTimesUtcAsync();
         customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
-            customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, _emailSettings.SendTimesUtc);
+            customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, effectiveDefaults);
 
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync();
 
         return RedirectToPage("Detail", new { id = customer.Id });
+    }
+
+    private async Task<List<string>> GetEffectiveDefaultSendTimesUtcAsync()
+    {
+        var entry = await _db.SystemInfo
+            .FirstOrDefaultAsync(e => e.Key == "email.send_times_utc");
+        if (entry != null && !string.IsNullOrWhiteSpace(entry.Value))
+        {
+            var parsed = entry.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(t => TimeSpan.TryParse(t, out _))
+                .ToList();
+            if (parsed.Count > 0)
+                return parsed;
+        }
+        return _emailSettings.SendTimesUtc;
+    }
+
+    private async Task<string> GetDefaultSendTimesDisplayAsync()
+    {
+        var defaults = await GetEffectiveDefaultSendTimesUtcAsync();
+        return string.Join(", ", defaults) + " UTC";
     }
 }
