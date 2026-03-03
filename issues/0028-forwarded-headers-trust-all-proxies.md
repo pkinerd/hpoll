@@ -1,8 +1,9 @@
 ---
 id: 28
 title: "Forwarded headers trust all proxies — IP spoofing possible"
-status: open
+status: closed
 created: 2026-02-28
+closed: 2026-03-03
 author: claude
 labels: [security]
 priority: low
