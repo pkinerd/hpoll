@@ -182,7 +182,7 @@ public class EmailSchedulerService : BackgroundService
             return;
         }
 
-        var html = await renderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId, ct: ct);
+        var html = await renderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId, _timeProvider.GetUtcNow().UtcDateTime, ct);
 
         var tz = TimeZoneInfo.FindSystemTimeZoneById(customer.TimeZoneId);
         var localNow = TimeZoneInfo.ConvertTimeFromUtc(_timeProvider.GetUtcNow().UtcDateTime, tz);

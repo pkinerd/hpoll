@@ -335,7 +335,7 @@ public class PollingService : BackgroundService
         }
     }
 
-    private static async Task<Device> GetOrCreateDeviceAsync(
+    private async Task<Device> GetOrCreateDeviceAsync(
         HpollDbContext db, Hub hub, string hueDeviceId, string deviceType, string name, CancellationToken ct)
     {
         var device = hub.Devices.FirstOrDefault(d => d.HueDeviceId == hueDeviceId);
@@ -355,7 +355,7 @@ public class PollingService : BackgroundService
         else if (device.Name != name)
         {
             device.Name = name;
-            device.UpdatedAt = DateTime.UtcNow;
+            device.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         }
         return device;
     }

@@ -524,4 +524,109 @@ public class EmailSchedulerServiceTests : IDisposable
         // NextSendTimeUtc should remain unchanged
         Assert.Equal(existingTime, customer.NextSendTimeUtc);
     }
+
+    [Fact]
+    public async Task SendCustomerEmailAsync_PassesTimeProviderNowUtc_ToRenderer()
+    {
+        // Use a fixed time that is clearly distinguishable from DateTime.UtcNow
+        var fixedTime = new DateTimeOffset(2025, 6, 15, 12, 0, 0, TimeSpan.Zero);
+        var mockTimeProvider = new Mock<TimeProvider>();
+        mockTimeProvider.Setup(tp => tp.GetUtcNow()).Returns(fixedTime);
+
+        DateTime? capturedNowUtc = null;
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .Callback<int, string, DateTime?, CancellationToken>((id, tz, nowUtc, ct) => capturedNowUtc = nowUtc)
+            .ReturnsAsync("<html>Summary</html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        using var scope = _serviceProvider.CreateScope();
+        var renderer = scope.ServiceProvider.GetRequiredService<IEmailRenderer>();
+        var sender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
+
+        var customer = new Customer
+        {
+            Name = "Test",
+            Email = "test@example.com",
+            TimeZoneId = "UTC",
+            Status = CustomerStatus.Active
+        };
+
+        var service = new EmailSchedulerService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<EmailSchedulerService>.Instance,
+            Options.Create(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" }),
+            new Mock<ISystemInfoService>().Object,
+            mockTimeProvider.Object);
+
+        await service.SendCustomerEmailAsync(customer, renderer, sender, CancellationToken.None);
+
+        Assert.NotNull(capturedNowUtc);
+        Assert.Equal(fixedTime.UtcDateTime, capturedNowUtc.Value);
+    }
+
+    [Fact]
+    public async Task ProcessDueCustomers_PassesNowUtcToRenderer()
+    {
+        var pastTime = DateTime.UtcNow.AddMinutes(-5);
+        await SeedCustomerAsync("test@example.com", nextSendTimeUtc: pastTime);
+
+        DateTime? capturedNowUtc = null;
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .Callback<int, string, DateTime?, CancellationToken>((id, tz, nowUtc, ct) => capturedNowUtc = nowUtc)
+            .ReturnsAsync("<html>Summary</html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1", SendTimesUtc = new() { "08:00" } });
+        await service.ProcessDueCustomersAsync(CancellationToken.None);
+
+        // Verify the renderer received a non-null nowUtc (proving the parameter is passed)
+        Assert.NotNull(capturedNowUtc);
+    }
+
+    [Fact]
+    public async Task SendCustomerEmailAsync_RendererAndSubjectUseConsistentTime()
+    {
+        // Use a fixed time so we can verify both the renderer and subject use the same time source
+        var fixedTime = new DateTimeOffset(2025, 6, 15, 12, 0, 0, TimeSpan.Zero);
+        var mockTimeProvider = new Mock<TimeProvider>();
+        mockTimeProvider.Setup(tp => tp.GetUtcNow()).Returns(fixedTime);
+
+        DateTime? capturedNowUtc = null;
+        string? capturedSubject = null;
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .Callback<int, string, DateTime?, CancellationToken>((id, tz, nowUtc, ct) => capturedNowUtc = nowUtc)
+            .ReturnsAsync("<html>Summary</html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .Callback<List<string>, string, string, List<string>?, List<string>?, CancellationToken>((to, subj, html, cc, bcc, ct) => capturedSubject = subj)
+            .Returns(Task.CompletedTask);
+
+        using var scope = _serviceProvider.CreateScope();
+        var renderer = scope.ServiceProvider.GetRequiredService<IEmailRenderer>();
+        var sender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
+
+        var customer = new Customer
+        {
+            Name = "Test",
+            Email = "test@example.com",
+            TimeZoneId = "UTC",
+            Status = CustomerStatus.Active
+        };
+
+        var service = new EmailSchedulerService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<EmailSchedulerService>.Instance,
+            Options.Create(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" }),
+            new Mock<ISystemInfoService>().Object,
+            mockTimeProvider.Object);
+
+        await service.SendCustomerEmailAsync(customer, renderer, sender, CancellationToken.None);
+
+        // Both the renderer nowUtc and the subject date should be derived from the same TimeProvider
+        Assert.NotNull(capturedNowUtc);
+        Assert.Equal(fixedTime.UtcDateTime, capturedNowUtc.Value);
+        Assert.NotNull(capturedSubject);
+        Assert.Contains("15 Jun 2025", capturedSubject);
+    }
 }
