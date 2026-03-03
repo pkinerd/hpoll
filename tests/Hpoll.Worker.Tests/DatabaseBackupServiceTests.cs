@@ -329,6 +329,8 @@ public class DatabaseBackupServiceTests : IDisposable
     [InlineData("my-backups")]
     [InlineData("path/to/dir")]
     [InlineData("a_b-c/d")]
+    [InlineData("/app/data")]
+    [InlineData("./data")]
     public void Constructor_ValidDataPath_DoesNotThrow(string dataPath)
     {
         var config = new ConfigurationBuilder()
@@ -347,7 +349,6 @@ public class DatabaseBackupServiceTests : IDisposable
 
     [Theory]
     [InlineData("data'; DROP TABLE", "DataPath")]
-    [InlineData("/absolute/path", "DataPath")]
     [InlineData("path with spaces", "DataPath")]
     [InlineData("", "DataPath")]
     public void Constructor_InvalidDataPath_ThrowsArgumentException(string dataPath, string expectedParamRef)
@@ -368,7 +369,6 @@ public class DatabaseBackupServiceTests : IDisposable
 
     [Theory]
     [InlineData("sub'; --")]
-    [InlineData("/leading-slash")]
     public void Constructor_InvalidSubDirectory_ThrowsArgumentException(string subDir)
     {
         var config = new ConfigurationBuilder()
@@ -386,9 +386,9 @@ public class DatabaseBackupServiceTests : IDisposable
     }
 
     [Fact]
-    public void Constructor_DataPathExceeding50Chars_ThrowsArgumentException()
+    public void Constructor_DataPathExceeding200Chars_ThrowsArgumentException()
     {
-        var longPath = new string('a', 51);
+        var longPath = new string('a', 201);
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { ["DataPath"] = longPath })
             .Build();
