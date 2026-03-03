@@ -105,7 +105,7 @@
 | [0105](issues/0105-email-renderer-incomplete-html-encoding.md) | Timezone display name not HTML-encoded in email renderer | open | low | security |
 | [0106](issues/0106-hueapiclient-intermediate-string-deserialization.md) | HueApiClient deserializes JSON via intermediate string allocation | open | low | enhancement, performance |
 | [0107](issues/0107-backup-test-task-delay-timing.md) | DatabaseBackupService test uses Task.Delay for timestamp separation | closed | low | testing, code-quality |
-| [0108](issues/0108-unused-customers-config-appsettings.md) | Unused Customers configuration key in appsettings.json | open | low | code-quality |
+| [0108](issues/0108-unused-customers-config-appsettings.md) | Unused Customers configuration key in appsettings.json | closed | low | code-quality |
 | [0109](issues/0109-emailrenderer-dbcontext-tight-coupling.md) | EmailRenderer directly references DbContext rather than abstraction | open | low | enhancement, code-quality |
 | [0110](issues/0110-background-service-loop-duplication.md) | SystemInfo metric update pattern duplicated across 3 background services | open | low | enhancement, code-quality |
 | [0111](issues/0111-devicereading-readingtype-composite-index.md) | Consider composite index on DeviceReading for ReadingType filtering | open | low | enhancement, performance |

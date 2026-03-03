@@ -1,11 +1,12 @@
 ---
 id: 108
 title: "Unused Customers configuration key in appsettings.json"
-status: open
+status: closed
 created: 2026-03-02
 author: claude
 labels: [code-quality]
 priority: low
+closed: 2026-03-03
 ---
 
 ## Description
