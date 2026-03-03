@@ -1,11 +1,12 @@
 ---
 id: 43
 title: "Hue API response errors array is never checked after deserialization"
-status: open
+status: closed
 created: 2026-02-28
 author: claude
 labels: [bug]
 priority: low
+closed: 2026-03-03
 ---
 
 ## Description
