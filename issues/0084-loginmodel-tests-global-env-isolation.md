@@ -1,7 +1,8 @@
 ---
 id: 84
 title: "LoginModel tests use global Environment creating test isolation risk"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-01
 author: claude
 labels: [testing, code-quality]
@@ -93,3 +94,12 @@ production architecture.
 
 Skipping: Requires production code change (DI for ADMIN_PASSWORD_HASH instead of Environment.GetEnvironmentVariable). The actual test isolation risk is negligible since xUnit creates fresh test class instances per test method, and the static dictionary uses unique IPs per test.
 
+### claude — 2026-03-03
+
+Implemented in commit 6a130b7 on branch `claude/improve-unit-testing-xWc4c`. Changes:
+- Added `AdminSettings` class with `PasswordHash` property to `Hpoll.Core.Configuration`
+- Registered `AdminSettings` in `Program.cs` via `IOptions<AdminSettings>`, binding to `ADMIN_PASSWORD_HASH` env var
+- Refactored `LoginModel` constructor to accept `IOptions<AdminSettings>` instead of calling `Environment.GetEnvironmentVariable` directly
+- Updated all 14 `LoginModelTests` to inject settings via `Options.Create(new AdminSettings { ... })` instead of mutating global env vars
+- Removed `IDisposable` pattern from `LoginModelTests` (no env var cleanup needed)
+- All 414 tests pass (115 Core + 184 Admin + 115 Worker)

@@ -1,7 +1,8 @@
 ---
 id: 91
 title: "DatabaseBackupService error handling paths untested"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-02
 author: claude
 labels: [testing]
@@ -32,3 +33,6 @@ All uncovered paths are purely defensive — they log the error and continue ope
 
 Skipping: DatabaseBackupService error handling paths are catch-log-continue blocks identical to the pattern in #0071/#0087. These were deliberately left untested as a project design decision.
 
+### claude — 2026-03-03
+
+Closing as won't-fix. All uncovered paths are purely defensive catch-log-continue blocks identical to the pattern in #0071 and #0087. The service has 85.2% line coverage and 95% branch coverage — the gaps are exclusively in error handlers that log warnings and continue operation. These were deliberately left untested as a project design decision consistent with all BackgroundService implementations.

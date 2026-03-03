@@ -1,7 +1,8 @@
 ---
 id: 114
 title: "Email and Data tests placed in unrelated test projects"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-02
 author: claude
 labels: [testing, code-quality]
@@ -34,3 +35,6 @@ Create `Hpoll.Email.Tests` and move `EmailRendererTests.cs` and `SesEmailSenderT
 
 Skipping: Moving tests between projects is a structural reorganization that doesn't improve test quality or coverage. The existing tests work correctly in their current locations despite the organizational inconsistency.
 
+### claude — 2026-03-03
+
+Closing as won't-fix. Moving tests between projects is a structural reorganization that doesn't improve test quality, coverage, or reliability. The existing tests work correctly in their current locations. EmailRendererTests and SesEmailSenderTests in Hpoll.Core.Tests have proper project references to Hpoll.Email. DbContextModelTests in Hpoll.Admin.Tests has proper references to Hpoll.Data. Creating dedicated test projects would add build complexity without functional benefit.

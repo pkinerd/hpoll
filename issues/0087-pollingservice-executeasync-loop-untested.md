@@ -1,7 +1,8 @@
 ---
 id: 87
 title: "PollingService.ExecuteAsync main service loop has no test coverage"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-02
 author: claude
 labels: [testing]
@@ -38,3 +39,6 @@ The key untested paths are:
 
 Skipping: Same pattern as #0071 — ExecuteAsync main loop is standard BackgroundService boilerplate. The unique system info metric updates within the loop are tested via PollAllHubsAsync unit tests.
 
+### claude — 2026-03-03
+
+Closing as won't-fix. Same standard BackgroundService boilerplate pattern as #0071. The ExecuteAsync loop (lines 45-89) contains system info metric writes, error logging, and Task.Delay cancellation — all trivial code paths. The core polling logic (PollAllHubsAsync, PollHubAsync) is thoroughly tested with 43+ tests. Testing the outer loop would require StartAsync/StopAsync timing-dependent tests, which were deliberately removed from the project.

@@ -1,7 +1,8 @@
 ---
 id: 71
 title: "EmailSchedulerService.ExecuteAsync error retry path has 0% test coverage"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-01
 author: claude
 labels: [testing]
@@ -85,3 +86,9 @@ The issue recommends injecting a mock `IEmailRenderer` that throws, then verifyi
 
 Skipping: ExecuteAsync error retry path is standard BackgroundService boilerplate (11 lines). Prior review recommended closing as won't-fix. Sibling issues #0032/#0036 were deliberately closed without testing this pattern per commit f142a28.
 
+### claude — 2026-03-03
+
+Closing as won't-fix. The ExecuteAsync error retry path (lines 73-84) is an 11-line standard BackgroundService catch-log-delay-continue pattern with zero branching logic. Multiple reviews concluded:
+- Testing requires running the full ExecuteAsync loop via StartAsync, reintroducing the timing-dependent test style deliberately removed in commit f142a28
+- The identical pattern in sibling services (PollingService, TokenRefreshService, DatabaseBackupService) was deliberately left untested as a project design decision
+- The ROI is very low for code with no conditional logic beyond the cancellation guard

@@ -1,7 +1,8 @@
 ---
 id: 77
 title: "OAuthCallback Razor view has 0% test coverage"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-01
 author: claude
 labels: [testing]
@@ -185,3 +186,6 @@ The factual observation that no test renders `OAuthCallback.cshtml` is correct. 
 
 Skipping: Razor view integration testing is not standard .NET practice. The OAuthCallback page is a thin redirect handler. The test infrastructure cost (WebApplicationFactory + OAuth flow simulation) outweighs the coverage benefit for this low-risk view.
 
+### claude — 2026-03-03
+
+Closing as won't-fix. Razor view integration testing is not standard .NET practice. The OAuthCallback code-behind has 100% coverage across 14 unit tests — all model properties consumed by the view are exhaustively validated. The view itself is pure display logic (5 conditionals rendering static HTML). The "24 branches" metric is inflated by Razor compilation artifacts (tag helper null-checks). Testing would require WebApplicationFactory with session-state setup, which is significantly more complex than existing integration tests.

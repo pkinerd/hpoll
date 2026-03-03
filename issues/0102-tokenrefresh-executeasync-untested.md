@@ -1,7 +1,8 @@
 ---
 id: 102
 title: "TokenRefreshService.ExecuteAsync outer exception catch untested"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-02
 author: claude
 labels: [testing]
@@ -30,3 +31,6 @@ If testing this path, configure `_mockHueApiClient` to throw a non-`OperationCan
 
 Skipping: Same ExecuteAsync outer catch pattern as #0071. TokenRefreshService error handling is identical boilerplate to EmailSchedulerService and PollingService, which were all deliberately left untested.
 
+### claude — 2026-03-03
+
+Closing as won't-fix. The outer `catch (Exception ex)` block (lines 71-74) is a 4-line standard catch-log-continue pattern identical to the sibling services closed in #0071, #0087, and #0091. Three ExecuteAsync tests already exist covering cancellation, system info metrics, and system info failure. The only gap is this trivial error handler with no branching logic.
