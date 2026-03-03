@@ -1,8 +1,9 @@
 ---
 id: 29
 title: "CC/BCC email fields lack server-side format validation"
-status: open
+status: closed
 created: 2026-02-28
+closed: 2026-03-03
 author: claude
 labels: [security]
 priority: low

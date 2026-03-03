@@ -30,7 +30,7 @@
 | [0026](issues/0026-cookie-secure-policy-same-as-request.md) | Cookie SecurePolicy set to SameAsRequest allows HTTP transmission | closed | medium | security |
 | [0027](issues/0027-rate-limiting-unbounded-dictionary.md) | Rate limiting dictionary has no size bounds (DoS risk) | closed | low | security |
 | [0028](issues/0028-forwarded-headers-trust-all-proxies.md) | Forwarded headers trust all proxies — IP spoofing possible | closed | low | security |
-| [0029](issues/0029-cc-bcc-email-validation.md) | CC/BCC email fields lack server-side format validation | open | low | security |
+| [0029](issues/0029-cc-bcc-email-validation.md) | CC/BCC email fields lack server-side format validation | closed | low | security |
 | [0030](issues/0030-encrypt-tokens-at-rest.md) | Encrypt OAuth tokens at rest in SQLite database | open | medium | security |
 | [0031](issues/0031-create-admin-tests-project.md) | Create Hpoll.Admin.Tests project for admin portal page models | closed | high | testing |
 | [0032](issues/0032-expand-token-refresh-service-tests.md) | Expand TokenRefreshService tests (currently only 3 tests for 140 lines) | closed | high | testing |
