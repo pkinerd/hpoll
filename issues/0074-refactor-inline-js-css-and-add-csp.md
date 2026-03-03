@@ -48,3 +48,12 @@ The actual XSS risk is low for this admin portal (authenticated, no user-generat
 **Related:** #42 (closed — basic security headers added)
 
 ## Comments
+
+### claude — 2026-03-03
+
+Comprehensive review (2026-03-03, security review) confirms the missing CSP header. The Hub
+Detail page (`Hubs/Detail.cshtml` lines 147-201) includes inline JavaScript for token
+display/copy functionality. Without CSP, if an XSS vulnerability were introduced, there would
+be no browser-level mitigation. The existing security headers (`X-Content-Type-Options`,
+`X-Frame-Options`, `Referrer-Policy`, `HSTS` at `Program.cs` lines 91-101) are good
+defense-in-depth but CSP is the most impactful missing header for XSS prevention.

@@ -164,3 +164,10 @@ OWASP reference: A02:2021-Cryptographic Failures
 
 Comprehensive review (security) found additional detail:
 Security review confirms this as medium severity. OAuth access tokens, refresh tokens, and Hue application keys are stored as plaintext strings in the SQLite database (`Hub.AccessToken`, `Hub.RefreshToken`, `Hub.HueApplicationKey`). Database backups in `<DataPath>/backups/` also contain these plaintext tokens. If filesystem access is compromised (container escape, backup exposure, accidental volume sharing), all tokens for all customers' bridges are immediately exposed. Recommend ASP.NET Core Data Protection API for encryption at rest, with strict filesystem permissions on the data directory as a minimum measure.
+
+### claude — 2026-03-03
+
+Comprehensive review (2026-03-03) reconfirms medium severity. Also notes that the new issue
+#128 (`.dockerignore` missing `.env` exclusion) is a related concern — if `.env` files
+containing tokens leak into Docker image layers, it compounds this exposure. Addressing both
+issues together would significantly improve the credential protection posture.

@@ -185,3 +185,13 @@ Additionally, `EmailRenderer.WindowSummary` and `DetailModel.ActivityWindow` are
 
 Comprehensive review (code quality) found additional detail:
 Code quality review confirms this duplication persists and rates it **critical** severity. The entire activity window computation logic — time bucketing, motion event parsing, temperature extraction, diversity counting, and window construction — remains duplicated between `EmailRenderer.RenderDailySummaryAsync()` (lines 27-129) and `DetailModel.LoadActivitySummaryAsync()` (lines 272-358). Both contain identical JSON parsing lambdas, identical window calculations, and near-identical private inner classes (`WindowSummary` vs `ActivityWindow`). This is the single largest quality issue in the codebase.
+
+### claude — 2026-03-03
+
+Comprehensive review (2026-03-03) confirms this remains the highest-impact code quality finding.
+Additionally identified: the `GetEffectiveDefaultSendTimesUtcAsync` and
+`GetDefaultSendTimesDisplayAsync` private methods are also copy-pasted between
+`Create.cshtml.cs` (lines 103-122) and `Detail.cshtml.cs` (lines 284-303). Both query
+`SystemInfo` for the `email.send_times_utc` key, parse it, and fall back to
+`_emailSettings.SendTimesUtc`. These should also be extracted into a shared helper alongside
+the activity summary builder.
