@@ -1,11 +1,12 @@
 ---
 id: 127
 title: "Customer create form shows wrong send time default and doesn't allow blank for system default"
-status: open
+status: closed
 created: 2026-03-02
 author: claude
 labels: [bug]
 priority: medium
+closed: 2026-03-03
 ---
 
 ## Description
