@@ -31,9 +31,16 @@ public class CreateModel : PageModel
     public string TimeZoneId { get; set; } = "Australia/Sydney";
 
     [BindProperty]
-    public string SendTimesLocal { get; set; } = "19:30";
+    public string SendTimesLocal { get; set; } = string.Empty;
 
-    public void OnGet() { }
+    public string DefaultSendTimesDisplay { get; set; } = string.Empty;
+
+    public void OnGet()
+    {
+        DefaultSendTimesDisplay = _emailSettings.SendTimesUtc.Count > 0
+            ? string.Join(", ", _emailSettings.SendTimesUtc) + " UTC"
+            : "08:00 UTC";
+    }
 
     public async Task<IActionResult> OnPostAsync()
     {

@@ -77,10 +77,40 @@ public class CreateModelTests : IDisposable
     }
 
     [Fact]
-    public void OnPostAsync_DefaultSendTime_Is1930()
+    public void DefaultSendTimesLocal_IsEmpty()
     {
         var model = CreatePageModel();
-        Assert.Equal("19:30", model.SendTimesLocal);
+        Assert.Equal(string.Empty, model.SendTimesLocal);
+    }
+
+    [Fact]
+    public void OnGet_PopulatesDefaultSendTimesDisplay_FromEmailSettings()
+    {
+        var emailSettings = Options.Create(new EmailSettings
+        {
+            SendTimesUtc = new List<string> { "08:00", "20:00" }
+        });
+        var model = new CreateModel(_db, emailSettings);
+        model.PageContext = new PageContext
+        {
+            ActionDescriptor = new CompiledPageActionDescriptor(),
+            HttpContext = new DefaultHttpContext(),
+            RouteData = new RouteData()
+        };
+
+        model.OnGet();
+
+        Assert.Equal("08:00, 20:00 UTC", model.DefaultSendTimesDisplay);
+    }
+
+    [Fact]
+    public void OnGet_EmptyEmailSettings_ShowsFallbackDefault()
+    {
+        var model = CreatePageModel();
+
+        model.OnGet();
+
+        Assert.Equal("08:00 UTC", model.DefaultSendTimesDisplay);
     }
 
     [Fact]
