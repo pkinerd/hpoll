@@ -94,6 +94,7 @@ This branch tracks project issues using markdown files.
 
 - `state.json` — Tracks the next issue ID and valid labels
 - `INDEX.md` — Table of all issues with summary info
+- `OPEN_ISSUES.md` — Summary of open issues grouped by type and priority
 - `issues/` — Individual issue files named `<id>-<slug>.md`
 - `docs/` — Project documentation files
 - `SCHEMA.md` — Format specification for issue files
@@ -152,6 +153,15 @@ Comment text.
 
 Note: when the table is empty, omit the placeholder row. The first issue
 created will add the first data row.
+
+**`/tmp/claude-issues/OPEN_ISSUES.md`**:
+```markdown
+# Open Issues Summary
+
+*Last updated: YYYY-MM-DD*
+
+*No open issues.*
+```
 
 ##### 4. Commit and push the initialization
 
@@ -295,7 +305,10 @@ useful for tracking decisions or recording issues that were already resolved.
    existing worktree files (state.json, INDEX.md, issue files) before writing
    to them.
 
-7. Commit and push to the session-scoped branch:
+7. **Regenerate `OPEN_ISSUES.md`** — see **Regenerate Open Issues Summary**.
+   Skip this step if the issue was created with `--closed`.
+
+8. Commit and push to the session-scoped branch:
    ```bash
    cd /tmp/claude-issues
    git add -A
@@ -309,14 +322,14 @@ useful for tracking decisions or recording issues that were already resolved.
    needed to avoid signing failures, and the push destination must use the full
    refname (`refs/heads/...`) for git to resolve it correctly.
 
-8. Clean up:
+9. Clean up:
    ```bash
    cd -
    git worktree remove /tmp/claude-issues
    ```
 
-9. Run **Step 4** (verify sync) to confirm the changes were merged into
-   `claude/issues`. Include the issue ID and title in the success message.
+10. Run **Step 4** (verify sync) to confirm the changes were merged into
+    `claude/issues`. Include the issue ID and title in the success message.
 
 #### Update Issue
 
@@ -328,9 +341,10 @@ useful for tracking decisions or recording issues that were already resolved.
 4. Read then update INDEX.md if title, status, labels, or priority changed.
    If the title (and therefore slug/filename) changed, also update the link
    target in the ID column to point to the renamed file.
-5. Commit: `Update issue #<id>: <description of change>`
-6. Push and clean up (same as create steps 7-8).
-7. Run **Step 4** (verify sync).
+5. **Regenerate `OPEN_ISSUES.md`** — see **Regenerate Open Issues Summary**.
+6. Commit: `Update issue #<id>: <description of change>`
+7. Push and clean up (same as create steps 8-9).
+8. Run **Step 4** (verify sync).
 
 #### Comment on Issue
 
@@ -345,7 +359,7 @@ useful for tracking decisions or recording issues that were already resolved.
    Use `claude` as author if Claude is adding the comment, or the user's name
    if they are providing it.
 4. Commit: `Comment on issue #<id>`
-5. Push and clean up (same as create steps 7-8).
+5. Push and clean up (same as create steps 8-9).
 6. Run **Step 4** (verify sync).
 
 #### Close Issue
@@ -355,9 +369,10 @@ useful for tracking decisions or recording issues that were already resolved.
    - Change `status: open` (or `status: in-progress`) to `status: closed`
    - Add `closed: <YYYY-MM-DD>` to the frontmatter
 3. Read then update the status column in INDEX.md.
-4. Commit: `Close issue #<id>: <title>`
-5. Push and clean up (same as create steps 7-8).
-6. Run **Step 4** (verify sync). Include the issue ID and title in the
+4. **Regenerate `OPEN_ISSUES.md`** — see **Regenerate Open Issues Summary**.
+5. Commit: `Close issue #<id>: <title>`
+6. Push and clean up (same as create steps 8-9).
+7. Run **Step 4** (verify sync). Include the issue ID and title in the
    confirmation.
 
 #### Reopen Issue
@@ -369,9 +384,10 @@ useful for tracking decisions or recording issues that were already resolved.
    - Change `status: closed` to `status: open`
    - Remove the `closed: <date>` line from the frontmatter
 4. Read then update the status column in INDEX.md.
-5. Commit: `Reopen issue #<id>: <title>`
-6. Push and clean up (same as create steps 7-8).
-7. Run **Step 4** (verify sync). Confirm reopening to the user.
+5. **Regenerate `OPEN_ISSUES.md`** — see **Regenerate Open Issues Summary**.
+6. Commit: `Reopen issue #<id>: <title>`
+7. Push and clean up (same as create steps 8-9).
+8. Run **Step 4** (verify sync). Confirm reopening to the user.
 
 #### List Issues (with filter)
 
@@ -440,8 +456,91 @@ search.
    default to `.md`.
 4. Commit: `Add doc: <name>` (or `Update doc: <name>` if the file already
    exists).
-5. Push and clean up (same as create steps 7-8).
+5. Push and clean up (same as create steps 8-9).
 6. Run **Step 4** (verify sync). Confirm to the user.
+
+### Regenerate Open Issues Summary
+
+After any write operation that creates, updates, closes, or reopens issues,
+regenerate `/tmp/claude-issues/OPEN_ISSUES.md` **before committing**. This file
+provides a quick-reference view of all open issues grouped by label and
+priority. It is committed alongside the other changes in the same commit — do
+not make a separate commit for it.
+
+**Steps:**
+
+1. Read `/tmp/claude-issues/INDEX.md` and parse the markdown table rows.
+2. Filter for rows where the Status column is `open` or `in-progress`.
+3. Group the filtered issues by **priority** (critical, high, medium, low, then
+   unset) and by **label**.
+4. Write `/tmp/claude-issues/OPEN_ISSUES.md` using the format below.
+
+**Format when there are open issues:**
+
+```markdown
+# Open Issues Summary
+
+*Last updated: YYYY-MM-DD*
+
+**N open issues** | P critical | Q high | R medium | S low
+
+## By Priority
+
+### Critical
+
+- [#NNNN](issues/NNNN-slug.md) — Title `label1` `label2`
+
+### High
+
+- [#NNNN](issues/NNNN-slug.md) — Title `label1` `label2`
+
+### Medium
+
+...
+
+### Low
+
+...
+
+### Unset
+
+...
+
+## By Label
+
+### label-name
+
+- [#NNNN](issues/NNNN-slug.md) — Title (priority)
+
+### another-label
+
+...
+
+### Unlabeled
+
+- [#NNNN](issues/NNNN-slug.md) — Title (priority)
+```
+
+- Use today's date for *Last updated*.
+- The counts line shows total open issues followed by per-priority counts.
+  Omit priorities with zero count from the counts line.
+- **Omit empty priority sections** — only include a `### Priority` heading if
+  there are issues at that level.
+- **Omit empty label sections** — only include a `### label` heading if there
+  are open issues with that label.
+- Issues with no labels appear under `### Unlabeled`.
+- Issues with multiple labels appear under each of their label sections.
+- Within each section, sort issues by ID ascending.
+
+**Format when there are no open issues:**
+
+```markdown
+# Open Issues Summary
+
+*Last updated: YYYY-MM-DD*
+
+*No open issues.*
+```
 
 ### Step 4: Verify sync (post-push)
 
@@ -536,7 +635,9 @@ avoids repeated AskUserQuestion prompts and produces a single clean commit.
    cd /tmp/claude-issues && python3 /tmp/create_issues.py
    ```
 
-5. **Commit and push** in a single commit:
+5. **Regenerate `OPEN_ISSUES.md`** — see **Regenerate Open Issues Summary**.
+
+6. **Commit and push** in a single commit:
    ```bash
    cd /tmp/claude-issues
    git add -A
@@ -544,9 +645,9 @@ avoids repeated AskUserQuestion prompts and produces a single clean commit.
    git push origin HEAD:refs/heads/claude/zzsysissuesskill-<suffix>
    ```
 
-6. **Clean up** the worktree.
+7. **Clean up** the worktree.
 
-7. Run **Step 4** (verify sync).
+8. Run **Step 4** (verify sync).
 
 #### Bulk document import
 
