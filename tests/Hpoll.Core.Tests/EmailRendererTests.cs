@@ -1031,4 +1031,30 @@ public class EmailRendererTests : IDisposable
         Assert.Contains("Recent Battery Sensor", html);
         Assert.Contains("15%", html);
     }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_BatteryLatestHighIgnoresOlderLow()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-bat-latest-high",
+            DeviceType = DeviceTypes.Battery,
+            Name = "Recovered Sensor"
+        };
+        _db.Devices.Add(batteryDevice);
+        await _db.SaveChangesAsync();
+
+        // Older reading at 10% (critical), newer reading at 90% (healthy)
+        AddBattery(batteryDevice.Id, new DateTime(2026, 2, 25, 10, 0, 0, DateTimeKind.Utc), 10, "critical");
+        AddBattery(batteryDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 90);
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        // Latest reading is 90% (above 30% threshold) so no battery section shown
+        Assert.DoesNotContain("Battery Status", html);
+    }
 }

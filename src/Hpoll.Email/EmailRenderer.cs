@@ -134,19 +134,19 @@ public class EmailRenderer : IEmailRenderer
         // Format the timezone name for display
         var tzAbbrev = tz.IsDaylightSavingTime(nowLocal) ? tz.DaylightName : tz.StandardName;
 
-        // Query latest battery reading per device — bounded to last 7 days to avoid unbounded scan
+        // Query latest battery reading per device — aggregation pushed into SQL
         var batteryCutoff = effectiveNowUtc.AddDays(-7);
-        var allBatteryReadings = await _db.DeviceReadings
+        var batteryReadings = await _db.DeviceReadings
             .Include(r => r.Device)
             .Where(r => deviceIds.Contains(r.DeviceId) && r.ReadingType == ReadingTypes.Battery
-                && r.Timestamp >= batteryCutoff)
+                && r.Timestamp >= batteryCutoff
+                && r.Timestamp == _db.DeviceReadings
+                    .Where(r2 => r2.DeviceId == r.DeviceId
+                        && r2.ReadingType == ReadingTypes.Battery
+                        && r2.Timestamp >= batteryCutoff)
+                    .Max(r2 => r2.Timestamp))
             .AsNoTracking()
             .ToListAsync(ct);
-
-        var batteryReadings = allBatteryReadings
-            .GroupBy(r => r.DeviceId)
-            .Select(g => g.OrderByDescending(r => r.Timestamp).First())
-            .ToList();
 
         var batteryStatuses = new List<BatteryStatus>();
         foreach (var reading in batteryReadings)
