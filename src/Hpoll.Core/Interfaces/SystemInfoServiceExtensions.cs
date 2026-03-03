@@ -15,6 +15,10 @@ public static class SystemInfoServiceExtensions
         {
             await systemInfo.SetBatchAsync(category, entries, ct);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw; // Let cancellation propagate for graceful shutdown
+        }
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Failed to update system info metrics");

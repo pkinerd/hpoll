@@ -182,10 +182,11 @@ public class EmailSchedulerService : BackgroundService
             return;
         }
 
-        var html = await renderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId, _timeProvider.GetUtcNow().UtcDateTime, ct);
+        var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
+        var html = await renderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId, nowUtc, ct);
 
         var tz = TimeZoneInfo.FindSystemTimeZoneById(customer.TimeZoneId);
-        var localNow = TimeZoneInfo.ConvertTimeFromUtc(_timeProvider.GetUtcNow().UtcDateTime, tz);
+        var localNow = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, tz);
         var subject = $"hpoll Daily Summary - {localNow:d MMM yyyy}";
         var ccList = ParseEmailList(customer.CcEmails);
         var bccList = ParseEmailList(customer.BccEmails);

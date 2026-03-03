@@ -90,6 +90,7 @@ public class DetailModel : PageModel
         if (string.IsNullOrWhiteSpace(EditName))
         {
             ModelState.AddModelError(nameof(EditName), "Name is required.");
+            await PreparePageDataAsync(customer);
             return Page();
         }
 
@@ -97,6 +98,7 @@ public class DetailModel : PageModel
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         SuccessMessage = "Name updated.";
+        await PreparePageDataAsync(customer);
         return Page();
     }
 
@@ -115,7 +117,11 @@ public class DetailModel : PageModel
         ValidateEmailField(EditCcEmails, nameof(EditCcEmails));
         ValidateEmailField(EditBccEmails, nameof(EditBccEmails));
 
-        if (!ModelState.IsValid) return Page();
+        if (!ModelState.IsValid)
+        {
+            await PreparePageDataAsync(customer);
+            return Page();
+        }
 
         customer.Email = EditEmail!;
         customer.CcEmails = (EditCcEmails ?? string.Empty).Trim();
@@ -125,6 +131,7 @@ public class DetailModel : PageModel
         SuccessMessage = "Email addresses updated.";
         EditCcEmails = customer.CcEmails;
         EditBccEmails = customer.BccEmails;
+        await PreparePageDataAsync(customer);
         return Page();
     }
 
@@ -137,7 +144,6 @@ public class DetailModel : PageModel
         EditName = customer.Name;
         EditCcEmails = customer.CcEmails;
         EditBccEmails = customer.BccEmails;
-        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
 
         var newSendTimes = (EditSendTimesLocal ?? string.Empty).Trim();
 
@@ -148,6 +154,7 @@ public class DetailModel : PageModel
             if (parsed.Count == 0)
             {
                 ModelState.AddModelError(nameof(EditSendTimesLocal), "Invalid time format. Use HH:mm (e.g., 19:30, 08:00).");
+                await PreparePageDataAsync(customer);
                 return Page();
             }
             // Normalize to sorted HH:mm format
@@ -164,6 +171,7 @@ public class DetailModel : PageModel
 
         EditSendTimesLocal = customer.SendTimesLocal;
         SuccessMessage = $"Send times updated. Next email: {customer.NextSendTimeUtc:yyyy-MM-dd HH:mm} UTC.";
+        await PreparePageDataAsync(customer);
         return Page();
     }
 
@@ -177,13 +185,13 @@ public class DetailModel : PageModel
         EditCcEmails = customer.CcEmails;
         EditBccEmails = customer.BccEmails;
         EditSendTimesLocal = customer.SendTimesLocal;
-        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
 
         var newTzId = (EditTimeZoneId ?? string.Empty).Trim();
         if (string.IsNullOrEmpty(newTzId))
         {
             EditingTimeZone = true;
             ModelState.AddModelError(nameof(EditTimeZoneId), "Timezone is required.");
+            await PreparePageDataAsync(customer);
             return Page();
         }
 
@@ -195,6 +203,7 @@ public class DetailModel : PageModel
         {
             EditingTimeZone = true;
             ModelState.AddModelError(nameof(EditTimeZoneId), "Invalid timezone.");
+            await PreparePageDataAsync(customer);
             return Page();
         }
 
@@ -206,6 +215,7 @@ public class DetailModel : PageModel
         await _db.SaveChangesAsync();
 
         SuccessMessage = "Timezone updated.";
+        await PreparePageDataAsync(customer);
         return Page();
     }
 
@@ -234,6 +244,7 @@ public class DetailModel : PageModel
         if (string.IsNullOrEmpty(_hueApp.ClientId) || string.IsNullOrEmpty(_hueApp.CallbackUrl))
         {
             ErrorMessage = "HueApp:ClientId and HueApp:CallbackUrl must be configured.";
+            await PreparePageDataAsync(customer);
             return Page();
         }
 
@@ -249,7 +260,14 @@ public class DetailModel : PageModel
             $"&state={Uri.EscapeDataString(state)}" +
             $"&redirect_uri={Uri.EscapeDataString(_hueApp.CallbackUrl)}";
 
+        await PreparePageDataAsync(customer);
         return Page();
+    }
+
+    private async Task PreparePageDataAsync(Customer customer)
+    {
+        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
+        await LoadActivitySummaryAsync(customer);
     }
 
     private void ValidateEmailField(string? commaDelimited, string fieldName)
