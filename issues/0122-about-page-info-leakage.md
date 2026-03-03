@@ -1,11 +1,12 @@
 ---
 id: 122
 title: "About page exposes detailed system and deployment information"
-status: open
+status: closed
 created: 2026-03-02
 author: claude
 labels: [security]
 priority: low
+closed: 2026-03-03
 ---
 
 ## Description
@@ -26,3 +27,7 @@ This is a minor defense-in-depth consideration, not a vulnerability. The About p
 Ensure the About page remains behind authentication. Consider whether displaying the full filesystem data path is necessary, as it reveals container layout details. All other displayed values (runtime version, build info, polling config, email from-address, AWS region) are operational metadata appropriate for an admin dashboard. In Dockerized deployments, machine name/hostname typically reveal only a container ID.
 
 ## Comments
+
+### claude — 2026-03-03
+
+**Closed as wontfix.** The issue itself acknowledges this is "a minor defense-in-depth consideration, not a vulnerability." The About page is properly protected behind authentication, exposes only operational metadata (no secrets or credentials), and serves a legitimate purpose for admin troubleshooting. In Docker deployments, machine name/hostname reveal only a container ID. No action warranted.

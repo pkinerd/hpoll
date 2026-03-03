@@ -114,7 +114,7 @@
 | [0116](issues/0116-test-polling-motion-cutoff-extended-downtime.md) | Add test for PollingService motion cutoff after extended downtime | closed | medium | testing |
 | [0120](issues/0120-admin-missing-asnotracking.md) | Missing AsNoTracking on read-only Admin queries wastes change-tracker memory | open | low | enhancement, performance |
 | [0121](issues/0121-admin-missing-exception-handler.md) | Admin portal lacks UseExceptionHandler middleware for production errors | open | low | enhancement |
-| [0122](issues/0122-about-page-info-leakage.md) | About page exposes detailed system and deployment information | open | low | security |
+| [0122](issues/0122-about-page-info-leakage.md) | About page exposes detailed system and deployment information | closed | low | security |
 | [0123](issues/0123-email-window-bucketing-undocumented.md) | Extract 60-minute incomplete-window threshold into named constant | closed | low | documentation |
 | [0126](issues/0126-readme-missing-backup-docs.md) | README missing Backup configuration documentation | closed | low | documentation |
 | [0127](issues/0127-customer-create-send-time-wrong-default.md) | Customer create form shows wrong send time default and doesn't allow blank for system default | closed | medium | bug |
