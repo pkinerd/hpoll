@@ -94,7 +94,7 @@
 | [0091](issues/0091-databasebackupservice-error-paths-untested.md) | DatabaseBackupService error handling paths untested | closed | low | testing |
 | [0094](issues/0094-oauth-registration-flow-lacks-architectural-docs.md) | OAuth hub registration flow lacks architectural documentation | closed | low | documentation |
 | [0095](issues/0095-readme-phantom-settings-and-duplicate-header.md) | README references nonexistent PollingSettings and has duplicate section header | closed | medium | documentation |
-| [0096](issues/0096-token-reveal-cacheable-get.md) | Token reveal endpoint uses cacheable GET request | open | low | security |
+| [0096](issues/0096-token-reveal-cacheable-get.md) | Token reveal endpoint uses cacheable GET request | closed | low | security |
 | [0097](issues/0097-setup-mode-hash-generator-exposed.md) | Setup mode hash generator lacks server-side guard when password already configured | open | low | enhancement |
 | [0098](issues/0098-clearallasync-test-wrong-behavior.md) | SystemInfoService.ClearAllAsync test verifies exception instead of actual behavior | closed | low | testing, code-quality |
 | [0099](issues/0099-emailscheduler-renderer-failure-untested.md) | EmailSchedulerService lacks test for renderer failure path | closed | low | testing |
@@ -102,7 +102,7 @@
 | [0102](issues/0102-tokenrefresh-executeasync-untested.md) | TokenRefreshService.ExecuteAsync outer exception catch untested | closed | low | testing |
 | [0103](issues/0103-tokenrefresh-boundary-test-flaky.md) | TokenRefreshService boundary test has overly weak assertion | closed | low | testing, code-quality |
 | [0104](issues/0104-customer-detail-error-success-styling.md) | Customer Detail error message displayed with success styling | closed | low | bug |
-| [0105](issues/0105-email-renderer-incomplete-html-encoding.md) | Timezone display name not HTML-encoded in email renderer | open | low | security |
+| [0105](issues/0105-email-renderer-incomplete-html-encoding.md) | Timezone display name not HTML-encoded in email renderer | closed | low | security |
 | [0106](issues/0106-hueapiclient-intermediate-string-deserialization.md) | HueApiClient deserializes JSON via intermediate string allocation | open | low | enhancement, performance |
 | [0107](issues/0107-backup-test-task-delay-timing.md) | DatabaseBackupService test uses Task.Delay for timestamp separation | closed | low | testing, code-quality |
 | [0108](issues/0108-unused-customers-config-appsettings.md) | Unused Customers configuration key in appsettings.json | closed | low | code-quality |

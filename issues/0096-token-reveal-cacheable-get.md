@@ -1,8 +1,9 @@
 ---
 id: 96
 title: "Token reveal endpoint uses cacheable GET request"
-status: open
+status: closed
 created: 2026-03-02
+closed: 2026-03-03
 author: claude
 labels: [security]
 priority: low
