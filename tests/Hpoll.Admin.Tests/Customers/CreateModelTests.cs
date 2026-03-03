@@ -9,6 +9,7 @@ using Hpoll.Admin.Pages.Customers;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
 using Hpoll.Data;
+using Hpoll.Data.Entities;
 
 namespace Hpoll.Admin.Tests.Customers;
 
@@ -84,7 +85,7 @@ public class CreateModelTests : IDisposable
     }
 
     [Fact]
-    public void OnGet_PopulatesDefaultSendTimesDisplay_FromEmailSettings()
+    public async Task OnGetAsync_PopulatesDefaultSendTimesDisplay_FromEmailSettings()
     {
         var emailSettings = Options.Create(new EmailSettings
         {
@@ -98,19 +99,37 @@ public class CreateModelTests : IDisposable
             RouteData = new RouteData()
         };
 
-        model.OnGet();
+        await model.OnGetAsync();
 
         Assert.Equal("08:00, 20:00 UTC", model.DefaultSendTimesDisplay);
     }
 
     [Fact]
-    public void OnGet_EmptyEmailSettings_ShowsFallbackDefault()
+    public async Task OnGetAsync_EmptyEmailSettings_ShowsEmptyDefault()
     {
         var model = CreatePageModel();
 
-        model.OnGet();
+        await model.OnGetAsync();
 
-        Assert.Equal("08:00 UTC", model.DefaultSendTimesDisplay);
+        Assert.Equal(" UTC", model.DefaultSendTimesDisplay);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_SystemInfoOverridesEmailSettings()
+    {
+        _db.SystemInfo.Add(new SystemInfo
+        {
+            Key = "email.send_times_utc",
+            Value = "08:45",
+            Category = "Email"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+
+        await model.OnGetAsync();
+
+        Assert.Equal("08:45 UTC", model.DefaultSendTimesDisplay);
     }
 
     [Fact]
@@ -210,5 +229,56 @@ public class CreateModelTests : IDisposable
         Assert.NotNull(customer);
         Assert.Equal("", customer.SendTimesLocal);
         Assert.NotNull(customer.NextSendTimeUtc); // Should fall back to default
+    }
+
+    [Fact]
+    public async Task OnPostAsync_EmptySendTimes_UsesSystemInfoDefaults()
+    {
+        // SystemInfo has 08:45 (written by the worker), but _emailSettings has default empty list
+        _db.SystemInfo.Add(new SystemInfo
+        {
+            Key = "email.send_times_utc",
+            Value = "08:45",
+            Category = "Email"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        model.Name = "Alice Smith";
+        model.Email = "alice@example.com";
+        model.TimeZoneId = "UTC";
+        model.SendTimesLocal = "";
+
+        var result = await model.OnPostAsync();
+
+        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        var customer = await _db.Customers.FirstOrDefaultAsync(c => c.Email == "alice@example.com");
+        Assert.NotNull(customer);
+        Assert.Equal("", customer.SendTimesLocal);
+        Assert.NotNull(customer.NextSendTimeUtc);
+        // Should use 08:45 from SystemInfo, not 08:00 hardcoded fallback
+        Assert.Equal(45, customer.NextSendTimeUtc!.Value.Minute);
+    }
+
+    [Fact]
+    public async Task OnPostAsync_ValidationError_PreservesDefaultSendTimesDisplay()
+    {
+        _db.SystemInfo.Add(new SystemInfo
+        {
+            Key = "email.send_times_utc",
+            Value = "08:45",
+            Category = "Email"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        model.Name = "Bob";
+        model.Email = "not-an-email";
+        model.TimeZoneId = "UTC";
+
+        var result = await model.OnPostAsync();
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal("08:45 UTC", model.DefaultSendTimesDisplay);
     }
 }
