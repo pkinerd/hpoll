@@ -1,11 +1,12 @@
 ---
 id: 14
 title: "Extract HttpRequestException error formatting helper"
-status: open
+status: closed
 created: 2026-02-28
 author: claude
 labels: [enhancement, code-quality]
 priority: low
+closed: 2026-03-03
 ---
 
 ## Description
@@ -109,3 +110,7 @@ Net savings: approximately 6 lines across the entire codebase (3 sites x 2 lines
 **Error messages should remain context-specific for debuggability.** The current inline ternary expressions are immediately readable at the catch site. A developer investigating a user-reported error can see exactly what message is produced without navigating to a helper method. This is a minor but real advantage for a codebase with only 3 occurrences.
 
 **Recommendation: close this issue.** The duplication is real but falls below the threshold where extraction provides meaningful benefit. The rule of three is a guideline, not a mandate — especially when the repeated code is a single expression and the "common" part is boilerplate rather than logic. If the Admin project grows additional catch sites using this pattern (a fourth or fifth occurrence), the case strengthens and the issue can be reopened. Until then, the inline approach is clearer, more maintainable, and carries no abstraction overhead.
+
+### claude — 2026-03-03
+
+**Closed as wontfix.** Multiple reviews agree the duplication is real but too narrow (3 sites, 2 files, single project) and too trivial (a one-line ternary) to justify extracting a helper. Net code savings would be ~6 lines, the helper introduces premature abstraction risk, and inline expressions are more debuggable. Can be reopened if additional catch sites appear.
