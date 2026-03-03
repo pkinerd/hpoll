@@ -238,4 +238,24 @@ public class LoginModelTests
         Assert.IsType<PageResult>(result);
         Assert.Equal("Invalid password.", model.ErrorMessage);
     }
+
+    [Fact]
+    public void OnPostSetup_WhenPasswordAlreadyConfigured_ReturnsNotFound()
+    {
+        var model = CreatePageModel(passwordHash: _testHash);
+        var result = model.OnPostSetup("newpassword123", "newpassword123");
+
+        Assert.IsType<NotFoundResult>(result);
+        Assert.Null(model.GeneratedHash);
+    }
+
+    [Fact]
+    public void OnPostSetup_WhenPasswordNotConfigured_AllowsHashGeneration()
+    {
+        var model = CreatePageModel(passwordHash: null);
+        var result = model.OnPostSetup("validpassword123", "validpassword123");
+
+        Assert.IsType<PageResult>(result);
+        Assert.NotNull(model.GeneratedHash);
+    }
 }

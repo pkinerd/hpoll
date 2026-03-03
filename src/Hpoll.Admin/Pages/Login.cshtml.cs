@@ -88,6 +88,9 @@ public class LoginModel : PageModel
 
     public IActionResult OnPostSetup(string password, string confirmPassword)
     {
+        if (!string.IsNullOrEmpty(_passwordHash))
+            return NotFound();
+
         IsSetupMode = true;
 
         if (string.IsNullOrEmpty(password))

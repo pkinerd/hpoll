@@ -107,10 +107,12 @@ public class DatabaseBackupService : BackgroundService
                 lastCompleted = fi.LastWriteTimeUtc.ToString("O");
             }
 
-            await _systemInfo.SetAsync("Backup", "backup.last_backup_completed", lastCompleted);
-            await _systemInfo.SetAsync("Backup", "backup.next_backup_due",
-                now.AddHours(_settings.IntervalHours).ToString("O"));
-            await _systemInfo.SetAsync("Backup", "backup.total_backups", _totalBackups.ToString());
+            await _systemInfo.SetBatchAsync("Backup", new Dictionary<string, string>
+            {
+                ["backup.last_backup_completed"] = lastCompleted,
+                ["backup.next_backup_due"] = now.AddHours(_settings.IntervalHours).ToString("O"),
+                ["backup.total_backups"] = _totalBackups.ToString()
+            });
 
             _logger.LogInformation(
                 "Backup stats initialized from existing files: {Count} backups found", _totalBackups);
@@ -135,18 +137,13 @@ public class DatabaseBackupService : BackgroundService
             PruneOldBackups();
             _totalBackups++;
 
-            try
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            await _systemInfo.TrySetBatchAsync("Backup", new Dictionary<string, string>
             {
-                var now = _timeProvider.GetUtcNow().UtcDateTime;
-                await _systemInfo.SetAsync("Backup", "backup.last_backup_completed", now.ToString("O"));
-                await _systemInfo.SetAsync("Backup", "backup.next_backup_due",
-                    now.AddHours(_settings.IntervalHours).ToString("O"));
-                await _systemInfo.SetAsync("Backup", "backup.total_backups", _totalBackups.ToString());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to update system info metrics");
-            }
+                ["backup.last_backup_completed"] = now.ToString("O"),
+                ["backup.next_backup_due"] = now.AddHours(_settings.IntervalHours).ToString("O"),
+                ["backup.total_backups"] = _totalBackups.ToString()
+            }, _logger, stoppingToken);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {

@@ -230,9 +230,12 @@ public class DatabaseBackupServiceTests : IDisposable
         catch (OperationCanceledException) { }
         finally { await service.StopAsync(CancellationToken.None); }
 
-        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.total_backups", "3", It.IsAny<CancellationToken>()), Times.Once);
-        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.last_backup_completed", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.Once);
-        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.next_backup_due", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        systemInfoMock.Verify(s => s.SetBatchAsync("Backup",
+            It.Is<Dictionary<string, string>>(d =>
+                d.ContainsKey("backup.total_backups") && d["backup.total_backups"] == "3"
+                && d.ContainsKey("backup.last_backup_completed")
+                && d.ContainsKey("backup.next_backup_due")),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -251,16 +254,19 @@ public class DatabaseBackupServiceTests : IDisposable
             : Array.Empty<string>();
         Assert.Single(backupFiles);
 
-        // Verify system info was updated after backup
-        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.last_backup_completed", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
-        systemInfoMock.Verify(s => s.SetAsync("Backup", "backup.total_backups", It.IsNotNull<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        // Verify system info was updated after backup via SetBatchAsync
+        systemInfoMock.Verify(s => s.SetBatchAsync("Backup",
+            It.Is<Dictionary<string, string>>(d =>
+                d.ContainsKey("backup.last_backup_completed")
+                && d.ContainsKey("backup.total_backups")),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
     public async Task ExecuteAsync_SystemInfoFailure_DoesNotCrashService()
     {
         var systemInfoMock = new Mock<ISystemInfoService>();
-        systemInfoMock.Setup(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        systemInfoMock.Setup(s => s.SetBatchAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("System info write failed"));
 
         var service = CreateService(systemInfoMock: systemInfoMock);

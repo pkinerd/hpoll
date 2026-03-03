@@ -179,12 +179,14 @@ public class DetailModel : PageModel
         Devices = await _db.Devices
             .Where(d => d.HubId == id)
             .OrderBy(d => d.Name)
+            .AsNoTracking()
             .ToListAsync();
 
         RecentLogs = await _db.PollingLogs
             .Where(l => l.HubId == id)
             .OrderByDescending(l => l.Timestamp)
             .Take(20)
+            .AsNoTracking()
             .ToListAsync();
 
         return Page();
