@@ -324,7 +324,7 @@ public class CustomersPageTests : IClassFixture<HpollWebApplicationFactory>, IAs
     }
 
     [Fact]
-    public async Task CustomersDetail_ShowsActivitySummaryToggle()
+    public async Task CustomersDetail_AlwaysShowsActivitySummary()
     {
         using var db = _factory.CreateDbContext();
         var customer = new Customer
@@ -341,7 +341,7 @@ public class CustomersPageTests : IClassFixture<HpollWebApplicationFactory>, IAs
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Contains("Activity Summary", html);
-        Assert.Contains("Show Activity Summary", html);
+        Assert.DoesNotContain("Show Activity Summary", html);
     }
 
     [Fact]

@@ -186,15 +186,15 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnGetAsync_WithActivity_ShowsActivitySummary()
+    public async Task OnGetAsync_AlwaysLoadsActivitySummary()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
-        var result = await model.OnGetAsync(customer.Id, activity: true);
+        var result = await model.OnGetAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
-        Assert.True(model.ShowActivitySummary);
+        Assert.NotNull(model.ActivityWindows);
     }
 
     [Fact]

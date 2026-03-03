@@ -52,12 +52,11 @@ public class DetailModel : PageModel
     public string? ErrorMessage { get; set; }
     public string DefaultSendTimesDisplay { get; set; } = string.Empty;
     public string? OAuthUrl { get; set; }
-    public bool ShowActivitySummary { get; set; }
     public bool EditingTimeZone { get; set; }
     public List<ActivityWindow> ActivityWindows { get; set; } = new();
     public int MotionSensorCount { get; set; }
 
-    public async Task<IActionResult> OnGetAsync(int id, bool? activity = null, bool editTz = false)
+    public async Task<IActionResult> OnGetAsync(int id, bool editTz = false)
     {
         var customer = await _db.Customers
             .Include(c => c.Hubs)
@@ -73,12 +72,7 @@ public class DetailModel : PageModel
         EditTimeZoneId = customer.TimeZoneId;
         EditingTimeZone = editTz;
         DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
-
-        if (activity == true)
-        {
-            ShowActivitySummary = true;
-            await LoadActivitySummaryAsync(customer);
-        }
+        await LoadActivitySummaryAsync(customer);
 
         return Page();
     }
