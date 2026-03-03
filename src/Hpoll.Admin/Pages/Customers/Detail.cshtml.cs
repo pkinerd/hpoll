@@ -49,6 +49,7 @@ public class DetailModel : PageModel
     public string? EditTimeZoneId { get; set; }
 
     public string? SuccessMessage { get; set; }
+    public string? ErrorMessage { get; set; }
     public string DefaultSendTimesDisplay { get; set; } = string.Empty;
     public string? OAuthUrl { get; set; }
     public bool ShowActivitySummary { get; set; }
@@ -229,7 +230,7 @@ public class DetailModel : PageModel
 
         if (string.IsNullOrEmpty(_hueApp.ClientId) || string.IsNullOrEmpty(_hueApp.CallbackUrl))
         {
-            SuccessMessage = "HueApp:ClientId and HueApp:CallbackUrl must be configured.";
+            ErrorMessage = "HueApp:ClientId and HueApp:CallbackUrl must be configured.";
             return Page();
         }
 

@@ -511,7 +511,7 @@ public class DetailModelTests : IDisposable
         var result = await model.OnPostRegisterHubAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
-        Assert.Contains("ClientId", model.SuccessMessage);
+        Assert.Contains("ClientId", model.ErrorMessage);
         Assert.Equal(customer.Id, model.Customer.Id);
     }
 
