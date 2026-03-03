@@ -78,10 +78,10 @@ public class CreateModelTests : IDisposable
     }
 
     [Fact]
-    public void DefaultSendTimesLocal_IsEmpty()
+    public void DefaultSendTimesLocal_IsNull()
     {
         var model = CreatePageModel();
-        Assert.Equal(string.Empty, model.SendTimesLocal);
+        Assert.Null(model.SendTimesLocal);
     }
 
     [Fact]

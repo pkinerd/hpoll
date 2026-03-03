@@ -33,7 +33,7 @@ public class CreateModel : PageModel
     public string TimeZoneId { get; set; } = "Australia/Sydney";
 
     [BindProperty]
-    public string SendTimesLocal { get; set; } = string.Empty;
+    public string? SendTimesLocal { get; set; }
 
     public string DefaultSendTimesDisplay { get; set; } = string.Empty;
 
