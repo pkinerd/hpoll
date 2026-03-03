@@ -1,7 +1,8 @@
 ---
 id: 135
 title: "README settings table does not include non-.NET env vars like ADMIN_PASSWORD_HASH"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-03
 author: claude
 labels: [documentation]
@@ -32,3 +33,7 @@ password" section (lines 324-338). It also appears in `.env.example`.
 **Found by:** Comprehensive review — documentation review.
 
 ## Comments
+
+### claude — 2026-03-03
+
+Fixed in commit on branch `claude/fix-multiple-issues-OnW6X`.

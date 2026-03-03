@@ -118,10 +118,10 @@
 | [0123](issues/0123-email-window-bucketing-undocumented.md) | Extract 60-minute incomplete-window threshold into named constant | closed | low | documentation |
 | [0126](issues/0126-readme-missing-backup-docs.md) | README missing Backup configuration documentation | closed | low | documentation |
 | [0127](issues/0127-customer-create-send-time-wrong-default.md) | Customer create form shows wrong send time default and doesn't allow blank for system default | closed | medium | bug |
-| [0128](issues/0128-dockerignore-missing-env-exclusion.md) | Dockerignore missing .env exclusion — defense-in-depth hardening | open | low | security |
-| [0129](issues/0129-systeminfoservice-datetime-utcnow.md) | SystemInfoService uses DateTime.UtcNow instead of TimeProvider | open | low | enhancement, code-quality |
-| [0131](issues/0131-login-view-low-test-coverage.md) | Login.cshtml Razor view has uncovered rendering paths | open | low | testing |
-| [0132](issues/0132-pii-email-addresses-in-logs.md) | Email addresses logged in plaintext — compliance consideration | open | low | code-quality |
-| [0133](issues/0133-unused-device-roomname-property.md) | Device.RoomName property is never populated during polling | open | low | code-quality |
-| [0134](issues/0134-admin-dashboard-hardcoded-token-threshold.md) | Admin dashboard hardcodes 48-hour token expiry threshold | open | low | code-quality |
-| [0135](issues/0135-readme-missing-admin-password-hash.md) | README settings table does not include non-.NET env vars like ADMIN_PASSWORD_HASH | open | low | documentation |
+| [0128](issues/0128-dockerignore-missing-env-exclusion.md) | Dockerignore missing .env exclusion — defense-in-depth hardening | closed | low | security |
+| [0129](issues/0129-systeminfoservice-datetime-utcnow.md) | SystemInfoService uses DateTime.UtcNow instead of TimeProvider | closed | low | enhancement, code-quality |
+| [0131](issues/0131-login-view-low-test-coverage.md) | Login.cshtml Razor view has uncovered rendering paths | closed | low | testing |
+| [0132](issues/0132-pii-email-addresses-in-logs.md) | Email addresses logged in plaintext — compliance consideration | closed | low | code-quality |
+| [0133](issues/0133-unused-device-roomname-property.md) | Device.RoomName property is never populated during polling | closed | low | code-quality |
+| [0134](issues/0134-admin-dashboard-hardcoded-token-threshold.md) | Admin dashboard hardcodes 48-hour token expiry threshold | closed | low | code-quality |
+| [0135](issues/0135-readme-missing-admin-password-hash.md) | README settings table does not include non-.NET env vars like ADMIN_PASSWORD_HASH | closed | low | documentation |

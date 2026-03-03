@@ -1,7 +1,8 @@
 ---
 id: 129
 title: "SystemInfoService uses DateTime.UtcNow instead of TimeProvider"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-03
 author: claude
 labels: [enhancement, code-quality]
@@ -29,3 +30,7 @@ other Worker services.
 **Found by:** Comprehensive review — code quality review.
 
 ## Comments
+
+### claude — 2026-03-03
+
+Fixed in commit on branch `claude/fix-multiple-issues-OnW6X`.

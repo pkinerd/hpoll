@@ -1,7 +1,8 @@
 ---
 id: 134
 title: "Admin dashboard hardcodes 48-hour token expiry threshold"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-03
 author: claude
 labels: [code-quality]
@@ -24,3 +25,7 @@ threshold than the Worker uses for actual token refresh, creating a confusing mi
 **Found by:** Comprehensive review — documentation review and code quality review.
 
 ## Comments
+
+### claude — 2026-03-03
+
+Fixed in commit on branch `claude/fix-multiple-issues-OnW6X`.

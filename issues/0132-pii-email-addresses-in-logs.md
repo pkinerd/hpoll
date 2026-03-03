@@ -1,7 +1,8 @@
 ---
 id: 132
 title: "Email addresses logged in plaintext — compliance consideration"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-03
 author: claude
 labels: [code-quality]
@@ -41,3 +42,7 @@ aggregation). For current architecture, the email addresses serve operational de
 **Found by:** Comprehensive review — security review.
 
 ## Comments
+
+### claude — 2026-03-03
+
+Fixed in commit on branch `claude/fix-multiple-issues-OnW6X`.

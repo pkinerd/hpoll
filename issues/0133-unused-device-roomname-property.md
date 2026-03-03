@@ -1,7 +1,8 @@
 ---
 id: 133
 title: "Device.RoomName property is never populated during polling"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-03
 author: claude
 labels: [code-quality]
@@ -34,3 +35,7 @@ the Hue API `/resource/room` endpoint and cross-referencing devices to their ass
 **Found by:** Comprehensive review — documentation review.
 
 ## Comments
+
+### claude — 2026-03-03
+
+Fixed in commit on branch `claude/fix-multiple-issues-OnW6X`.

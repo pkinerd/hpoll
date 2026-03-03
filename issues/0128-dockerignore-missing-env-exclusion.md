@@ -1,7 +1,8 @@
 ---
 id: 128
 title: "Dockerignore missing .env exclusion — defense-in-depth hardening"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-03
 author: claude
 labels: [security]
@@ -42,3 +43,7 @@ data/
 **Found by:** Comprehensive review — security review.
 
 ## Comments
+
+### claude — 2026-03-03
+
+Fixed in commit on branch `claude/fix-multiple-issues-OnW6X`.
