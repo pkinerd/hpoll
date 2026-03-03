@@ -1,7 +1,8 @@
 ---
 id: 76
 title: "Inconsistent TimeProvider vs DateTime.UtcNow usage across codebase"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-01
 author: claude
 labels: [enhancement, code-quality]
@@ -317,3 +318,7 @@ Most critically, `PollingService.GetOrCreateDeviceAsync` (line 353) uses `DateTi
 Additional occurrences of `DateTime.UtcNow`:
 - `SystemInfoService` (Worker service): 4 occurrences at lines 31, 38, 60, 69
 - All Admin page models: `Detail.cshtml.cs` (lines 101, 119, 157-158, 200-201, 214, 275), `Hubs/Detail.cshtml.cs` (lines 61, 68, 84, 97, 118), `OAuthCallback.cshtml.cs` (lines 109, 129), `Index.cshtml.cs` (line 33)
+
+### claude — 2026-03-03
+
+Fixed the two consistently identified important items: (1) EmailSchedulerService.SendCustomerEmailAsync now passes _timeProvider.GetUtcNow().UtcDateTime as nowUtc to RenderDailySummaryAsync, ensuring email body and subject use the same time source; (2) PollingService.GetOrCreateDeviceAsync is now non-static and uses _timeProvider for UpdatedAt on device name changes. Admin pages, SystemInfoService, and EmailRenderer were excluded per multiple critical reviews as cosmetic/false positives.
