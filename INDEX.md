@@ -65,7 +65,7 @@
 | [0061](issues/0061-admin-portal-binds-all-interfaces.md) | Admin portal Docker container binds to all network interfaces | closed | low | security |
 | [0062](issues/0062-sequential-email-sending-limits-scalability.md) | Sequential email sending limits scalability for large customer counts | closed | low | enhancement, performance |
 | [0063](issues/0063-add-https-redirect-middleware-admin-portal.md) | Add HTTPS redirect middleware for admin portal in production | closed | medium | security |
-| [0064](issues/0064-sanitize-exception-messages-in-polling-log.md) | Sanitize exception messages before persisting in PollingLog | open | low | security |
+| [0064](issues/0064-sanitize-exception-messages-in-polling-log.md) | Sanitize exception messages before persisting in PollingLog | closed | low | security |
 | [0065](issues/0065-oauth-callback-signed-state-parameter.md) | OAuth callback should use signed state parameter instead of session-based CSRF | closed | low | security, enhancement |
 | [0066](issues/0066-fix-claude-md-inaccuracies.md) | Fix CLAUDE.md inaccuracies: CI trigger pattern and missing battery mention | closed | low | documentation |
 | [0067](issues/0067-entity-defaults-use-datetime-utcnow-at-instantiation.md) | Entity default values use DateTime.UtcNow at instantiation, not persistence time | closed | low | enhancement, code-quality |

@@ -1,11 +1,12 @@
 ---
 id: 64
 title: "Sanitize exception messages before persisting in PollingLog"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [security]
 priority: low
+closed: 2026-03-03
 ---
 
 ## Description
@@ -106,3 +107,7 @@ The comment about `HueApiClient` logging error response bodies at Warning level 
 - **Actual risk:** Minimal. The only realistic sensitive data that could appear in the catch-all is a local SQLite file path from EF Core exceptions, which is trivially discoverable information on the deployment host.
 - **The three claimed threat vectors are not present:** (1) Tokens do not appear in .NET HttpRequestException messages; (2) the specific HTTP status catch blocks already use curated messages; (3) the admin user already has direct access to all tokens on the same page.
 - **If any action is taken:** The most proportionate fix would be to change the general catch-all to store a generic message like `"Unexpected error: {ex.GetType().Name}"` and keep the full `ex.Message` only in the application log. This is a one-line change and addresses the theoretical EF Core path leak without the elaborate sanitization framework suggested in the original description.
+
+### claude — 2026-03-03
+
+**Closed as wontfix.** The critical review confirmed this issue is substantially overstated. The three main HTTP failure modes (401, 429, 503) already use curated messages. The general catch-all only fires for unexpected exceptions whose messages do not contain credentials or tokens. The admin user who would see these messages already has full access to all tokens on the same page. The actual risk is minimal and does not justify the implementation effort.
