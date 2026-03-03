@@ -1,8 +1,9 @@
 ---
 id: 79
 title: "VACUUM INTO uses string interpolation creating SQL injection risk"
-status: open
+status: closed
 created: 2026-03-01
+closed: 2026-03-03
 author: claude
 labels: [security]
 priority: low
