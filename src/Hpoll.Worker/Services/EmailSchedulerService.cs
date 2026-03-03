@@ -101,8 +101,8 @@ public class EmailSchedulerService : BackgroundService
         {
             customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
                 customer.SendTimesLocal, customer.TimeZoneId, now, _settings.SendTimesUtc);
-            _logger.LogInformation("Initialized NextSendTimeUtc for customer {Name} (Id={Id}): {NextSend}",
-                customer.Name, customer.Id, customer.NextSendTimeUtc);
+            _logger.LogInformation("Initialized NextSendTimeUtc for customer (Id={Id}): {NextSend}",
+                customer.Id, customer.NextSendTimeUtc);
         }
 
         await db.SaveChangesAsync(ct);
@@ -145,8 +145,8 @@ public class EmailSchedulerService : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send email to {Email} (customer {Name}, Id={Id})",
-                    customer.Email, customer.Name, customer.Id);
+                _logger.LogError(ex, "Failed to send email to {Email} (customer Id={Id})",
+                    MaskEmail(customer.Email), customer.Id);
             }
 
             // Always advance NextSendTimeUtc even on failure, to prevent retry loops
@@ -177,8 +177,8 @@ public class EmailSchedulerService : BackgroundService
         var toList = ParseEmailList(customer.Email);
         if (toList == null)
         {
-            _logger.LogWarning("Customer {Name} (Id={Id}) has no valid notification email addresses, skipping",
-                customer.Name, customer.Id);
+            _logger.LogWarning("Customer (Id={Id}) has no valid notification email addresses, skipping",
+                customer.Id);
             return;
         }
 
@@ -192,8 +192,8 @@ public class EmailSchedulerService : BackgroundService
         var bccList = ParseEmailList(customer.BccEmails);
         await sender.SendEmailAsync(toList, subject, html, ccList, bccList, ct);
 
-        _logger.LogInformation("Email sent to {Email} (customer {Name}, Id={Id})",
-            customer.Email, customer.Name, customer.Id);
+        _logger.LogInformation("Email sent to {Email} (customer Id={Id})",
+            MaskEmail(customer.Email), customer.Id);
     }
 
     internal async Task<TimeSpan> GetSleepDurationAsync(CancellationToken ct)
@@ -219,6 +219,22 @@ public class EmailSchedulerService : BackgroundService
         return await db.Customers
             .Where(c => c.Status == CustomerStatus.Active && c.NextSendTimeUtc != null)
             .MinAsync(c => (DateTime?)c.NextSendTimeUtc, ct);
+    }
+
+    internal static string MaskEmail(string email)
+    {
+        if (string.IsNullOrEmpty(email)) return email;
+        var parts = email.Split(',');
+        return string.Join(", ", parts.Select(e =>
+        {
+            var trimmed = e.Trim();
+            var at = trimmed.IndexOf('@');
+            if (at <= 0) return "***";
+            var local = trimmed[..at];
+            var domain = trimmed[at..];
+            var visible = Math.Min(2, local.Length);
+            return local[..visible] + new string('*', Math.Max(0, local.Length - visible)) + domain;
+        }));
     }
 
     internal static List<string>? ParseEmailList(string commaDelimited)

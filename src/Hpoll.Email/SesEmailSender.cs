@@ -23,6 +23,16 @@ public class SesEmailSender : IEmailSender
         _logger = logger;
     }
 
+    private static string MaskEmail(string email)
+    {
+        var at = email.IndexOf('@');
+        if (at <= 0) return "***";
+        var local = email[..at];
+        var domain = email[at..];
+        var visible = Math.Min(2, local.Length);
+        return local[..visible] + new string('*', Math.Max(0, local.Length - visible)) + domain;
+    }
+
     public Task SendEmailAsync(List<string> toAddresses, string subject, string htmlBody, CancellationToken ct = default)
     {
         return SendEmailAsync(toAddresses, subject, htmlBody, null, null, ct);
@@ -52,15 +62,15 @@ public class SesEmailSender : IEmailSender
             }
         };
 
-        var toDisplay = string.Join(", ", toAddresses);
+        var toMasked = string.Join(", ", toAddresses.Select(MaskEmail));
         try
         {
             var response = await _sesClient.SendEmailAsync(sendRequest, ct);
-            _logger.LogInformation("Email sent to {To}, MessageId: {MessageId}", toDisplay, response.MessageId);
+            _logger.LogInformation("Email sent to {To}, MessageId: {MessageId}", toMasked, response.MessageId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send email to {To}", toDisplay);
+            _logger.LogError(ex, "Failed to send email to {To}", toMasked);
             throw;
         }
     }

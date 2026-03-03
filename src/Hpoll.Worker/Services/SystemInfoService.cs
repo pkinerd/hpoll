@@ -15,13 +15,16 @@ public class SystemInfoService : ISystemInfoService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<SystemInfoService> _logger;
+    private readonly TimeProvider _timeProvider;
 
     public SystemInfoService(
         IServiceScopeFactory scopeFactory,
-        ILogger<SystemInfoService> logger)
+        ILogger<SystemInfoService> logger,
+        TimeProvider? timeProvider = null)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public async Task SetAsync(string category, string key, string value, CancellationToken ct = default)
@@ -32,14 +35,14 @@ public class SystemInfoService : ISystemInfoService
         var entry = await db.SystemInfo.FindAsync(new object[] { key }, ct);
         if (entry == null)
         {
-            entry = new SystemInfo { Key = key, Category = category, Value = value, UpdatedAt = DateTime.UtcNow };
+            entry = new SystemInfo { Key = key, Category = category, Value = value, UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime };
             db.SystemInfo.Add(entry);
         }
         else
         {
             entry.Value = value;
             entry.Category = category;
-            entry.UpdatedAt = DateTime.UtcNow;
+            entry.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         }
 
         await db.SaveChangesAsync(ct);
@@ -61,7 +64,7 @@ public class SystemInfoService : ISystemInfoService
             {
                 entry.Value = value;
                 entry.Category = category;
-                entry.UpdatedAt = DateTime.UtcNow;
+                entry.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
             }
             else
             {
@@ -70,7 +73,7 @@ public class SystemInfoService : ISystemInfoService
                     Key = key,
                     Category = category,
                     Value = value,
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime
                 });
             }
         }
