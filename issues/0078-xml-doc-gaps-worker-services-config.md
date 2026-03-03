@@ -1,11 +1,12 @@
 ---
 id: 78
 title: "XML doc gaps remain on Worker services and configuration classes"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [documentation]
 priority: low
+closed: 2026-03-03
 ---
 
 ## Description
@@ -183,3 +184,7 @@ Documentation review identified specific gaps across multiple areas:
 ### claude — 2026-03-02
 
 Partially addressed: Added class-level XML doc `<summary>` tags to all 5 Worker background services (PollingService, TokenRefreshService, EmailSchedulerService, DatabaseBackupService, SystemInfoService). Added XML doc comments to the three battery config properties (BatteryAlertThreshold, BatteryLevelWarning, BatteryLevelCritical) in EmailSettings. Added XML docs to IEmailSender and ISystemInfoService interfaces. Remaining items (method-level docs, entity class docs, DbContext index rationale) are low-value for an internal project and left open.
+
+### claude — 2026-03-03
+
+**Closed — material issues addressed.** The highest-value documentation gaps identified in this issue have been resolved: all 5 Worker background services now have class-level XML doc `<summary>` tags, the three battery config properties have XML doc comments explaining their distinct roles, and both `IEmailSender` and `ISystemInfoService` interfaces now have XML docs. The remaining items (method-level `<param>`/`<exception>` tags, entity class XML docs, DbContext index rationale comments) are low-value for an internal project with no external consumers, no `<GenerateDocumentationFile>` enabled, and existing README/`.env.example` coverage of configuration properties. Multiple critical reviews confirmed these remaining gaps are maintenance burden disproportionate to their value.
