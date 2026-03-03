@@ -47,6 +47,7 @@ public class DetailModel : PageModel
 
         if (value == null) return BadRequest();
 
+        Response.Headers.CacheControl = "no-store, no-cache";
         return new JsonResult(new { value });
     }
 

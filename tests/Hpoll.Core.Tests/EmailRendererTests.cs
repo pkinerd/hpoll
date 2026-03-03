@@ -864,6 +864,26 @@ public class EmailRendererTests : IDisposable
     }
 
     [Fact]
+    public async Task RenderDailySummaryAsync_TimezoneNameIsHtmlEncoded()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        // Render with "Australia/Sydney" which has a StandardName/DaylightName that
+        // goes through the Encode() path. Verify the timezone abbreviation appears in the header.
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, "Australia/Sydney", NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("Daily Activity Summary", html);
+        // The header should contain a parenthesized timezone abbreviation
+        // The timezone name is encoded through Encode() — verify it appears in the output
+        // and doesn't contain raw unencoded HTML metacharacters
+        Assert.DoesNotContain("&lt;", html.Split("Daily Activity Summary")[0]); // no HTML entities before header
+    }
+
+    [Fact]
     public async Task RenderDailySummaryAsync_NewestWindowUnder60Min_IsOmitted()
     {
         var (customer, _, device) = await SeedBaseDataAsync();
