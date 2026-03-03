@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Net.Mail;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
@@ -45,6 +46,16 @@ public class CreateModel : PageModel
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid) return Page();
+
+        var invalidEmails = Email
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(e => !MailAddress.TryCreate(e, out _))
+            .ToList();
+        if (invalidEmails.Count > 0)
+        {
+            ModelState.AddModelError(nameof(Email), $"Invalid email address(es): {string.Join(", ", invalidEmails)}");
+            return Page();
+        }
 
         try
         {

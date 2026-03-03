@@ -114,6 +114,47 @@ public class CreateModelTests : IDisposable
     }
 
     [Fact]
+    public async Task OnPostAsync_InvalidEmailFormat_ReturnsValidationError()
+    {
+        var model = CreatePageModel();
+        model.Name = "Bob";
+        model.Email = "not-an-email";
+        model.TimeZoneId = "UTC";
+
+        var result = await model.OnPostAsync();
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("Email"));
+    }
+
+    [Fact]
+    public async Task OnPostAsync_MixedValidInvalidEmails_ReturnsValidationError()
+    {
+        var model = CreatePageModel();
+        model.Name = "Bob";
+        model.Email = "valid@example.com, bad-email";
+        model.TimeZoneId = "UTC";
+
+        var result = await model.OnPostAsync();
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("Email"));
+    }
+
+    [Fact]
+    public async Task OnPostAsync_MultipleValidEmails_Succeeds()
+    {
+        var model = CreatePageModel();
+        model.Name = "Bob";
+        model.Email = "a@example.com, b@example.com";
+        model.TimeZoneId = "UTC";
+
+        var result = await model.OnPostAsync();
+
+        Assert.IsType<RedirectToPageResult>(result);
+    }
+
+    [Fact]
     public async Task OnPostAsync_InvalidTimezone_ReturnsError()
     {
         var model = CreatePageModel();

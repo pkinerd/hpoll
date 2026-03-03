@@ -541,6 +541,104 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
+    public async Task OnPostUpdateEmailsAsync_InvalidToEmail_ReturnsValidationError()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditEmail = "not-an-email";
+        model.EditCcEmails = "";
+        model.EditBccEmails = "";
+
+        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("EditEmail"));
+    }
+
+    [Fact]
+    public async Task OnPostUpdateEmailsAsync_EmptyToEmail_ReturnsValidationError()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditEmail = "";
+        model.EditCcEmails = "";
+        model.EditBccEmails = "";
+
+        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("EditEmail"));
+    }
+
+    [Fact]
+    public async Task OnPostUpdateEmailsAsync_InvalidCcEmail_ReturnsValidationError()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditEmail = "valid@example.com";
+        model.EditCcEmails = "valid@test.com, not-valid";
+        model.EditBccEmails = "";
+
+        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("EditCcEmails"));
+        Assert.Null(model.SuccessMessage);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateEmailsAsync_InvalidBccEmail_ReturnsValidationError()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditEmail = "valid@example.com";
+        model.EditCcEmails = "";
+        model.EditBccEmails = "bad-email";
+
+        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("EditBccEmails"));
+        Assert.Null(model.SuccessMessage);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateEmailsAsync_ValidMultipleEmails_Succeeds()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditEmail = "a@example.com, b@example.com";
+        model.EditCcEmails = "cc1@test.com, cc2@test.com";
+        model.EditBccEmails = "bcc@test.com";
+
+        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal("Email addresses updated.", model.SuccessMessage);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateEmailsAsync_EmptyCcBcc_Succeeds()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditEmail = "valid@example.com";
+        model.EditCcEmails = "";
+        model.EditBccEmails = null;
+
+        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal("Email addresses updated.", model.SuccessMessage);
+    }
+
+    [Fact]
     public async Task OnPostRegisterHubAsync_PopulatesEditFieldsFromCustomer()
     {
         var customer = await SeedCustomerAsync("Custom Name", "custom@example.com");

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Net.Mail;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -105,6 +106,14 @@ public class DetailModel : PageModel
         if (customer == null) return NotFound();
         Customer = customer;
         EditName = customer.Name;
+
+        if (string.IsNullOrWhiteSpace(EditEmail))
+            ModelState.AddModelError(nameof(EditEmail), "At least one email address is required.");
+        else
+            ValidateEmailField(EditEmail, nameof(EditEmail));
+
+        ValidateEmailField(EditCcEmails, nameof(EditCcEmails));
+        ValidateEmailField(EditBccEmails, nameof(EditBccEmails));
 
         if (!ModelState.IsValid) return Page();
 
@@ -241,6 +250,17 @@ public class DetailModel : PageModel
             $"&redirect_uri={Uri.EscapeDataString(_hueApp.CallbackUrl)}";
 
         return Page();
+    }
+
+    private void ValidateEmailField(string? commaDelimited, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(commaDelimited)) return;
+        var invalid = commaDelimited
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(e => !MailAddress.TryCreate(e, out _))
+            .ToList();
+        if (invalid.Count > 0)
+            ModelState.AddModelError(fieldName, $"Invalid email address(es): {string.Join(", ", invalid)}");
     }
 
     private async Task<List<string>> GetEffectiveDefaultSendTimesUtcAsync()
