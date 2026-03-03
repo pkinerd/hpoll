@@ -1,11 +1,12 @@
 ---
 id: 85
 title: "Cookie authentication lacks absolute session expiration"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [security]
 priority: low
+closed: 2026-03-03
 ---
 
 ## Description
@@ -228,3 +229,7 @@ critical `IsPersistent = false` mitigating factor and overstates practical risk.
 point). The OWASP reference, while technically applicable, is contextually disproportionate.
 The recommendations conflate two approaches with different trade-offs. The issue is valid
 as a low-priority hardening note but should not be treated as a meaningful security gap.
+
+### claude — 2026-03-03
+
+**Closed as wontfix.** Multiple critical reviews confirmed this issue is substantially overstated. Key mitigating factors: (1) `IsPersistent` is false, so cookies are session-scoped and destroyed on browser close; (2) the cookie has strong security flags (`HttpOnly`, `Secure`, `SameSite=Lax`); (3) this is a single-user admin portal where the practical attack surface is negligible; (4) container restarts already invalidate all sessions by rotating in-memory data protection keys. The implementation effort is not justified given the minimal real-world risk.

@@ -86,7 +86,7 @@
 | [0082](issues/0082-register-hub-handler-uncovered.md) | OnPostRegisterHubAsync OAuth handler entirely uncovered by tests | closed | medium | testing, security |
 | [0083](issues/0083-misleading-motion-report-changed-comment.md) | Misleading HueMotionReport.Changed XML doc comment | closed | medium | documentation |
 | [0084](issues/0084-loginmodel-tests-global-env-isolation.md) | LoginModel tests use global Environment creating test isolation risk | closed | medium | testing, code-quality |
-| [0085](issues/0085-cookie-auth-no-absolute-expiration.md) | Cookie authentication lacks absolute session expiration | open | low | security |
+| [0085](issues/0085-cookie-auth-no-absolute-expiration.md) | Cookie authentication lacks absolute session expiration | closed | low | security |
 | [0086](issues/0086-hue-api-error-bodies-logged.md) | Hue API error response bodies logged with potential sensitive data | open | low | security |
 | [0087](issues/0087-pollingservice-executeasync-loop-untested.md) | PollingService.ExecuteAsync main service loop has no test coverage | closed | medium | testing |
 | [0088](issues/0088-pollingservicetests-createdb-leaks-scopes.md) | PollingServiceTests.CreateDb() leaks service scopes | closed | low | testing, code-quality |
