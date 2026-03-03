@@ -1,11 +1,12 @@
 ---
 id: 112
 title: "DatabaseBackupService total backups counter produces meaningless hybrid value"
-status: open
+status: closed
 created: 2026-03-02
 author: claude
 labels: [bug, code-quality]
 priority: low
+closed: 2026-03-03
 ---
 
 ## Description

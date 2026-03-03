@@ -1,11 +1,12 @@
 ---
 id: 104
 title: "Customer Detail error message displayed with success styling"
-status: open
+status: closed
 created: 2026-03-02
 author: claude
 labels: [bug]
 priority: low
+closed: 2026-03-03
 ---
 
 ## Description

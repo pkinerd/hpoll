@@ -101,7 +101,7 @@
 | [0100](issues/0100-exchange-auth-code-error-untested.md) | ExchangeAuthorizationCodeAsync error path has no test coverage | closed | low | testing |
 | [0102](issues/0102-tokenrefresh-executeasync-untested.md) | TokenRefreshService.ExecuteAsync outer exception catch untested | closed | low | testing |
 | [0103](issues/0103-tokenrefresh-boundary-test-flaky.md) | TokenRefreshService boundary test has overly weak assertion | closed | low | testing, code-quality |
-| [0104](issues/0104-customer-detail-error-success-styling.md) | Customer Detail error message displayed with success styling | open | low | bug |
+| [0104](issues/0104-customer-detail-error-success-styling.md) | Customer Detail error message displayed with success styling | closed | low | bug |
 | [0105](issues/0105-email-renderer-incomplete-html-encoding.md) | Timezone display name not HTML-encoded in email renderer | open | low | security |
 | [0106](issues/0106-hueapiclient-intermediate-string-deserialization.md) | HueApiClient deserializes JSON via intermediate string allocation | open | low | enhancement, performance |
 | [0107](issues/0107-backup-test-task-delay-timing.md) | DatabaseBackupService test uses Task.Delay for timestamp separation | closed | low | testing, code-quality |
@@ -109,7 +109,7 @@
 | [0109](issues/0109-emailrenderer-dbcontext-tight-coupling.md) | EmailRenderer directly references DbContext rather than abstraction | open | low | enhancement, code-quality |
 | [0110](issues/0110-background-service-loop-duplication.md) | SystemInfo metric update pattern duplicated across 3 background services | open | low | enhancement, code-quality |
 | [0111](issues/0111-devicereading-readingtype-composite-index.md) | Consider composite index on DeviceReading for ReadingType filtering | open | low | enhancement, performance |
-| [0112](issues/0112-backup-counter-drift-after-pruning.md) | DatabaseBackupService total backups counter produces meaningless hybrid value | open | low | bug, code-quality |
+| [0112](issues/0112-backup-counter-drift-after-pruning.md) | DatabaseBackupService total backups counter produces meaningless hybrid value | closed | low | bug, code-quality |
 | [0114](issues/0114-email-data-tests-wrong-project.md) | Email and Data tests placed in unrelated test projects | closed | low | testing, code-quality |
 | [0116](issues/0116-test-polling-motion-cutoff-extended-downtime.md) | Add test for PollingService motion cutoff after extended downtime | closed | medium | testing |
 | [0120](issues/0120-admin-missing-asnotracking.md) | Missing AsNoTracking on read-only Admin queries wastes change-tracker memory | open | low | enhancement, performance |
