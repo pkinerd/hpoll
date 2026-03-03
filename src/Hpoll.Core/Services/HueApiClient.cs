@@ -180,7 +180,16 @@ public class HueApiClient : IHueApiClient
         var json = await response.Content.ReadAsStringAsync(ct);
         var result = JsonSerializer.Deserialize<HueResponse<T>>(json, JsonOptions);
 
-        return result ?? throw new InvalidOperationException($"Failed to deserialize Hue API response for {path}.");
+        if (result == null)
+            throw new InvalidOperationException($"Failed to deserialize Hue API response for {path}.");
+
+        if (result.Errors.Count > 0)
+        {
+            _logger.LogWarning("Hue API response for {Path} contained {ErrorCount} error(s): {Errors}",
+                path, result.Errors.Count, string.Join("; ", result.Errors.Select(e => e.Description)));
+        }
+
+        return result;
     }
 
     private async Task<HueTokenResponse> PostTokenRequestAsync(Dictionary<string, string> formData, CancellationToken ct)
