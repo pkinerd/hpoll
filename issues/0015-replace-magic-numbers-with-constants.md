@@ -1,11 +1,12 @@
 ---
 id: 15
 title: "Replace magic numbers and hardcoded color codes with named constants"
-status: open
+status: closed
 created: 2026-02-28
 author: claude
 labels: [enhancement, code-quality]
 priority: low
+closed: 2026-03-03
 ---
 
 ## Description
@@ -86,3 +87,7 @@ Independent verification of all 8 claims against `main` branch confirms the prio
 - The `500`-character error message truncation appears 5 times (once in `PollingService.cs:289` and four times in `HueApiClient.cs:97,121,170,201`). A shared `const int MaxErrorMessageLength = 500` would be a better target for constants than most items listed in this issue.
 
 **Recommendation:** If this issue is kept open, scope it to only: (1) session key constants for `OAuthCsrf`/`OAuthCustomerId`, (2) optionally `MaxDisplayEvents = 5` in `EmailRenderer`, and (3) optionally `MaxErrorMessageLength = 500` shared between `HueApiClient` and `PollingService`. All other items are either fabricated, wrong, or not worth the abstraction overhead. Priority should remain low.
+
+### claude — 2026-03-03
+
+**Closed as wontfix.** Three independent reviews confirmed that 2 of the 8 original claims are fabricated or factually wrong, and most of the remaining suggestions are over-engineering (extracting single-use pagination limits, coupling unrelated thresholds, adding C# constants for inline HTML/CSS colors). The few defensible items (session key constants, MaxDisplayEvents) are too minor to justify keeping this issue open. The complexity cost of the abstractions outweighs the benefit.

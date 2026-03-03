@@ -16,7 +16,7 @@
 | [0012](issues/0012-extract-hub-apply-token-response.md) | Extract Hub.ApplyTokenResponse to eliminate 3-location token update duplication | closed | medium | enhancement, code-quality |
 | [0013](issues/0013-extract-load-customer-helper-detail-page.md) | Extract shared LoadCustomerAsync helper in Detail page model | closed | low | enhancement, code-quality |
 | [0014](issues/0014-extract-http-error-formatting-helper.md) | Extract HttpRequestException error formatting helper | open | low | enhancement, code-quality |
-| [0015](issues/0015-replace-magic-numbers-with-constants.md) | Replace magic numbers and hardcoded color codes with named constants | open | low | enhancement, code-quality |
+| [0015](issues/0015-replace-magic-numbers-with-constants.md) | Replace magic numbers and hardcoded color codes with named constants | closed | low | enhancement, code-quality |
 | [0016](issues/0016-extract-shared-service-registration.md) | Extract shared DB/HttpClient bootstrap between Worker and Admin Program.cs | closed | low | enhancement, code-quality |
 | [0017](issues/0017-replace-batch-deletion-with-execute-delete.md) | Replace batch deletion with ExecuteDeleteAsync to avoid materializing rows | closed | high | enhancement, performance |
 | [0018](issues/0018-fix-unbounded-battery-history-query.md) | Fix unbounded battery history query in EmailRenderer | closed | high | bug, performance |
