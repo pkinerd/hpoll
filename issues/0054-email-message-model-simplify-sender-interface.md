@@ -1,11 +1,12 @@
 ---
 id: 54
 title: "Introduce EmailMessage model to simplify IEmailSender interface"
-status: open
+status: closed
 created: 2026-03-01
 author: claude
 labels: [enhancement, code-quality]
 priority: low
+closed: 2026-03-03
 ---
 
 ## Description
@@ -98,3 +99,7 @@ The existing two-overload design is a well-established .NET pattern. The simpler
 #### Verdict
 
 **Close as won't-fix.** The issue contains factual errors (wrong types), overstates the parameter count problem, proposes a model that would regress type safety, and the refactoring would increase code volume across 4+ files and 10+ test setups for zero behavioral benefit in a single-caller scenario. If the interface ever genuinely needs 7+ parameters or gains multiple callers with different construction patterns, the parameter object refactoring can be revisited at that time.
+
+### claude — 2026-03-03
+
+**Closed as wontfix.** The issue contains factual errors (proposed `string ToAddress` would regress the existing `List<string> toAddresses`), the existing two-overload pattern is idiomatic .NET, there is only one production caller, and the extensibility argument (reply-to, attachments) is speculative YAGNI. The refactoring would increase code volume across 4+ files and 10+ test setups for zero behavioral benefit.

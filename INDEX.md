@@ -55,7 +55,7 @@
 | [0051](issues/0051-battery-threshold-boundary-condition.md) | BatteryAlertThreshold boundary condition — device at exactly threshold level is neither shown nor alerted | closed | medium | bug |
 | [0052](issues/0052-pin-dependency-versions-reproducible-builds.md) | Pin NuGet and Docker dependency versions for reproducible builds | open | low | security, enhancement |
 | [0053](issues/0053-register-app-leaks-response-body-in-exception.md) | RegisterApplicationAsync leaks full Hue API response body in exception message | closed | medium | bug, security |
-| [0054](issues/0054-email-message-model-simplify-sender-interface.md) | Introduce EmailMessage model to simplify IEmailSender interface | open | low | enhancement, code-quality |
+| [0054](issues/0054-email-message-model-simplify-sender-interface.md) | Introduce EmailMessage model to simplify IEmailSender interface | closed | low | enhancement, code-quality |
 | [0055](issues/0055-filter-device-readings-by-type-at-db-level.md) | Filter DeviceReadings by ReadingType at database level in activity summary queries | closed | medium | enhancement, performance |
 | [0056](issues/0056-duplicate-json-parsing-motion-readings.md) | Duplicate JSON parsing of motion readings doubles memory and CPU cost | closed | medium | enhancement, performance |
 | [0057](issues/0057-config-validation-tests-boundary-conditions.md) | Add configuration validation tests for boundary conditions | closed | medium | testing, bug |
