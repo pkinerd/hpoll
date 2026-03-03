@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -106,9 +107,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages().RequireAuthorization();
 
-// Logout endpoint — POST to prevent CSRF-triggered logouts
+// Logout endpoint — POST with antiforgery validation to prevent CSRF-triggered logouts
 app.MapPost("/Logout", async (HttpContext ctx) =>
 {
+    var antiforgery = ctx.RequestServices.GetRequiredService<IAntiforgery>();
+    if (!await antiforgery.IsRequestValidAsync(ctx))
+        return Results.BadRequest();
     await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     return Results.Redirect("/Login");
 }).AllowAnonymous();
