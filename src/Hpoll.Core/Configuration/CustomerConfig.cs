@@ -65,3 +65,8 @@ public class BackupSettings
     public int RetentionCount { get; set; } = 7;
     public string SubDirectory { get; set; } = "backups";
 }
+
+public class AdminSettings
+{
+    public string? PasswordHash { get; set; }
+}

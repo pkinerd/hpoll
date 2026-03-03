@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Options;
+using Hpoll.Core.Configuration;
 
 namespace Hpoll.Admin.Pages;
 
@@ -16,6 +18,12 @@ public class LoginModel : PageModel
     private static readonly PasswordHasher<object> _hasher = new();
     private const int MaxAttempts = 5;
     private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+    private readonly string? _passwordHash;
+
+    public LoginModel(IOptions<AdminSettings> adminSettings)
+    {
+        _passwordHash = adminSettings.Value.PasswordHash;
+    }
 
     public bool IsSetupMode { get; set; }
     public string? ErrorMessage { get; set; }
@@ -23,12 +31,12 @@ public class LoginModel : PageModel
 
     public void OnGet()
     {
-        IsSetupMode = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ADMIN_PASSWORD_HASH"));
+        IsSetupMode = string.IsNullOrEmpty(_passwordHash);
     }
 
     public async Task<IActionResult> OnPostAsync(string password)
     {
-        var storedHash = Environment.GetEnvironmentVariable("ADMIN_PASSWORD_HASH");
+        var storedHash = _passwordHash;
         if (string.IsNullOrEmpty(storedHash))
         {
             IsSetupMode = true;

@@ -23,6 +23,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 builder.Services.Configure<HueAppSettings>(builder.Configuration.GetSection("HueApp"));
 builder.Services.Configure<PollingSettings>(builder.Configuration.GetSection("Polling"));
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
+builder.Services.Configure<AdminSettings>(opts =>
+    opts.PasswordHash = Environment.GetEnvironmentVariable("ADMIN_PASSWORD_HASH"));
 
 // Database — same SQLite path as the worker
 var dbPath = Path.Combine(
