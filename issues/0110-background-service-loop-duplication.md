@@ -1,7 +1,8 @@
 ---
 id: 110
 title: "SystemInfo metric update pattern duplicated across 3 background services"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-02
 author: claude
 labels: [enhancement, code-quality]
@@ -36,3 +37,7 @@ catch (Exception ex)
 Extract a small helper method — either a `TrySetAsync` extension on `ISystemInfoService` that swallows exceptions internally, or a local static helper — to remove the 15-20 duplicated try/catch lines across the three services.
 
 ## Comments
+
+### claude — 2026-03-03
+
+Fixed: Created `TrySetBatchAsync` extension method on `ISystemInfoService` in `SystemInfoServiceExtensions.cs`. Refactored all 3 services (PollingService, TokenRefreshService, DatabaseBackupService) to use it, eliminating the duplicated try/catch pattern. Added 4 unit tests for the extension method.

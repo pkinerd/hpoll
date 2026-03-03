@@ -1,7 +1,8 @@
 ---
 id: 109
 title: "EmailRenderer directly references DbContext rather than abstraction"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-02
 author: claude
 labels: [enhancement, code-quality]
@@ -28,3 +29,7 @@ The `EmailRenderer` class in `Hpoll.Email` takes `HpollDbContext` as a direct co
 This is a low-priority structural improvement. If the project grows or the Email project gains additional consumers, consider introducing a data access interface in `Hpoll.Core` (e.g., `IActivityDataProvider`). For now, the more actionable concern is the unbounded battery query (lines 135-138) which fetches all historical battery readings without a time filter and deduplicates in memory — adding a server-side "latest per device" query would be a more impactful improvement.
 
 ## Comments
+
+### claude — 2026-03-03
+
+Fixed the actionable part: bounded battery query to 7-day window and added .AsNoTracking() to eliminate unbounded scan. The broader DbContext abstraction is deferred as the issue notes — no second consumer exists and testability is already adequate.

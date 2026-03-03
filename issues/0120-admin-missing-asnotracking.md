@@ -1,7 +1,8 @@
 ---
 id: 120
 title: "Missing AsNoTracking on read-only Admin queries wastes change-tracker memory"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-02
 author: claude
 labels: [enhancement, performance]
@@ -29,3 +30,7 @@ Several Admin page queries that are read-only (used only for display) do not use
 Add `.AsNoTracking()` to all queries in the Admin portal that are used only for display. This is a straightforward change with no behavioral impact — it simply tells EF Core not to track the returned entities. Alternatively, consider configuring `QueryTrackingBehavior.NoTracking` globally for the Admin portal's DbContext registration, since the portal predominantly reads data.
 
 ## Comments
+
+### claude — 2026-03-03
+
+Fixed: Added `.AsNoTracking()` to all read-only queries in Admin pages: Index (ExpiringTokenHubs, FailingHubs, RecentLogs), Customers/Index, About (SystemInfo entries), and Hubs/Detail (Devices, RecentLogs).

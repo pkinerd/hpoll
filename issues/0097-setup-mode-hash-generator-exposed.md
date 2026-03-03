@@ -1,7 +1,8 @@
 ---
 id: 97
 title: "Setup mode hash generator lacks server-side guard when password already configured"
-status: open
+status: closed
+closed: 2026-03-03
 created: 2026-03-02
 author: claude
 labels: [enhancement]
@@ -21,3 +22,7 @@ The `OnPostSetup` handler (lines 81-105) has **no server-side guard** checking w
 2. Consider displaying a warning banner when setup mode is active to alert users it is publicly accessible
 
 ## Comments
+
+### claude — 2026-03-03
+
+Fixed: Added server-side guard in OnPostSetup that returns NotFound when _passwordHash is already configured, preventing hash generation after initial setup.
