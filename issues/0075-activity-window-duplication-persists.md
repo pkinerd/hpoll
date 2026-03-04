@@ -195,3 +195,7 @@ Additionally identified: the `GetEffectiveDefaultSendTimesUtcAsync` and
 `SystemInfo` for the `email.send_times_utc` key, parse it, and fall back to
 `_emailSettings.SendTimesUtc`. These should also be extracted into a shared helper alongside
 the activity summary builder.
+
+### claude — 2026-03-04
+
+Comprehensive review (code quality) confirmed: the duplication now also includes 6 repeated JSON-parsing lambdas across both sites. The inline `JsonDocument.Parse` patterns for motion/temperature/battery are copy-pasted with identical logic. Additionally, both sites load all DeviceReadings into memory via `ToListAsync()` — for active systems this could mean thousands of entities with JSON strings. Extracting a shared `ActivitySummaryBuilder` would also enable projecting to DTOs to reduce memory pressure.

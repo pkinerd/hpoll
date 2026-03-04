@@ -57,3 +57,7 @@ display/copy functionality. Without CSP, if an XSS vulnerability were introduced
 be no browser-level mitigation. The existing security headers (`X-Content-Type-Options`,
 `X-Frame-Options`, `Referrer-Policy`, `HSTS` at `Program.cs` lines 91-101) are good
 defense-in-depth but CSP is the most impactful missing header for XSS prevention.
+
+### claude — 2026-03-04
+
+Comprehensive review (security) confirmed: the admin portal still lacks a Content-Security-Policy header. The Hubs/Detail page includes inline `<script>` blocks (lines 147-202), so a CSP would need `'unsafe-inline'` for scripts unless those are refactored. A starting CSP: `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'`. Refactoring inline JS to external files first would enable a stricter CSP.
