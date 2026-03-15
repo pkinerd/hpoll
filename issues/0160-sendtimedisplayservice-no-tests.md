@@ -1,11 +1,12 @@
 ---
 id: 160
 title: "SendTimeDisplayService has no unit tests"
-status: open
+status: closed
 created: 2026-03-15
 author: claude
 labels: [testing]
 priority: low
+closed: 2026-03-15
 ---
 
 ## Description

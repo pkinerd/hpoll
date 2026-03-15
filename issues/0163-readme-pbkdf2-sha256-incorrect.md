@@ -1,11 +1,12 @@
 ---
 id: 163
 title: "README incorrectly states password hashing uses PBKDF2-SHA256 (actual: SHA512)"
-status: open
+status: closed
 created: 2026-03-15
 author: claude
 labels: [documentation]
 priority: medium
+closed: 2026-03-15
 ---
 
 ## Description

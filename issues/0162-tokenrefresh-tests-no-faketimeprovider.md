@@ -1,11 +1,12 @@
 ---
 id: 162
 title: "TokenRefreshServiceTests use DateTime.UtcNow instead of FakeTimeProvider"
-status: open
+status: closed
 created: 2026-03-15
 author: claude
 labels: [testing, code-quality]
 priority: low
+closed: 2026-03-15
 ---
 
 ## Description

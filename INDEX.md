@@ -134,14 +134,14 @@
 | [0143](issues/0143-readme-missing-battery-in-intro.md) | README introduction omits battery sensor data | closed | low | documentation |
 | [0144](issues/0144-oauthcallback-manual-token-mapping.md) | OAuthCallbackModel manually maps tokens instead of using ApplyTokenResponse | closed | low | enhancement, code-quality |
 | [0145](issues/0145-repetitive-customer-loading-detail-page.md) | Repetitive customer-loading boilerplate in Detail page handlers | closed | low | enhancement, code-quality |
-| [0146](issues/0146-getorcreatedeviceasync-untested.md) | GetOrCreateDeviceAsync edge case (null/empty HueDeviceId) not tested | open | low | testing |
-| [0147](issues/0147-hueapiclient-cancellationtoken-untested.md) | HueApiClient CancellationToken propagation untested | open | low | testing |
+| [0146](issues/0146-getorcreatedeviceasync-untested.md) | GetOrCreateDeviceAsync edge case (null/empty HueDeviceId) not tested | closed | low | testing |
+| [0147](issues/0147-hueapiclient-cancellationtoken-untested.md) | HueApiClient CancellationToken propagation untested | closed | low | testing |
 | [0148](issues/0148-send-email-now-button.md) | Add 'Send Email Now' button to Customer Detail page | open | medium | feature, enhancement |
 | [0150](issues/0150-backup-tests-cwd-mutation.md) | DatabaseBackupServiceTests mutates process-wide CWD creating test isolation risk | closed | low | testing, code-quality |
 | [0152](issues/0152-adminsettings-passwordhash-doc-inaccurate.md) | AdminSettings.PasswordHash doc comment says 'Null' but code checks IsNullOrEmpty | closed | low | documentation |
 | [0156](issues/0156-emailscheduler-tests-datetime-utcnow-flaky.md) | EmailSchedulerServiceTests use DateTime.UtcNow instead of mock TimeProvider | closed | low | testing, code-quality |
 | [0157](issues/0157-polling-finally-save-failure-untested.md) | PollingService finally-block SaveChangesAsync failure path untested | closed | low | testing |
 | [0159](issues/0159-emailrenderer-buildhtml-monolith.md) | EmailRenderer.BuildHtml is a 120-line monolith with inline HTML construction | closed | low | enhancement, code-quality |
-| [0160](issues/0160-sendtimedisplayservice-no-tests.md) | SendTimeDisplayService has no unit tests | open | low | testing |
-| [0162](issues/0162-tokenrefresh-tests-no-faketimeprovider.md) | TokenRefreshServiceTests use DateTime.UtcNow instead of FakeTimeProvider | open | low | testing, code-quality |
-| [0163](issues/0163-readme-pbkdf2-sha256-incorrect.md) | README incorrectly states password hashing uses PBKDF2-SHA256 (actual: SHA512) | open | medium | documentation |
+| [0160](issues/0160-sendtimedisplayservice-no-tests.md) | SendTimeDisplayService has no unit tests | closed | low | testing |
+| [0162](issues/0162-tokenrefresh-tests-no-faketimeprovider.md) | TokenRefreshServiceTests use DateTime.UtcNow instead of FakeTimeProvider | closed | low | testing, code-quality |
+| [0163](issues/0163-readme-pbkdf2-sha256-incorrect.md) | README incorrectly states password hashing uses PBKDF2-SHA256 (actual: SHA512) | closed | medium | documentation |
