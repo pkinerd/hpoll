@@ -1,7 +1,8 @@
 ---
 id: 156
 title: "EmailSchedulerServiceTests use DateTime.UtcNow instead of mock TimeProvider"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-15
 author: claude
 labels: [testing, code-quality]

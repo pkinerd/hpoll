@@ -139,5 +139,5 @@
 | [0148](issues/0148-send-email-now-button.md) | Add 'Send Email Now' button to Customer Detail page | open | medium | feature, enhancement |
 | [0150](issues/0150-backup-tests-cwd-mutation.md) | DatabaseBackupServiceTests mutates process-wide CWD creating test isolation risk | closed | low | testing, code-quality |
 | [0152](issues/0152-adminsettings-passwordhash-doc-inaccurate.md) | AdminSettings.PasswordHash doc comment says 'Null' but code checks IsNullOrEmpty | closed | low | documentation |
-| [0156](issues/0156-emailscheduler-tests-datetime-utcnow-flaky.md) | EmailSchedulerServiceTests use DateTime.UtcNow instead of mock TimeProvider | open | low | testing, code-quality |
-| [0157](issues/0157-polling-finally-save-failure-untested.md) | PollingService finally-block SaveChangesAsync failure path untested | open | low | testing |
+| [0156](issues/0156-emailscheduler-tests-datetime-utcnow-flaky.md) | EmailSchedulerServiceTests use DateTime.UtcNow instead of mock TimeProvider | closed | low | testing, code-quality |
+| [0157](issues/0157-polling-finally-save-failure-untested.md) | PollingService finally-block SaveChangesAsync failure path untested | closed | low | testing |

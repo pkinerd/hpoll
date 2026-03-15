@@ -1,7 +1,8 @@
 ---
 id: 157
 title: "PollingService finally-block SaveChangesAsync failure path untested"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-15
 author: claude
 labels: [testing]
