@@ -137,5 +137,5 @@
 | [0146](issues/0146-getorcreatedeviceasync-untested.md) | GetOrCreateDeviceAsync edge case (null/empty HueDeviceId) not tested | open | low | testing |
 | [0147](issues/0147-hueapiclient-cancellationtoken-untested.md) | HueApiClient CancellationToken propagation untested | open | low | testing |
 | [0148](issues/0148-send-email-now-button.md) | Add 'Send Email Now' button to Customer Detail page | open | medium | feature, enhancement |
-| [0150](issues/0150-backup-tests-cwd-mutation.md) | DatabaseBackupServiceTests mutates process-wide CWD creating test isolation risk | open | low | testing, code-quality |
-| [0152](issues/0152-adminsettings-passwordhash-doc-inaccurate.md) | AdminSettings.PasswordHash doc comment says 'Null' but code checks IsNullOrEmpty | open | low | documentation |
+| [0150](issues/0150-backup-tests-cwd-mutation.md) | DatabaseBackupServiceTests mutates process-wide CWD creating test isolation risk | closed | low | testing, code-quality |
+| [0152](issues/0152-adminsettings-passwordhash-doc-inaccurate.md) | AdminSettings.PasswordHash doc comment says 'Null' but code checks IsNullOrEmpty | closed | low | documentation |

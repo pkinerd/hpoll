@@ -1,7 +1,8 @@
 ---
 id: 152
 title: "AdminSettings.PasswordHash doc comment says 'Null' but code checks IsNullOrEmpty"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-15
 author: claude
 labels: [documentation]
