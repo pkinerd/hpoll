@@ -2,7 +2,7 @@
 
 *Last updated: 2026-03-15*
 
-**11 open issues** | 2 medium | 9 low
+**12 open issues** | 3 medium | 9 low
 
 ## By Priority
 
@@ -10,6 +10,7 @@
 
 - [#0030](issues/0030-encrypt-tokens-at-rest.md) — Encrypt OAuth tokens at rest in SQLite database `security`
 - [#0075](issues/0075-activity-window-duplication-persists.md) — Activity window duplication persists — ActivitySummaryBuilder never extracted `enhancement` `code-quality`
+- [#0148](issues/0148-send-email-now-button.md) — Add 'Send Email Now' button to Customer Detail page `feature` `enhancement`
 
 ### Low
 - [#0048](issues/0048-persist-data-protection-keys-secure-session-cookie.md) — Persist Data Protection keys and add Secure flag to session cookie `security`
@@ -37,6 +38,11 @@
 - [#0075](issues/0075-activity-window-duplication-persists.md) — Activity window duplication persists — ActivitySummaryBuilder never extracted (medium)
 - [#0106](issues/0106-hueapiclient-intermediate-string-deserialization.md) — HueApiClient deserializes JSON via intermediate string allocation (low)
 - [#0121](issues/0121-admin-missing-exception-handler.md) — Admin portal lacks UseExceptionHandler middleware for production errors (low)
+- [#0148](issues/0148-send-email-now-button.md) — Add 'Send Email Now' button to Customer Detail page (medium)
+
+### feature
+
+- [#0148](issues/0148-send-email-now-button.md) — Add 'Send Email Now' button to Customer Detail page (medium)
 
 ### performance
 

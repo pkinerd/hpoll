@@ -136,3 +136,4 @@
 | [0145](issues/0145-repetitive-customer-loading-detail-page.md) | Repetitive customer-loading boilerplate in Detail page handlers | closed | low | enhancement, code-quality |
 | [0146](issues/0146-getorcreatedeviceasync-untested.md) | GetOrCreateDeviceAsync edge case (null/empty HueDeviceId) not tested | open | low | testing |
 | [0147](issues/0147-hueapiclient-cancellationtoken-untested.md) | HueApiClient CancellationToken propagation untested | open | low | testing |
+| [0148](issues/0148-send-email-now-button.md) | Add 'Send Email Now' button to Customer Detail page | open | medium | feature, enhancement |
