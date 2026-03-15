@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Hpoll.Admin.Pages.Customers;
+using Hpoll.Admin.Services;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
 using Hpoll.Data;
@@ -27,10 +28,11 @@ public class CreateModelTests : IDisposable
 
     public void Dispose() => _db.Dispose();
 
-    private CreateModel CreatePageModel()
+    private CreateModel CreatePageModel(EmailSettings? emailSettings = null)
     {
-        var emailSettings = Options.Create(new EmailSettings());
-        var model = new CreateModel(_db, emailSettings);
+        var opts = Options.Create(emailSettings ?? new EmailSettings());
+        var sendTimeService = new SendTimeDisplayService(_db, opts);
+        var model = new CreateModel(_db, sendTimeService);
         model.PageContext = new PageContext
         {
             ActionDescriptor = new CompiledPageActionDescriptor(),
@@ -87,17 +89,10 @@ public class CreateModelTests : IDisposable
     [Fact]
     public async Task OnGetAsync_PopulatesDefaultSendTimesDisplay_FromEmailSettings()
     {
-        var emailSettings = Options.Create(new EmailSettings
+        var model = CreatePageModel(new EmailSettings
         {
             SendTimesUtc = new List<string> { "08:00", "20:00" }
         });
-        var model = new CreateModel(_db, emailSettings);
-        model.PageContext = new PageContext
-        {
-            ActionDescriptor = new CompiledPageActionDescriptor(),
-            HttpContext = new DefaultHttpContext(),
-            RouteData = new RouteData()
-        };
 
         await model.OnGetAsync();
 

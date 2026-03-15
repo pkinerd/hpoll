@@ -9,6 +9,7 @@ using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Services;
+using Hpoll.Core.Utilities;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
@@ -221,21 +222,7 @@ public class EmailSchedulerService : BackgroundService
             .MinAsync(c => (DateTime?)c.NextSendTimeUtc, ct);
     }
 
-    internal static string MaskEmail(string email)
-    {
-        if (string.IsNullOrEmpty(email)) return email;
-        var parts = email.Split(',');
-        return string.Join(", ", parts.Select(e =>
-        {
-            var trimmed = e.Trim();
-            var at = trimmed.IndexOf('@');
-            if (at <= 0) return "***";
-            var local = trimmed[..at];
-            var domain = trimmed[at..];
-            var visible = Math.Min(2, local.Length);
-            return local[..visible] + new string('*', Math.Max(0, local.Length - visible)) + domain;
-        }));
-    }
+    internal static string MaskEmail(string email) => EmailMasker.MaskList(email);
 
     internal static List<string>? ParseEmailList(string commaDelimited)
     {

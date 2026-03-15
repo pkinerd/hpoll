@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Interfaces;
+using Hpoll.Core.Utilities;
 
 public class SesEmailSender : IEmailSender
 {
@@ -21,16 +22,6 @@ public class SesEmailSender : IEmailSender
         _sesClient = sesClient;
         _settings = settings.Value;
         _logger = logger;
-    }
-
-    private static string MaskEmail(string email)
-    {
-        var at = email.IndexOf('@');
-        if (at <= 0) return "***";
-        var local = email[..at];
-        var domain = email[at..];
-        var visible = Math.Min(2, local.Length);
-        return local[..visible] + new string('*', Math.Max(0, local.Length - visible)) + domain;
     }
 
     public Task SendEmailAsync(List<string> toAddresses, string subject, string htmlBody, CancellationToken ct = default)
@@ -62,7 +53,7 @@ public class SesEmailSender : IEmailSender
             }
         };
 
-        var toMasked = string.Join(", ", toAddresses.Select(MaskEmail));
+        var toMasked = string.Join(", ", toAddresses.Select(EmailMasker.Mask));
         try
         {
             var response = await _sesClient.SendEmailAsync(sendRequest, ct);

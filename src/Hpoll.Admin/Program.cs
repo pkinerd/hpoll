@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
+using Hpoll.Admin.Services;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Services;
 using Hpoll.Data;
@@ -73,6 +74,7 @@ builder.Services.AddAntiforgery(options =>
     options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
+builder.Services.AddScoped<SendTimeDisplayService>();
 builder.Services.AddRazorPages();
 
 var app = builder.Build();

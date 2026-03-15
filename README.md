@@ -1,7 +1,7 @@
 # hpoll
 
 hpoll is an experimental Philips Hue monitoring service. It periodically polls
-Hue Bridge hubs for motion and temperature sensor data, stores readings in a
+Hue Bridge hubs for motion, temperature, and battery sensor data, stores readings in a
 SQLite database, and sends daily summary emails via AWS SES.
 
 ## Prerequisites

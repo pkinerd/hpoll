@@ -2,9 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Net.Mail;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using Hpoll.Core.Configuration;
+using Hpoll.Admin.Services;
 using Hpoll.Core.Constants;
 using Hpoll.Core.Services;
 using Hpoll.Data;
@@ -15,12 +13,12 @@ namespace Hpoll.Admin.Pages.Customers;
 public class CreateModel : PageModel
 {
     private readonly HpollDbContext _db;
-    private readonly EmailSettings _emailSettings;
+    private readonly SendTimeDisplayService _sendTimeService;
 
-    public CreateModel(HpollDbContext db, IOptions<EmailSettings> emailSettings)
+    public CreateModel(HpollDbContext db, SendTimeDisplayService sendTimeService)
     {
         _db = db;
-        _emailSettings = emailSettings.Value;
+        _sendTimeService = sendTimeService;
     }
 
     [BindProperty, Required, StringLength(100)]
@@ -39,12 +37,12 @@ public class CreateModel : PageModel
 
     public async Task OnGetAsync()
     {
-        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
+        DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
+        DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
 
         if (!ModelState.IsValid) return Page();
 
@@ -90,7 +88,7 @@ public class CreateModel : PageModel
             Status = CustomerStatus.Active
         };
 
-        var effectiveDefaults = await GetEffectiveDefaultSendTimesUtcAsync();
+        var effectiveDefaults = await _sendTimeService.GetEffectiveDefaultSendTimesUtcAsync();
         customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
             customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, effectiveDefaults);
 
@@ -98,26 +96,5 @@ public class CreateModel : PageModel
         await _db.SaveChangesAsync();
 
         return RedirectToPage("Detail", new { id = customer.Id });
-    }
-
-    private async Task<List<string>> GetEffectiveDefaultSendTimesUtcAsync()
-    {
-        var entry = await _db.SystemInfo
-            .FirstOrDefaultAsync(e => e.Key == "email.send_times_utc");
-        if (entry != null && !string.IsNullOrWhiteSpace(entry.Value))
-        {
-            var parsed = entry.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(t => TimeSpan.TryParse(t, out _))
-                .ToList();
-            if (parsed.Count > 0)
-                return parsed;
-        }
-        return _emailSettings.SendTimesUtc;
-    }
-
-    private async Task<string> GetDefaultSendTimesDisplayAsync()
-    {
-        var defaults = await GetEffectiveDefaultSendTimesUtcAsync();
-        return string.Join(", ", defaults) + " UTC";
     }
 }
