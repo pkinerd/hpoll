@@ -171,3 +171,11 @@ Comprehensive review (2026-03-03) reconfirms medium severity. Also notes that th
 #128 (`.dockerignore` missing `.env` exclusion) is a related concern — if `.env` files
 containing tokens leak into Docker image layers, it compounds this exposure. Addressing both
 issues together would significantly improve the credential protection posture.
+
+### claude — 2026-03-15
+
+Comprehensive review (2026-03-15, security review) reconfirms medium severity. Additional detail:
+the `DatabaseBackupService` creates periodic `VACUUM INTO` copies under `data/backups/`, meaning
+plaintext tokens are replicated into backup files on the same volume. This increases the number of
+files containing sensitive data. The backup files are particularly concerning if external backup
+mechanisms (e.g., volume snapshots, NAS sync) are used, as tokens would propagate to external storage.

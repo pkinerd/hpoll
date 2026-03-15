@@ -141,3 +141,7 @@
 | [0152](issues/0152-adminsettings-passwordhash-doc-inaccurate.md) | AdminSettings.PasswordHash doc comment says 'Null' but code checks IsNullOrEmpty | closed | low | documentation |
 | [0156](issues/0156-emailscheduler-tests-datetime-utcnow-flaky.md) | EmailSchedulerServiceTests use DateTime.UtcNow instead of mock TimeProvider | closed | low | testing, code-quality |
 | [0157](issues/0157-polling-finally-save-failure-untested.md) | PollingService finally-block SaveChangesAsync failure path untested | closed | low | testing |
+| [0159](issues/0159-emailrenderer-buildhtml-monolith.md) | EmailRenderer.BuildHtml is a 120-line monolith with inline HTML construction | open | low | enhancement, code-quality |
+| [0160](issues/0160-sendtimedisplayservice-no-tests.md) | SendTimeDisplayService has no unit tests | open | low | testing |
+| [0162](issues/0162-tokenrefresh-tests-no-faketimeprovider.md) | TokenRefreshServiceTests use DateTime.UtcNow instead of FakeTimeProvider | open | low | testing, code-quality |
+| [0163](issues/0163-readme-pbkdf2-sha256-incorrect.md) | README incorrectly states password hashing uses PBKDF2-SHA256 (actual: SHA512) | open | medium | documentation |

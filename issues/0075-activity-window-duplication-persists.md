@@ -199,3 +199,12 @@ the activity summary builder.
 ### claude — 2026-03-04
 
 Comprehensive review (code quality) confirmed: the duplication now also includes 6 repeated JSON-parsing lambdas across both sites. The inline `JsonDocument.Parse` patterns for motion/temperature/battery are copy-pasted with identical logic. Additionally, both sites load all DeviceReadings into memory via `ToListAsync()` — for active systems this could mean thousands of entities with JSON strings. Extracting a shared `ActivitySummaryBuilder` would also enable projecting to DTOs to reduce memory pressure.
+
+### claude — 2026-03-15
+
+Comprehensive review (2026-03-15) notes additional coverage impact: the compiler-generated
+lambda/closure classes in `Detail.cshtml.cs` (`<>c__DisplayClass71_0` at 11.1% and `<>c` at
+42.9% line coverage) directly correspond to the duplicated activity window computation. These
+lambdas are the JSON parsing and LINQ predicates within `LoadActivitySummaryAsync`. Extracting
+the shared `ActivitySummaryBuilder` would consolidate these lambda classes and improve coverage
+measurability.
