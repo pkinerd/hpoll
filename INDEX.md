@@ -145,3 +145,4 @@
 | [0160](issues/0160-sendtimedisplayservice-no-tests.md) | SendTimeDisplayService has no unit tests | closed | low | testing |
 | [0162](issues/0162-tokenrefresh-tests-no-faketimeprovider.md) | TokenRefreshServiceTests use DateTime.UtcNow instead of FakeTimeProvider | closed | low | testing, code-quality |
 | [0163](issues/0163-readme-pbkdf2-sha256-incorrect.md) | README incorrectly states password hashing uses PBKDF2-SHA256 (actual: SHA512) | closed | medium | documentation |
+| [0165](issues/0165-pollingservicetests-missing-faketimeprovider-injection.md) | PollingServiceTests doesn't inject FakeTimeProvider by default | open | low | testing, code-quality |
