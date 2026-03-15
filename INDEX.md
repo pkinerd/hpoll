@@ -153,3 +153,4 @@
 | [0172](issues/0172-hub-detail-generic-exception-paths-untested.md) | Hub Detail generic Exception and null-StatusCode error paths untested | closed | low | testing |
 | [0173](issues/0173-customer-detail-updateemails-notfound-untested.md) | Customer Detail POST handlers missing invalid-customer NotFound tests | closed | low | testing |
 | [0174](issues/0174-sendtimedisplayservice-queries-db-every-page-load.md) | SendTimeDisplayService queries database on every page load | closed | low | enhancement, performance |
+| [0179](issues/0179-oauthcallback-error-switch-branches-untested.md) | OAuthCallback error mapping switch branches mostly untested | open | low | testing |

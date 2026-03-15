@@ -208,3 +208,13 @@ lambda/closure classes in `Detail.cshtml.cs` (`<>c__DisplayClass71_0` at 11.1% a
 lambdas are the JSON parsing and LINQ predicates within `LoadActivitySummaryAsync`. Extracting
 the shared `ActivitySummaryBuilder` would consolidate these lambda classes and improve coverage
 measurability.
+
+### claude — 2026-03-15
+
+Comprehensive review (code quality, review #6) found additional angle: the untyped
+`DeviceReading.Value` JSON parsing is a key contributor to the duplication. Both `EmailRenderer`
+and `Detail.cshtml.cs` contain identical inline `JsonDocument.Parse` lambdas for motion
+(bool extraction), motion events (count), and temperature (double extraction) — 6 copies total.
+Creating typed models (`MotionReadingValue`, `TemperatureReadingValue`, `BatteryReadingValue`)
+in `Hpoll.Core.Models` with `TryParse` methods would eliminate the inline JSON parsing at all
+consumption points and complement the `ActivitySummaryBuilder` extraction.

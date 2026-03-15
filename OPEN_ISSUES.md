@@ -2,7 +2,7 @@
 
 *Last updated: 2026-03-15*
 
-**10 open issues** | 3 medium | 7 low
+**11 open issues** | 3 medium | 8 low
 
 ## By Priority
 
@@ -21,6 +21,7 @@
 - [#0086](issues/0086-hue-api-error-bodies-logged.md) — Hue API error response bodies logged with potential sensitive data `security`
 - [#0106](issues/0106-hueapiclient-intermediate-string-deserialization.md) — HueApiClient deserializes JSON via intermediate string allocation `enhancement` `performance`
 - [#0121](issues/0121-admin-missing-exception-handler.md) — Admin portal lacks UseExceptionHandler middleware for production errors `enhancement`
+- [#0179](issues/0179-oauthcallback-error-switch-branches-untested.md) — OAuthCallback error mapping switch branches mostly untested `testing`
 
 ## By Label
 
@@ -54,3 +55,7 @@
 - [#0052](issues/0052-pin-dependency-versions-reproducible-builds.md) — Pin NuGet and Docker dependency versions for reproducible builds (low)
 - [#0074](issues/0074-refactor-inline-js-css-and-add-csp.md) — Refactor inline JS/CSS out of Razor pages and add Content-Security-Policy header (low)
 - [#0086](issues/0086-hue-api-error-bodies-logged.md) — Hue API error response bodies logged with potential sensitive data (low)
+
+### testing
+
+- [#0179](issues/0179-oauthcallback-error-switch-branches-untested.md) — OAuthCallback error mapping switch branches mostly untested (low)
