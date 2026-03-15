@@ -1,8 +1,9 @@
 ---
 id: 181
 title: "Hub Detail toggle/clear-reauth/delete handlers lack exception handling"
-status: open
+status: closed
 created: 2026-03-15
+closed: 2026-03-15
 author: claude
 labels: [enhancement, code-quality]
 priority: low
@@ -27,3 +28,7 @@ The inconsistency is partially explainable: the refresh/test-connection handlers
 **Recommendation:** The preferred fix is to address #121 first (UseExceptionHandler middleware), which provides a generic error page for all unhandled exceptions across the admin portal. This is more maintainable than adding per-handler try/catch to every database-only handler. If per-handler error messages are desired, note that these handlers use the POST-redirect-GET pattern (returning `RedirectToPage`), so switching to `Page()` on error would require loading the hub data that `OnGetAsync` normally provides.
 
 ## Comments
+
+### claude — 2026-03-15
+
+Closed: merged details into #121 (UseExceptionHandler middleware). The global middleware is the right fix for these database-only handlers rather than per-handler try/catch.

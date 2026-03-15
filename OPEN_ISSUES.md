@@ -2,7 +2,7 @@
 
 *Last updated: 2026-03-15*
 
-**11 open issues** | 3 medium | 8 low
+**10 open issues** | 3 medium | 7 low
 
 ## By Priority
 
@@ -21,7 +21,6 @@
 - [#0086](issues/0086-hue-api-error-bodies-logged.md) — Hue API error response bodies logged with potential sensitive data `security`
 - [#0106](issues/0106-hueapiclient-intermediate-string-deserialization.md) — HueApiClient deserializes JSON via intermediate string allocation `enhancement` `performance`
 - [#0121](issues/0121-admin-missing-exception-handler.md) — Admin portal lacks UseExceptionHandler middleware for production errors `enhancement`
-- [#0181](issues/0181-hub-detail-post-handlers-no-exception-handling.md) — Hub Detail toggle/clear-reauth/delete handlers lack exception handling `enhancement` `code-quality`
 
 ## By Label
 
@@ -29,7 +28,6 @@
 
 - [#0073](issues/0073-missing-cancellationtoken-in-admin-handlers.md) — Missing CancellationToken propagation in Admin page handlers (low)
 - [#0075](issues/0075-activity-window-duplication-persists.md) — Activity window duplication persists — ActivitySummaryBuilder never extracted (medium)
-- [#0181](issues/0181-hub-detail-post-handlers-no-exception-handling.md) — Hub Detail toggle/clear-reauth/delete handlers lack exception handling (low)
 
 ### enhancement
 
@@ -40,7 +38,6 @@
 - [#0106](issues/0106-hueapiclient-intermediate-string-deserialization.md) — HueApiClient deserializes JSON via intermediate string allocation (low)
 - [#0121](issues/0121-admin-missing-exception-handler.md) — Admin portal lacks UseExceptionHandler middleware for production errors (low)
 - [#0148](issues/0148-send-email-now-button.md) — Add 'Send Email Now' button to Customer Detail page (medium)
-- [#0181](issues/0181-hub-detail-post-handlers-no-exception-handling.md) — Hub Detail toggle/clear-reauth/delete handlers lack exception handling (low)
 
 ### feature
 
