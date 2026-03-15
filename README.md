@@ -344,7 +344,7 @@ page generates a hash — copy it into your `.env` file and restart:
 ADMIN_PASSWORD_HASH=AQAAAAIAAYag...
 ```
 
-The password is hashed using PBKDF2-SHA256 with a random salt. The plain-text
+The password is hashed using ASP.NET Core Identity's PasswordHasher (PBKDF2 with HMAC-SHA512, 100,000 iterations as at dotnet 8). The plain-text
 password is never stored.
 
 ## Data persistence

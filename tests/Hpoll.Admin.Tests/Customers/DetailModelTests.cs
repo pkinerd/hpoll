@@ -655,6 +655,27 @@ public class DetailModelTests : IDisposable
         Assert.Equal("bcc@test.com", model.EditBccEmails);
     }
 
+    [Fact]
+    public async Task OnPostUpdateEmailsAsync_InvalidCustomer_ReturnsNotFound()
+    {
+        var model = CreatePageModel();
+        model.EditEmail = "test@example.com";
+
+        var result = await model.OnPostUpdateEmailsAsync(999);
+
+        Assert.IsType<NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task OnPostToggleStatusAsync_InvalidCustomer_ReturnsNotFound()
+    {
+        var model = CreatePageModel();
+
+        var result = await model.OnPostToggleStatusAsync(999);
+
+        Assert.IsType<NotFoundResult>(result);
+    }
+
     private class TestSession : ISession
     {
         private readonly Dictionary<string, byte[]> _store = new();

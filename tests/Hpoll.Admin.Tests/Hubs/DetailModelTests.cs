@@ -325,4 +325,64 @@ public class DetailModelTests : IDisposable
         Assert.Contains("no-store", cacheControl);
         Assert.Contains("no-cache", cacheControl);
     }
+
+    [Fact]
+    public async Task OnPostRefreshTokenAsync_GenericException_ShowsGenericErrorMessage()
+    {
+        var (_, hub) = await SeedDataAsync();
+
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("unexpected failure"));
+
+        var model = CreatePageModel();
+        var result = await model.OnPostRefreshTokenAsync(hub.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Contains("unexpected error", model.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task OnPostRefreshTokenAsync_HttpExceptionNoStatusCode_ShowsCannotReachMessage()
+    {
+        var (_, hub) = await SeedDataAsync();
+
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("connection refused"));
+
+        var model = CreatePageModel();
+        var result = await model.OnPostRefreshTokenAsync(hub.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Contains("could not reach the Hue API", model.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task OnPostTestConnectionAsync_GenericException_ShowsGenericErrorMessage()
+    {
+        var (_, hub) = await SeedDataAsync();
+
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("unexpected failure"));
+
+        var model = CreatePageModel();
+        var result = await model.OnPostTestConnectionAsync(hub.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Contains("unexpected error", model.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task OnPostTestConnectionAsync_HttpExceptionNoStatusCode_ShowsCannotReachMessage()
+    {
+        var (_, hub) = await SeedDataAsync();
+
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("connection refused"));
+
+        var model = CreatePageModel();
+        var result = await model.OnPostTestConnectionAsync(hub.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Contains("could not reach the Hue API", model.ErrorMessage);
+    }
 }

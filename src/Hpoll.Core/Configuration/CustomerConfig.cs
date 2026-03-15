@@ -93,6 +93,6 @@ public class BackupSettings
 /// </summary>
 public class AdminSettings
 {
-    /// <summary>BCrypt hash of the admin password. Null or empty triggers first-time setup mode.</summary>
+    /// <summary>ASP.NET Core Identity PasswordHasher hash of the admin password. Null or empty triggers first-time setup mode.</summary>
     public string? PasswordHash { get; set; }
 }

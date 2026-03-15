@@ -64,16 +64,23 @@ public class OAuthCallbackModelTests : IDisposable
         return customer;
     }
 
-    [Fact]
-    public async Task OnGetAsync_WithError_ReturnsPageWithErrorMessage()
+    [Theory]
+    [InlineData("access_denied", "denied by the user")]
+    [InlineData("unauthorized_client", "not authorized")]
+    [InlineData("invalid_request", "malformed")]
+    [InlineData("unsupported_response_type", "does not support")]
+    [InlineData("server_error", "encountered an error")]
+    [InlineData("temporarily_unavailable", "encountered an error")]
+    [InlineData("unknown_error_code", "authorization failed")]
+    public async Task OnGetAsync_WithError_ReturnsPageWithMappedErrorMessage(string errorCode, string expectedSubstring)
     {
         var model = CreatePageModel();
 
-        var result = await model.OnGetAsync(null, null, "access_denied");
+        var result = await model.OnGetAsync(null, null, errorCode);
 
         Assert.IsType<PageResult>(result);
         Assert.False(model.Success);
-        Assert.Contains("denied", model.Message);
+        Assert.Contains(expectedSubstring, model.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
