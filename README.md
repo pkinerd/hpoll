@@ -8,12 +8,8 @@ SQLite database, and sends daily summary emails via AWS SES.
 
 - A [Philips Hue developer account](https://developers.meethue.com/) with a
   registered Remote Hue API app (provides **Client ID** and **Client Secret**)
-- A Hue Bridge on the same Hue account, with its **Bridge ID**
-- A **Hue application key** and **OAuth2 tokens** for each bridge — either
-  obtained manually through the Hue Remote Authentication flow or automatically
-  via the admin portal's "Register Hub" feature (see
-  [Web admin console](#web-admin-console))
-- AWS credentials configured for SES (for daily email reports)
+- A Hue Bridge and Hue account (to register against the app)
+- AWS credentials configured for SES (for email reports)
 
 ## Configuration
 
