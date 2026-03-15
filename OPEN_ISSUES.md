@@ -2,7 +2,7 @@
 
 *Last updated: 2026-03-15*
 
-**12 open issues** | 3 medium | 9 low
+**11 open issues** | 3 medium | 8 low
 
 ## By Priority
 
