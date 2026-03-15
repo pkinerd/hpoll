@@ -461,8 +461,9 @@ public class EmailSchedulerServiceTests : IDisposable
 
         await service.ProcessDueCustomersAsync(CancellationToken.None);
 
-        systemInfoMock.Verify(s => s.SetAsync("Runtime", "runtime.last_email_sent", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
-        systemInfoMock.Verify(s => s.SetAsync("Runtime", "runtime.total_emails_sent", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        systemInfoMock.Verify(s => s.SetBatchAsync("Runtime",
+            It.Is<Dictionary<string, string>>(d => d.ContainsKey("runtime.last_email_sent") && d.ContainsKey("runtime.total_emails_sent")),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -477,7 +478,7 @@ public class EmailSchedulerServiceTests : IDisposable
             .Returns(Task.CompletedTask);
 
         var systemInfoMock = new Mock<ISystemInfoService>();
-        systemInfoMock.Setup(s => s.SetAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        systemInfoMock.Setup(s => s.SetBatchAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("System info write failed"));
 
         var service = new EmailSchedulerService(

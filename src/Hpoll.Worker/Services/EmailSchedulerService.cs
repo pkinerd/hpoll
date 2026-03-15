@@ -133,16 +133,12 @@ public class EmailSchedulerService : BackgroundService
                 await SendCustomerEmailAsync(customer, renderer, sender, ct);
                 _totalEmailsSent++;
 
-                try
+                var metricTime = _timeProvider.GetUtcNow().UtcDateTime;
+                await _systemInfo.TrySetBatchAsync("Runtime", new Dictionary<string, string>
                 {
-                    var metricTime = _timeProvider.GetUtcNow().UtcDateTime;
-                    await _systemInfo.SetAsync("Runtime", "runtime.last_email_sent", metricTime.ToString("O"));
-                    await _systemInfo.SetAsync("Runtime", "runtime.total_emails_sent", _totalEmailsSent.ToString());
-                }
-                catch (Exception mex)
-                {
-                    _logger.LogWarning(mex, "Failed to update system info metrics");
-                }
+                    ["runtime.last_email_sent"] = metricTime.ToString("O"),
+                    ["runtime.total_emails_sent"] = _totalEmailsSent.ToString()
+                }, _logger, ct);
             }
             catch (Exception ex)
             {
@@ -159,16 +155,11 @@ public class EmailSchedulerService : BackgroundService
 
         await db.SaveChangesAsync(ct);
 
-        try
+        var nextDue = await GetNextDueTimeAsync(ct);
+        await _systemInfo.TrySetBatchAsync("Runtime", new Dictionary<string, string>
         {
-            var nextDue = await GetNextDueTimeAsync(ct);
-            await _systemInfo.SetAsync("Runtime", "runtime.next_email_due",
-                nextDue?.ToString("O") ?? "N/A");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to update next_email_due metric");
-        }
+            ["runtime.next_email_due"] = nextDue?.ToString("O") ?? "N/A"
+        }, _logger, ct);
 
         return true;
     }

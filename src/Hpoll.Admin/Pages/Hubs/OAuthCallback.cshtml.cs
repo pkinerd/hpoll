@@ -39,10 +39,19 @@ public class OAuthCallbackModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(string? code, string? state, string? error)
     {
-        // Handle OAuth error response
+        // Handle OAuth error response — map standard OAuth 2.0 error codes (RFC 6749 §4.1.2.1)
+        // to fixed messages rather than reflecting the raw query parameter
         if (!string.IsNullOrEmpty(error))
         {
-            Message = $"Hue authorization was denied: {error}";
+            Message = error switch
+            {
+                "access_denied" => "Hue authorization was denied by the user.",
+                "unauthorized_client" => "This application is not authorized. Check your Hue app credentials.",
+                "invalid_request" => "The authorization request was malformed. Please try again.",
+                "unsupported_response_type" => "The Hue server does not support this authorization flow.",
+                "server_error" or "temporarily_unavailable" => "The Hue server encountered an error. Please try again later.",
+                _ => "Hue authorization failed. Please try again."
+            };
             return Page();
         }
 
