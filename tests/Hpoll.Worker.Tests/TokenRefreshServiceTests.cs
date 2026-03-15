@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
@@ -18,12 +19,14 @@ public class TokenRefreshServiceTests : IDisposable
 {
     private readonly ServiceProvider _serviceProvider;
     private readonly Mock<IHueApiClient> _mockHueClient;
+    private readonly FakeTimeProvider _fakeTime;
     private readonly string _dbName;
 
     public TokenRefreshServiceTests()
     {
         _dbName = Guid.NewGuid().ToString();
         _mockHueClient = new Mock<IHueApiClient>();
+        _fakeTime = new FakeTimeProvider(new DateTimeOffset(2026, 3, 15, 12, 0, 0, TimeSpan.Zero));
 
         var services = new ServiceCollection();
         services.AddDbContext<HpollDbContext>(options =>
@@ -63,7 +66,7 @@ public class TokenRefreshServiceTests : IDisposable
             HueApplicationKey = "appkey",
             AccessToken = "old-access-token",
             RefreshToken = "old-refresh-token",
-            TokenExpiresAt = tokenExpiresAt ?? DateTime.UtcNow.AddDays(1),
+            TokenExpiresAt = tokenExpiresAt ?? _fakeTime.GetUtcNow().UtcDateTime.AddDays(1),
             Status = status
         };
         db.Hubs.Add(hub);
@@ -77,7 +80,8 @@ public class TokenRefreshServiceTests : IDisposable
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<TokenRefreshService>.Instance,
             Options.Create(settings ?? new PollingSettings()),
-            new Mock<ISystemInfoService>().Object);
+            new Mock<ISystemInfoService>().Object,
+            _fakeTime);
     }
 
     [Fact]
@@ -154,7 +158,7 @@ public class TokenRefreshServiceTests : IDisposable
     public async Task RefreshExpiringTokens_TokenNotNearExpiry_SkipsRefresh()
     {
         // Token expires far in the future (well beyond threshold)
-        await SeedHubAsync(tokenExpiresAt: DateTime.UtcNow.AddDays(30));
+        await SeedHubAsync(tokenExpiresAt: _fakeTime.GetUtcNow().UtcDateTime.AddDays(30));
 
         var service = CreateService(new PollingSettings { TokenRefreshThresholdHours = 48 });
         await service.RefreshExpiringTokensAsync(CancellationToken.None);
@@ -166,9 +170,9 @@ public class TokenRefreshServiceTests : IDisposable
     public async Task RefreshExpiringTokens_MultipleHubs_OnlyRefreshesExpiring()
     {
         // Hub1: near expiry (within threshold)
-        var hub1 = await SeedHubAsync(tokenExpiresAt: DateTime.UtcNow.AddHours(12));
+        var hub1 = await SeedHubAsync(tokenExpiresAt: _fakeTime.GetUtcNow().UtcDateTime.AddHours(12));
         // Hub2: far from expiry
-        var hub2 = await SeedHubAsync(tokenExpiresAt: DateTime.UtcNow.AddDays(30));
+        var hub2 = await SeedHubAsync(tokenExpiresAt: _fakeTime.GetUtcNow().UtcDateTime.AddDays(30));
 
         _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueTokenResponse
@@ -238,7 +242,7 @@ public class TokenRefreshServiceTests : IDisposable
     [Fact]
     public async Task RefreshExpiringTokens_InactiveHub_NotIncluded()
     {
-        await SeedHubAsync(status: HubStatus.Inactive, tokenExpiresAt: DateTime.UtcNow.AddHours(1));
+        await SeedHubAsync(status: HubStatus.Inactive, tokenExpiresAt: _fakeTime.GetUtcNow().UtcDateTime.AddHours(1));
 
         var service = CreateService();
         await service.RefreshExpiringTokensAsync(CancellationToken.None);
@@ -250,7 +254,7 @@ public class TokenRefreshServiceTests : IDisposable
     public async Task RefreshExpiringTokens_UpdatedAtTimestamp_SetOnSuccess()
     {
         var hub = await SeedHubAsync();
-        var beforeRefresh = DateTime.UtcNow;
+        var expectedTime = _fakeTime.GetUtcNow().UtcDateTime;
 
         _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueTokenResponse
@@ -266,14 +270,14 @@ public class TokenRefreshServiceTests : IDisposable
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
-        Assert.True(updatedHub.UpdatedAt >= beforeRefresh);
+        Assert.Equal(expectedTime, updatedHub.UpdatedAt);
     }
 
     [Fact]
     public async Task RefreshExpiringTokens_UpdatedAtTimestamp_SetOnNeedsReauth()
     {
         var hub = await SeedHubAsync();
-        var beforeRefresh = DateTime.UtcNow;
+        var expectedTime = _fakeTime.GetUtcNow().UtcDateTime;
 
         _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("Fail"));
@@ -284,7 +288,7 @@ public class TokenRefreshServiceTests : IDisposable
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
         Assert.Equal(HubStatus.NeedsReauth, updatedHub.Status);
-        Assert.True(updatedHub.UpdatedAt >= beforeRefresh);
+        Assert.Equal(expectedTime, updatedHub.UpdatedAt);
     }
 
     [Fact]
@@ -301,14 +305,15 @@ public class TokenRefreshServiceTests : IDisposable
     [Fact]
     public async Task ExecuteAsync_UpdatesSystemInfoMetrics()
     {
-        var hub = await SeedHubAsync(tokenExpiresAt: DateTime.UtcNow.AddDays(30));
+        var hub = await SeedHubAsync(tokenExpiresAt: _fakeTime.GetUtcNow().UtcDateTime.AddDays(30));
         var systemInfoMock = new Mock<ISystemInfoService>();
 
         var service = new TokenRefreshService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<TokenRefreshService>.Instance,
             Options.Create(new PollingSettings { TokenRefreshThresholdHours = 48, TokenRefreshCheckHours = 24 }),
-            systemInfoMock.Object);
+            systemInfoMock.Object,
+            _fakeTime);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         try { await service.StartAsync(cts.Token); await Task.Delay(1000, cts.Token); }
@@ -323,7 +328,7 @@ public class TokenRefreshServiceTests : IDisposable
     [Fact]
     public async Task ExecuteAsync_SystemInfoFailure_DoesNotCrashService()
     {
-        await SeedHubAsync(tokenExpiresAt: DateTime.UtcNow.AddDays(30));
+        await SeedHubAsync(tokenExpiresAt: _fakeTime.GetUtcNow().UtcDateTime.AddDays(30));
         var systemInfoMock = new Mock<ISystemInfoService>();
         systemInfoMock.Setup(s => s.SetBatchAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("System info write failed"));
@@ -332,7 +337,8 @@ public class TokenRefreshServiceTests : IDisposable
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<TokenRefreshService>.Instance,
             Options.Create(new PollingSettings { TokenRefreshCheckHours = 24 }),
-            systemInfoMock.Object);
+            systemInfoMock.Object,
+            _fakeTime);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         try { await service.StartAsync(cts.Token); await Task.Delay(1000, cts.Token); }
@@ -345,7 +351,7 @@ public class TokenRefreshServiceTests : IDisposable
     [Fact]
     public async Task RefreshExpiringTokens_NeedsReauthHub_NotIncluded()
     {
-        await SeedHubAsync(status: HubStatus.NeedsReauth, tokenExpiresAt: DateTime.UtcNow.AddHours(1));
+        await SeedHubAsync(status: HubStatus.NeedsReauth, tokenExpiresAt: _fakeTime.GetUtcNow().UtcDateTime.AddHours(1));
 
         var service = CreateService();
         await service.RefreshExpiringTokensAsync(CancellationToken.None);
@@ -367,7 +373,7 @@ public class TokenRefreshServiceTests : IDisposable
     {
         // Token expires exactly at the threshold boundary
         var settings = new PollingSettings { TokenRefreshThresholdHours = 48 };
-        await SeedHubAsync(tokenExpiresAt: DateTime.UtcNow.AddHours(48));
+        await SeedHubAsync(tokenExpiresAt: _fakeTime.GetUtcNow().UtcDateTime.AddHours(48));
 
         _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueTokenResponse
