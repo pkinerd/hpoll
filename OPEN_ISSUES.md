@@ -2,7 +2,7 @@
 
 *Last updated: 2026-03-15*
 
-**12 open issues** | 3 medium | 9 low
+**14 open issues** | 3 medium | 11 low
 
 ## By Priority
 
@@ -22,6 +22,8 @@
 - [#0121](issues/0121-admin-missing-exception-handler.md) — Admin portal lacks UseExceptionHandler middleware for production errors `enhancement`
 - [#0146](issues/0146-getorcreatedeviceasync-untested.md) — GetOrCreateDeviceAsync edge case (null/empty HueDeviceId) not tested `testing`
 - [#0147](issues/0147-hueapiclient-cancellationtoken-untested.md) — HueApiClient CancellationToken propagation untested `testing`
+- [#0150](issues/0150-backup-tests-cwd-mutation.md) — DatabaseBackupServiceTests mutates process-wide CWD creating test isolation risk `testing` `code-quality`
+- [#0152](issues/0152-adminsettings-passwordhash-doc-inaccurate.md) — AdminSettings.PasswordHash doc comment says 'Null' but code checks IsNullOrEmpty `documentation`
 
 ## By Label
 
@@ -29,6 +31,11 @@
 
 - [#0073](issues/0073-missing-cancellationtoken-in-admin-handlers.md) — Missing CancellationToken propagation in Admin page handlers (low)
 - [#0075](issues/0075-activity-window-duplication-persists.md) — Activity window duplication persists — ActivitySummaryBuilder never extracted (medium)
+- [#0150](issues/0150-backup-tests-cwd-mutation.md) — DatabaseBackupServiceTests mutates process-wide CWD creating test isolation risk (low)
+
+### documentation
+
+- [#0152](issues/0152-adminsettings-passwordhash-doc-inaccurate.md) — AdminSettings.PasswordHash doc comment says 'Null' but code checks IsNullOrEmpty (low)
 
 ### enhancement
 
@@ -60,3 +67,4 @@
 
 - [#0146](issues/0146-getorcreatedeviceasync-untested.md) — GetOrCreateDeviceAsync edge case (null/empty HueDeviceId) not tested (low)
 - [#0147](issues/0147-hueapiclient-cancellationtoken-untested.md) — HueApiClient CancellationToken propagation untested (low)
+- [#0150](issues/0150-backup-tests-cwd-mutation.md) — DatabaseBackupServiceTests mutates process-wide CWD creating test isolation risk (low)
