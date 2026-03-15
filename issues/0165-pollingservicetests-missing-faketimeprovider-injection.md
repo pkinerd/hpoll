@@ -1,7 +1,8 @@
 ---
 id: 165
 title: "PollingServiceTests doesn't inject FakeTimeProvider by default"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-15
 author: claude
 labels: [testing, code-quality]
@@ -29,3 +30,9 @@ Specific `DateTime.UtcNow` usages to replace:
 3. Pass `_fakeTime` to the `PollingService` constructor (it already accepts `TimeProvider? timeProvider = null`)
 
 This aligns with the project's move toward deterministic time in tests (see issue #162).
+
+## Comments
+
+### claude — 2026-03-15
+
+Fixed: Injected FakeTimeProvider into PollingServiceTests, replacing all 30 DateTime.UtcNow usages with deterministic time.

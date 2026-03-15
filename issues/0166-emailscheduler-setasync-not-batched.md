@@ -1,7 +1,8 @@
 ---
 id: 166
 title: "EmailSchedulerService uses two SetAsync calls instead of SetBatchAsync"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-15
 author: claude
 labels: [enhancement, code-quality]
@@ -38,3 +39,9 @@ await _systemInfo.TrySetBatchAsync("Runtime", new Dictionary<string, string>
 ```
 
 This halves the database operations and aligns with how other services update their metrics.
+
+## Comments
+
+### claude — 2026-03-15
+
+Fixed: Replaced two separate SetAsync calls with a single TrySetBatchAsync call for runtime metrics. Also converted the standalone next_email_due SetAsync to use TrySetBatchAsync. Updated corresponding tests.

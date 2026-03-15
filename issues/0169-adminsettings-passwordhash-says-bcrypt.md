@@ -1,7 +1,8 @@
 ---
 id: 169
 title: "AdminSettings.PasswordHash XML doc incorrectly says BCrypt"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-15
 author: claude
 labels: [documentation]
@@ -29,3 +30,9 @@ The implementation does not use BCrypt. It uses ASP.NET Core Identity's `Passwor
 ```csharp
 /// <summary>ASP.NET Core Identity PasswordHasher hash of the admin password. Null or empty triggers first-time setup mode.</summary>
 ```
+
+## Comments
+
+### claude — 2026-03-15
+
+Fixed: Updated XML doc comment to say "ASP.NET Core Identity PasswordHasher hash" instead of "BCrypt hash".

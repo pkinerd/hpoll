@@ -1,7 +1,8 @@
 ---
 id: 167
 title: "OAuth callback reflects error query parameter on AllowAnonymous page"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-15
 author: claude
 labels: [security]
@@ -45,3 +46,9 @@ Message = error switch
 ```
 
 This prevents arbitrary attacker-controlled text from appearing on the page.
+
+## Comments
+
+### claude — 2026-03-15
+
+Fixed: Mapped all 6 RFC 6749 §4.1.2.1 error codes (access_denied, unauthorized_client, invalid_request, unsupported_response_type, server_error, temporarily_unavailable) to fixed messages, with a catch-all default for unknown codes.

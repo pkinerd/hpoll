@@ -145,7 +145,7 @@
 | [0160](issues/0160-sendtimedisplayservice-no-tests.md) | SendTimeDisplayService has no unit tests | closed | low | testing |
 | [0162](issues/0162-tokenrefresh-tests-no-faketimeprovider.md) | TokenRefreshServiceTests use DateTime.UtcNow instead of FakeTimeProvider | closed | low | testing, code-quality |
 | [0163](issues/0163-readme-pbkdf2-sha256-incorrect.md) | README incorrectly states password hashing uses PBKDF2-SHA256 (actual: SHA512) | closed | medium | documentation |
-| [0165](issues/0165-pollingservicetests-missing-faketimeprovider-injection.md) | PollingServiceTests doesn't inject FakeTimeProvider by default | open | low | testing, code-quality |
-| [0166](issues/0166-emailscheduler-setasync-not-batched.md) | EmailSchedulerService uses two SetAsync calls instead of SetBatchAsync | open | low | enhancement, code-quality |
-| [0167](issues/0167-oauth-error-param-reflected.md) | OAuth callback reflects error query parameter on AllowAnonymous page | open | low | security |
-| [0169](issues/0169-adminsettings-passwordhash-says-bcrypt.md) | AdminSettings.PasswordHash XML doc incorrectly says BCrypt | open | low | documentation |
+| [0165](issues/0165-pollingservicetests-missing-faketimeprovider-injection.md) | PollingServiceTests doesn't inject FakeTimeProvider by default | closed | low | testing, code-quality |
+| [0166](issues/0166-emailscheduler-setasync-not-batched.md) | EmailSchedulerService uses two SetAsync calls instead of SetBatchAsync | closed | low | enhancement, code-quality |
+| [0167](issues/0167-oauth-error-param-reflected.md) | OAuth callback reflects error query parameter on AllowAnonymous page | closed | low | security |
+| [0169](issues/0169-adminsettings-passwordhash-says-bcrypt.md) | AdminSettings.PasswordHash XML doc incorrectly says BCrypt | closed | low | documentation |
