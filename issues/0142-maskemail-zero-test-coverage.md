@@ -1,7 +1,8 @@
 ---
 id: 142
 title: "MaskEmail methods have zero test coverage"
-status: open
+
+closed: 2026-03-15
 created: 2026-03-04
 author: claude
 labels: [testing]

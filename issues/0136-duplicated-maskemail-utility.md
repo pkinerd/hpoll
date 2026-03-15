@@ -1,7 +1,8 @@
 ---
 id: 136
 title: "Duplicated MaskEmail utility across Worker and Email projects"
-status: open
+
+closed: 2026-03-15
 created: 2026-03-04
 author: claude
 labels: [enhancement, code-quality]

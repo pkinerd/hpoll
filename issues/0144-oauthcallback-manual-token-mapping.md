@@ -1,7 +1,8 @@
 ---
 id: 144
 title: "OAuthCallbackModel manually maps tokens instead of using ApplyTokenResponse"
-status: open
+
+closed: 2026-03-15
 created: 2026-03-04
 author: claude
 labels: [enhancement, code-quality]

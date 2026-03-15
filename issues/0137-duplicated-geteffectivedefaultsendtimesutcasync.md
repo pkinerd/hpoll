@@ -1,7 +1,8 @@
 ---
 id: 137
 title: "Duplicated GetEffectiveDefaultSendTimesUtcAsync in Create and Detail pages"
-status: open
+
+closed: 2026-03-15
 created: 2026-03-04
 author: claude
 labels: [enhancement, code-quality]

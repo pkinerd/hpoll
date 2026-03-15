@@ -1,7 +1,8 @@
 ---
 id: 139
 title: "XML doc comment gaps on configuration, entity, and page model classes"
-status: open
+
+closed: 2026-03-15
 created: 2026-03-04
 author: claude
 labels: [documentation]
