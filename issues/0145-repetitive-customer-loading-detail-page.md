@@ -1,7 +1,8 @@
 ---
 id: 145
 title: "Repetitive customer-loading boilerplate in Detail page handlers"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-04
 author: claude
 labels: [enhancement, code-quality]
@@ -26,3 +27,7 @@ Note: `OnPostToggleStatusAsync` does not follow this pattern (it redirects inste
 ### critical-review — 2026-03-04
 
 Critical review: ADJUST. Corrected scope: only the query + null-check are truly common across handlers. Edit* property assignments intentionally vary per handler to preserve POSTed form values. OnPostToggleStatusAsync excluded (it redirects, different pattern).
+
+### claude — 2026-03-15
+
+Duplicate of closed #13 (Extract shared LoadCustomerAsync helper in Detail page model). Issue #13 identified the same repeated pattern and was closed as won't-fix after analysis concluded the extraction provides negligible benefit (only 2 common lines per handler).

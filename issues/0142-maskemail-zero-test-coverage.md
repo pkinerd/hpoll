@@ -13,7 +13,7 @@ priority: low
 Both `MaskEmail` implementations lack direct unit tests verifying output correctness:
 
 - `EmailSchedulerService.MaskEmail` (`internal static`) — handles comma-separated emails, line 224. This method IS indirectly executed by tests that call `ProcessDueCustomersAsync`/`SendCustomerEmailAsync` (through logging calls), so code coverage tools would show the lines as covered. However, no test verifies the actual masked output.
-- `SesEmailSender.MaskEmail` (`private static`) — handles single emails, line 26. Genuinely zero coverage — no tests exist for the `SesEmailSender` class at all.
+- `SesEmailSender.MaskEmail` (`private static`) — handles single emails, line 26. Indirectly executed via 6 tests in `SesEmailSenderTests.cs` (called before every `SendEmailAsync`), but no test asserts on the masked output.
 
 These are logging-only helper methods — incorrect masking would not affect functionality, only log readability.
 

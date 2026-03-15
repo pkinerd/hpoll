@@ -127,12 +127,12 @@
 | [0135](issues/0135-readme-missing-admin-password-hash.md) | README settings table does not include non-.NET env vars like ADMIN_PASSWORD_HASH | closed | low | documentation |
 | [0136](issues/0136-duplicated-maskemail-utility.md) | Duplicated MaskEmail utility across Worker and Email projects | open | medium | enhancement, code-quality |
 | [0137](issues/0137-duplicated-geteffectivedefaultsendtimesutcasync.md) | Duplicated GetEffectiveDefaultSendTimesUtcAsync in Create and Detail pages | open | medium | enhancement, code-quality |
-| [0138](issues/0138-admin-pages-datetime-utcnow-not-testable.md) | Admin page models use DateTime.UtcNow instead of TimeProvider | open | low | enhancement, code-quality, testing |
+| [0138](issues/0138-admin-pages-datetime-utcnow-not-testable.md) | Admin page models use DateTime.UtcNow instead of TimeProvider | closed | low | enhancement, code-quality, testing |
 | [0139](issues/0139-xml-doc-gaps-config-entity-pagemodel.md) | XML doc comment gaps on configuration, entity, and page model classes | open | low | documentation |
-| [0140](issues/0140-backgroundservice-executeasync-untested.md) | PollingService.ExecuteAsync has no test coverage; other services have partial error-path gaps | open | medium | testing |
+| [0140](issues/0140-backgroundservice-executeasync-untested.md) | PollingService.ExecuteAsync has no test coverage; other services have partial error-path gaps | closed | medium | testing |
 | [0142](issues/0142-maskemail-zero-test-coverage.md) | MaskEmail methods have zero test coverage | open | low | testing |
 | [0143](issues/0143-readme-missing-battery-in-intro.md) | README introduction omits battery sensor data | open | low | documentation |
 | [0144](issues/0144-oauthcallback-manual-token-mapping.md) | OAuthCallbackModel manually maps tokens instead of using ApplyTokenResponse | open | low | enhancement, code-quality |
-| [0145](issues/0145-repetitive-customer-loading-detail-page.md) | Repetitive customer-loading boilerplate in Detail page handlers | open | low | enhancement, code-quality |
+| [0145](issues/0145-repetitive-customer-loading-detail-page.md) | Repetitive customer-loading boilerplate in Detail page handlers | closed | low | enhancement, code-quality |
 | [0146](issues/0146-getorcreatedeviceasync-untested.md) | GetOrCreateDeviceAsync edge case (null/empty HueDeviceId) not tested | open | low | testing |
 | [0147](issues/0147-hueapiclient-cancellationtoken-untested.md) | HueApiClient CancellationToken propagation untested | open | low | testing |

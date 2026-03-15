@@ -1,7 +1,8 @@
 ---
 id: 138
 title: "Admin page models use DateTime.UtcNow instead of TimeProvider"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-04
 author: claude
 labels: [enhancement, code-quality, testing]
@@ -36,3 +37,7 @@ Additionally, `TimeProvider` is not registered in Admin's `Program.cs` (the Work
 ### critical-review — 2026-03-04
 
 Critical review: ADJUST. Lowered priority from medium to low. Narrowed scope to only the 2-3 handlers with time-sensitive logic (hub delete cooling period, login lockout). Simple timestamp-setting usages do not benefit from TimeProvider abstraction.
+
+### claude — 2026-03-15
+
+Duplicate of closed #76 (Inconsistent TimeProvider vs DateTime.UtcNow usage across codebase). Issue #76 already analyzed all Admin page DateTime.UtcNow usages and deliberately excluded them from the fix scope as cosmetic/false positives.
