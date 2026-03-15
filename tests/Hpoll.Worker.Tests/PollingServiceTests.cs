@@ -942,6 +942,25 @@ public class PollingServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task PollHub_FinallyBlockSaveFailure_DoesNotCrash()
+    {
+        var hub = await SeedHubAsync();
+
+        // When the API call is made, close the SQLite connection so that
+        // the finally-block SaveChangesAsync will fail
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns<string, string, CancellationToken>((token, key, ct) =>
+            {
+                _connection.Close();
+                throw new Exception("API error");
+            });
+
+        var service = CreateService();
+        // Should not throw — the finally block's catch should handle the save failure
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+    }
+
+    [Fact]
     public async Task PollHub_On401_EmptyRefreshToken_KeepsExistingRefreshToken()
     {
         var hub = await SeedHubAsync();
