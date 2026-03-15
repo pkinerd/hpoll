@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Hpoll.Admin.Services;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
 using Hpoll.Core.Services;
@@ -19,13 +20,15 @@ public class DetailModel : PageModel
     private readonly HpollDbContext _db;
     private readonly HueAppSettings _hueApp;
     private readonly EmailSettings _emailSettings;
+    private readonly SendTimeDisplayService _sendTimeService;
     private readonly ILogger<DetailModel> _logger;
 
-    public DetailModel(HpollDbContext db, IOptions<HueAppSettings> hueApp, IOptions<EmailSettings> emailSettings, ILogger<DetailModel> logger)
+    public DetailModel(HpollDbContext db, IOptions<HueAppSettings> hueApp, IOptions<EmailSettings> emailSettings, SendTimeDisplayService sendTimeService, ILogger<DetailModel> logger)
     {
         _db = db;
         _hueApp = hueApp.Value;
         _emailSettings = emailSettings.Value;
+        _sendTimeService = sendTimeService;
         _logger = logger;
     }
 
@@ -72,7 +75,7 @@ public class DetailModel : PageModel
         EditSendTimesLocal = customer.SendTimesLocal;
         EditTimeZoneId = customer.TimeZoneId;
         EditingTimeZone = editTz;
-        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
+        DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
         await LoadActivitySummaryAsync(customer);
 
         return Page();
@@ -163,7 +166,7 @@ public class DetailModel : PageModel
         }
 
         customer.SendTimesLocal = newSendTimes;
-        var effectiveDefaults = await GetEffectiveDefaultSendTimesUtcAsync();
+        var effectiveDefaults = await _sendTimeService.GetEffectiveDefaultSendTimesUtcAsync();
         customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
             customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, effectiveDefaults);
         customer.UpdatedAt = DateTime.UtcNow;
@@ -208,7 +211,7 @@ public class DetailModel : PageModel
         }
 
         customer.TimeZoneId = newTzId;
-        var effectiveDefaults = await GetEffectiveDefaultSendTimesUtcAsync();
+        var effectiveDefaults = await _sendTimeService.GetEffectiveDefaultSendTimesUtcAsync();
         customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
             customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, effectiveDefaults);
         customer.UpdatedAt = DateTime.UtcNow;
@@ -266,7 +269,7 @@ public class DetailModel : PageModel
 
     private async Task PreparePageDataAsync(Customer customer)
     {
-        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
+        DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
         await LoadActivitySummaryAsync(customer);
     }
 
@@ -279,27 +282,6 @@ public class DetailModel : PageModel
             .ToList();
         if (invalid.Count > 0)
             ModelState.AddModelError(fieldName, $"Invalid email address(es): {string.Join(", ", invalid)}");
-    }
-
-    private async Task<List<string>> GetEffectiveDefaultSendTimesUtcAsync()
-    {
-        var entry = await _db.SystemInfo
-            .FirstOrDefaultAsync(e => e.Key == "email.send_times_utc");
-        if (entry != null && !string.IsNullOrWhiteSpace(entry.Value))
-        {
-            var parsed = entry.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(t => TimeSpan.TryParse(t, out _))
-                .ToList();
-            if (parsed.Count > 0)
-                return parsed;
-        }
-        return _emailSettings.SendTimesUtc;
-    }
-
-    private async Task<string> GetDefaultSendTimesDisplayAsync()
-    {
-        var defaults = await GetEffectiveDefaultSendTimesUtcAsync();
-        return string.Join(", ", defaults) + " UTC";
     }
 
     private async Task LoadActivitySummaryAsync(Customer customer)

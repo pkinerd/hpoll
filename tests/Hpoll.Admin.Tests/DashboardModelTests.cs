@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Hpoll.Admin.Pages;
+using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
@@ -9,6 +11,7 @@ namespace Hpoll.Admin.Tests;
 public class DashboardModelTests : IDisposable
 {
     private readonly HpollDbContext _db;
+    private readonly IOptions<PollingSettings> _pollingSettings = Options.Create(new PollingSettings());
 
     public DashboardModelTests()
     {
@@ -58,7 +61,7 @@ public class DashboardModelTests : IDisposable
         await SeedHubAsync(c2.Id, HubStatus.Inactive);
         await SeedHubAsync(c3.Id, HubStatus.NeedsReauth);
 
-        var model = new IndexModel(_db);
+        var model = new IndexModel(_db, _pollingSettings);
         await model.OnGetAsync();
 
         Assert.Equal(2, model.ActiveCustomers);
@@ -77,7 +80,7 @@ public class DashboardModelTests : IDisposable
         // Expires in 72 hours (outside 48h threshold)
         await SeedHubAsync(customer.Id, HubStatus.Active, DateTime.UtcNow.AddHours(72));
 
-        var model = new IndexModel(_db);
+        var model = new IndexModel(_db, _pollingSettings);
         await model.OnGetAsync();
 
         Assert.Single(model.ExpiringTokenHubs);
@@ -90,7 +93,7 @@ public class DashboardModelTests : IDisposable
         await SeedHubAsync(customer.Id, HubStatus.Active, consecutiveFailures: 3);
         await SeedHubAsync(customer.Id, HubStatus.Active, consecutiveFailures: 0);
 
-        var model = new IndexModel(_db);
+        var model = new IndexModel(_db, _pollingSettings);
         await model.OnGetAsync();
 
         Assert.Single(model.FailingHubs);
@@ -100,7 +103,7 @@ public class DashboardModelTests : IDisposable
     [Fact]
     public async Task OnGetAsync_EmptyDatabase_ReturnsZeroCounts()
     {
-        var model = new IndexModel(_db);
+        var model = new IndexModel(_db, _pollingSettings);
         await model.OnGetAsync();
 
         Assert.Equal(0, model.ActiveCustomers);

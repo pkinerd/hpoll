@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using Hpoll.Data;
 using Hpoll.Worker.Services;
 
@@ -39,11 +40,12 @@ public class SystemInfoServiceTests : IDisposable
         return scope.ServiceProvider.GetRequiredService<HpollDbContext>();
     }
 
-    private SystemInfoService CreateService()
+    private SystemInfoService CreateService(TimeProvider? timeProvider = null)
     {
         return new SystemInfoService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            NullLogger<SystemInfoService>.Instance);
+            NullLogger<SystemInfoService>.Instance,
+            timeProvider);
     }
 
     [Fact]
@@ -90,14 +92,15 @@ public class SystemInfoServiceTests : IDisposable
     [Fact]
     public async Task SetAsync_SetsUpdatedAtTimestamp()
     {
-        var before = DateTime.UtcNow;
-        var service = CreateService();
+        var fixedTime = new DateTimeOffset(2026, 3, 1, 12, 0, 0, TimeSpan.Zero);
+        var fakeTimeProvider = new FakeTimeProvider(fixedTime);
+        var service = CreateService(fakeTimeProvider);
 
         await service.SetAsync("Runtime", "test.key", "value");
 
         using var db = CreateDb();
         var entry = await db.SystemInfo.FindAsync("test.key");
-        Assert.True(entry!.UpdatedAt >= before);
+        Assert.Equal(fixedTime.UtcDateTime, entry!.UpdatedAt);
     }
 
     [Fact]

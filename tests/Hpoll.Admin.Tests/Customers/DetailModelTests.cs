@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Hpoll.Admin.Pages.Customers;
+using Hpoll.Admin.Services;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
 using Hpoll.Data;
@@ -28,11 +29,12 @@ public class DetailModelTests : IDisposable
 
     public void Dispose() => _db.Dispose();
 
-    private DetailModel CreatePageModel(HueAppSettings? hueAppSettings = null)
+    private DetailModel CreatePageModel(HueAppSettings? hueAppSettings = null, EmailSettings? emailSettingsOverride = null)
     {
         var hueApp = Options.Create(hueAppSettings ?? new HueAppSettings());
-        var emailSettings = Options.Create(new EmailSettings());
-        var model = new DetailModel(_db, hueApp, emailSettings, NullLogger<DetailModel>.Instance);
+        var emailSettings = Options.Create(emailSettingsOverride ?? new EmailSettings());
+        var sendTimeService = new SendTimeDisplayService(_db, emailSettings);
+        var model = new DetailModel(_db, hueApp, emailSettings, sendTimeService, NullLogger<DetailModel>.Instance);
         var httpContext = new DefaultHttpContext();
         httpContext.Session = new TestSession();
         model.PageContext = new PageContext
@@ -353,14 +355,7 @@ public class DetailModelTests : IDisposable
     {
         var customer = await SeedCustomerAsync();
 
-        var emailSettings = Options.Create(new EmailSettings { SendTimesUtc = new List<string> { "09:00" } });
-        var model = new DetailModel(_db, Options.Create(new HueAppSettings()), emailSettings, NullLogger<DetailModel>.Instance);
-        model.PageContext = new PageContext
-        {
-            ActionDescriptor = new CompiledPageActionDescriptor(),
-            HttpContext = new DefaultHttpContext(),
-            RouteData = new RouteData()
-        };
+        var model = CreatePageModel(emailSettingsOverride: new EmailSettings { SendTimesUtc = new List<string> { "09:00" } });
 
         await model.OnGetAsync(customer.Id);
 

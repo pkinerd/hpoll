@@ -13,10 +13,12 @@ public class Hub
     public string RefreshToken { get; set; } = string.Empty;
     public DateTime TokenExpiresAt { get; set; }
     public string Status { get; set; } = HubStatus.Active;
+    /// <summary>Timestamp when the hub was deactivated (set to <see cref="HubStatus.Inactive"/>), null if active.</summary>
     public DateTime? DeactivatedAt { get; set; }
     public DateTime? LastPolledAt { get; set; }
     public DateTime? LastBatteryPollUtc { get; set; }
     public DateTime? LastSuccessAt { get; set; }
+    /// <summary>Rolling count of consecutive polling failures; resets to 0 on success. Used to trigger deactivation or re-auth.</summary>
     public int ConsecutiveFailures { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

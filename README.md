@@ -1,7 +1,7 @@
 # hpoll
 
 hpoll is an experimental Philips Hue monitoring service. It periodically polls
-Hue Bridge hubs for motion and temperature sensor data, stores readings in a
+Hue Bridge hubs for motion, temperature, and battery sensor data, stores readings in a
 SQLite database, and sends daily summary emails via AWS SES.
 
 ## Prerequisites
@@ -54,6 +54,16 @@ variables use `__` (double underscore) as section separators.
 | `HueApp:ClientId` | `HueApp__ClientId` | _(required)_ | Hue Remote API app client ID |
 | `HueApp:ClientSecret` | `HueApp__ClientSecret` | _(required)_ | Hue Remote API app client secret |
 | `HueApp:CallbackUrl` | `HueApp__CallbackUrl` | _(required for admin)_ | OAuth callback URL for hub registration (e.g. `https://admin.example.com/Hubs/OAuthCallback`) |
+
+### Other environment variables
+
+These variables are read directly (not through the .NET configuration system):
+
+| Env var | Required by | Description |
+|---|---|---|
+| `ADMIN_PASSWORD_HASH` | Admin | Hashed password for admin login (see [Admin panel password](#admin-panel-password)) |
+| `AWS_ACCESS_KEY_ID` | Worker | AWS credentials for SES email sending |
+| `AWS_SECRET_ACCESS_KEY` | Worker | AWS credentials for SES email sending |
 
 Customers and hubs are managed through the [web admin console](#web-admin-console).
 

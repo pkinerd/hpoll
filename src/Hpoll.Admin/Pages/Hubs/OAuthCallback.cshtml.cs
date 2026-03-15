@@ -124,11 +124,9 @@ public class OAuthCallbackModel : PageModel
                     CustomerId = customerId,
                     HueBridgeId = bridgeId,
                     HueApplicationKey = applicationKey,
-                    AccessToken = tokenResponse.AccessToken,
-                    RefreshToken = tokenResponse.RefreshToken,
-                    TokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
                     Status = HubStatus.Active
                 };
+                hub.ApplyTokenResponse(tokenResponse, DateTime.UtcNow);
                 _db.Hubs.Add(hub);
                 await _db.SaveChangesAsync();
                 HubId = hub.Id;
