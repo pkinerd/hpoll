@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using System.Net.Mail;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Hpoll.Admin.Services;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
 using Hpoll.Core.Services;
@@ -18,13 +20,15 @@ public class DetailModel : PageModel
     private readonly HpollDbContext _db;
     private readonly HueAppSettings _hueApp;
     private readonly EmailSettings _emailSettings;
+    private readonly SendTimeDisplayService _sendTimeService;
     private readonly ILogger<DetailModel> _logger;
 
-    public DetailModel(HpollDbContext db, IOptions<HueAppSettings> hueApp, IOptions<EmailSettings> emailSettings, ILogger<DetailModel> logger)
+    public DetailModel(HpollDbContext db, IOptions<HueAppSettings> hueApp, IOptions<EmailSettings> emailSettings, SendTimeDisplayService sendTimeService, ILogger<DetailModel> logger)
     {
         _db = db;
         _hueApp = hueApp.Value;
         _emailSettings = emailSettings.Value;
+        _sendTimeService = sendTimeService;
         _logger = logger;
     }
 
@@ -49,14 +53,14 @@ public class DetailModel : PageModel
     public string? EditTimeZoneId { get; set; }
 
     public string? SuccessMessage { get; set; }
+    public string? ErrorMessage { get; set; }
     public string DefaultSendTimesDisplay { get; set; } = string.Empty;
     public string? OAuthUrl { get; set; }
-    public bool ShowActivitySummary { get; set; }
     public bool EditingTimeZone { get; set; }
     public List<ActivityWindow> ActivityWindows { get; set; } = new();
     public int MotionSensorCount { get; set; }
 
-    public async Task<IActionResult> OnGetAsync(int id, bool? activity = null, bool editTz = false)
+    public async Task<IActionResult> OnGetAsync(int id, bool editTz = false)
     {
         var customer = await _db.Customers
             .Include(c => c.Hubs)
@@ -71,13 +75,8 @@ public class DetailModel : PageModel
         EditSendTimesLocal = customer.SendTimesLocal;
         EditTimeZoneId = customer.TimeZoneId;
         EditingTimeZone = editTz;
-        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
-
-        if (activity == true)
-        {
-            ShowActivitySummary = true;
-            await LoadActivitySummaryAsync(customer);
-        }
+        DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
+        await LoadActivitySummaryAsync(customer);
 
         return Page();
     }
@@ -94,6 +93,7 @@ public class DetailModel : PageModel
         if (string.IsNullOrWhiteSpace(EditName))
         {
             ModelState.AddModelError(nameof(EditName), "Name is required.");
+            await PreparePageDataAsync(customer);
             return Page();
         }
 
@@ -101,6 +101,7 @@ public class DetailModel : PageModel
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         SuccessMessage = "Name updated.";
+        await PreparePageDataAsync(customer);
         return Page();
     }
 
@@ -111,7 +112,19 @@ public class DetailModel : PageModel
         Customer = customer;
         EditName = customer.Name;
 
-        if (!ModelState.IsValid) return Page();
+        if (string.IsNullOrWhiteSpace(EditEmail))
+            ModelState.AddModelError(nameof(EditEmail), "At least one email address is required.");
+        else
+            ValidateEmailField(EditEmail, nameof(EditEmail));
+
+        ValidateEmailField(EditCcEmails, nameof(EditCcEmails));
+        ValidateEmailField(EditBccEmails, nameof(EditBccEmails));
+
+        if (!ModelState.IsValid)
+        {
+            await PreparePageDataAsync(customer);
+            return Page();
+        }
 
         customer.Email = EditEmail!;
         customer.CcEmails = (EditCcEmails ?? string.Empty).Trim();
@@ -121,6 +134,7 @@ public class DetailModel : PageModel
         SuccessMessage = "Email addresses updated.";
         EditCcEmails = customer.CcEmails;
         EditBccEmails = customer.BccEmails;
+        await PreparePageDataAsync(customer);
         return Page();
     }
 
@@ -133,7 +147,6 @@ public class DetailModel : PageModel
         EditName = customer.Name;
         EditCcEmails = customer.CcEmails;
         EditBccEmails = customer.BccEmails;
-        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
 
         var newSendTimes = (EditSendTimesLocal ?? string.Empty).Trim();
 
@@ -144,6 +157,7 @@ public class DetailModel : PageModel
             if (parsed.Count == 0)
             {
                 ModelState.AddModelError(nameof(EditSendTimesLocal), "Invalid time format. Use HH:mm (e.g., 19:30, 08:00).");
+                await PreparePageDataAsync(customer);
                 return Page();
             }
             // Normalize to sorted HH:mm format
@@ -152,7 +166,7 @@ public class DetailModel : PageModel
         }
 
         customer.SendTimesLocal = newSendTimes;
-        var effectiveDefaults = await GetEffectiveDefaultSendTimesUtcAsync();
+        var effectiveDefaults = await _sendTimeService.GetEffectiveDefaultSendTimesUtcAsync();
         customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
             customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, effectiveDefaults);
         customer.UpdatedAt = DateTime.UtcNow;
@@ -160,6 +174,7 @@ public class DetailModel : PageModel
 
         EditSendTimesLocal = customer.SendTimesLocal;
         SuccessMessage = $"Send times updated. Next email: {customer.NextSendTimeUtc:yyyy-MM-dd HH:mm} UTC.";
+        await PreparePageDataAsync(customer);
         return Page();
     }
 
@@ -173,13 +188,13 @@ public class DetailModel : PageModel
         EditCcEmails = customer.CcEmails;
         EditBccEmails = customer.BccEmails;
         EditSendTimesLocal = customer.SendTimesLocal;
-        DefaultSendTimesDisplay = await GetDefaultSendTimesDisplayAsync();
 
         var newTzId = (EditTimeZoneId ?? string.Empty).Trim();
         if (string.IsNullOrEmpty(newTzId))
         {
             EditingTimeZone = true;
             ModelState.AddModelError(nameof(EditTimeZoneId), "Timezone is required.");
+            await PreparePageDataAsync(customer);
             return Page();
         }
 
@@ -191,17 +206,19 @@ public class DetailModel : PageModel
         {
             EditingTimeZone = true;
             ModelState.AddModelError(nameof(EditTimeZoneId), "Invalid timezone.");
+            await PreparePageDataAsync(customer);
             return Page();
         }
 
         customer.TimeZoneId = newTzId;
-        var effectiveDefaults = await GetEffectiveDefaultSendTimesUtcAsync();
+        var effectiveDefaults = await _sendTimeService.GetEffectiveDefaultSendTimesUtcAsync();
         customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
             customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, effectiveDefaults);
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
         SuccessMessage = "Timezone updated.";
+        await PreparePageDataAsync(customer);
         return Page();
     }
 
@@ -229,7 +246,8 @@ public class DetailModel : PageModel
 
         if (string.IsNullOrEmpty(_hueApp.ClientId) || string.IsNullOrEmpty(_hueApp.CallbackUrl))
         {
-            SuccessMessage = "HueApp:ClientId and HueApp:CallbackUrl must be configured.";
+            ErrorMessage = "HueApp:ClientId and HueApp:CallbackUrl must be configured.";
+            await PreparePageDataAsync(customer);
             return Page();
         }
 
@@ -245,28 +263,25 @@ public class DetailModel : PageModel
             $"&state={Uri.EscapeDataString(state)}" +
             $"&redirect_uri={Uri.EscapeDataString(_hueApp.CallbackUrl)}";
 
+        await PreparePageDataAsync(customer);
         return Page();
     }
 
-    private async Task<List<string>> GetEffectiveDefaultSendTimesUtcAsync()
+    private async Task PreparePageDataAsync(Customer customer)
     {
-        var entry = await _db.SystemInfo
-            .FirstOrDefaultAsync(e => e.Key == "email.send_times_utc");
-        if (entry != null && !string.IsNullOrWhiteSpace(entry.Value))
-        {
-            var parsed = entry.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(t => TimeSpan.TryParse(t, out _))
-                .ToList();
-            if (parsed.Count > 0)
-                return parsed;
-        }
-        return _emailSettings.SendTimesUtc;
+        DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
+        await LoadActivitySummaryAsync(customer);
     }
 
-    private async Task<string> GetDefaultSendTimesDisplayAsync()
+    private void ValidateEmailField(string? commaDelimited, string fieldName)
     {
-        var defaults = await GetEffectiveDefaultSendTimesUtcAsync();
-        return string.Join(", ", defaults) + " UTC";
+        if (string.IsNullOrWhiteSpace(commaDelimited)) return;
+        var invalid = commaDelimited
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(e => !MailAddress.TryCreate(e, out _))
+            .ToList();
+        if (invalid.Count > 0)
+            ModelState.AddModelError(fieldName, $"Invalid email address(es): {string.Join(", ", invalid)}");
     }
 
     private async Task LoadActivitySummaryAsync(Customer customer)

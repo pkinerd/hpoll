@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
@@ -9,8 +11,13 @@ namespace Hpoll.Admin.Pages;
 public class IndexModel : PageModel
 {
     private readonly HpollDbContext _db;
+    private readonly PollingSettings _pollingSettings;
 
-    public IndexModel(HpollDbContext db) => _db = db;
+    public IndexModel(HpollDbContext db, IOptions<PollingSettings> pollingSettings)
+    {
+        _db = db;
+        _pollingSettings = pollingSettings.Value;
+    }
 
     public int ActiveCustomers { get; set; }
     public int InactiveCustomers { get; set; }
@@ -30,17 +37,19 @@ public class IndexModel : PageModel
         InactiveHubs = await _db.Hubs.CountAsync(h => h.Status == HubStatus.Inactive);
         NeedsReauthHubs = await _db.Hubs.CountAsync(h => h.Status == HubStatus.NeedsReauth);
 
-        var threshold = DateTime.UtcNow.AddHours(48);
+        var threshold = DateTime.UtcNow.AddHours(_pollingSettings.TokenRefreshThresholdHours);
         ExpiringTokenHubs = await _db.Hubs
             .Include(h => h.Customer)
             .Where(h => h.Status == HubStatus.Active && h.TokenExpiresAt < threshold)
             .OrderBy(h => h.TokenExpiresAt)
+            .AsNoTracking()
             .ToListAsync();
 
         FailingHubs = await _db.Hubs
             .Include(h => h.Customer)
             .Where(h => h.ConsecutiveFailures > 0)
             .OrderByDescending(h => h.ConsecutiveFailures)
+            .AsNoTracking()
             .ToListAsync();
 
         RecentLogs = await _db.PollingLogs
@@ -48,6 +57,7 @@ public class IndexModel : PageModel
             .ThenInclude(h => h.Customer)
             .OrderByDescending(l => l.Timestamp)
             .Take(10)
+            .AsNoTracking()
             .ToListAsync();
     }
 }

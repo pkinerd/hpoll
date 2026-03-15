@@ -1,4 +1,7 @@
 using System.Net;
+using Hpoll.Core.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Hpoll.Admin.Tests.Integration;
 
@@ -83,6 +86,32 @@ public class LoginPageTests : IClassFixture<HpollWebApplicationFactory>, IDispos
         var html = await response.Content.ReadAsStringAsync();
 
         Assert.Contains("- Testing</title>", html);
+    }
+
+    [Fact]
+    public async Task Login_SetupMode_ShowsPasswordSetupForm()
+    {
+        // Explicitly configure null password hash to ensure setup mode
+        using var client = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.Configure<AdminSettings>(opts => opts.PasswordHash = null);
+            });
+        }).CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        var response = await client.GetAsync("/Login");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Create a password to secure the admin panel", html);
+        Assert.Contains("hpoll admin setup", html);
+        Assert.Contains("name=\"password\"", html);
+        Assert.Contains("name=\"confirmPassword\"", html);
+        Assert.Contains("Generate hash", html);
     }
 
     public void Dispose() => _client.Dispose();

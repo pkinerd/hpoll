@@ -52,17 +52,12 @@ public class TokenRefreshService : BackgroundService
             {
                 await RefreshExpiringTokensAsync(stoppingToken);
 
-                try
+                var now = _timeProvider.GetUtcNow().UtcDateTime;
+                await _systemInfo.TrySetBatchAsync("Runtime", new Dictionary<string, string>
                 {
-                    var now = _timeProvider.GetUtcNow().UtcDateTime;
-                    await _systemInfo.SetAsync("Runtime", "runtime.last_token_check", now.ToString("O"));
-                    await _systemInfo.SetAsync("Runtime", "runtime.next_token_check",
-                        now.Add(checkInterval).ToString("O"));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to update system info metrics");
-                }
+                    ["runtime.last_token_check"] = now.ToString("O"),
+                    ["runtime.next_token_check"] = now.Add(checkInterval).ToString("O")
+                }, _logger, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

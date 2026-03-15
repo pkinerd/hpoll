@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
@@ -20,10 +21,12 @@ public class PollingServiceTests : IDisposable
     private readonly ServiceProvider _serviceProvider;
     private readonly Mock<IHueApiClient> _mockHueClient;
     private readonly SqliteConnection _connection;
+    private readonly FakeTimeProvider _fakeTime;
 
     public PollingServiceTests()
     {
         _mockHueClient = new Mock<IHueApiClient>();
+        _fakeTime = new FakeTimeProvider(new DateTimeOffset(2026, 3, 15, 12, 0, 0, TimeSpan.Zero));
 
         // Use SQLite in-memory so ExecuteDeleteAsync works (requires relational provider)
         _connection = new SqliteConnection("DataSource=:memory:");
@@ -78,7 +81,7 @@ public class PollingServiceTests : IDisposable
             HueApplicationKey = "appkey",
             AccessToken = "access-token",
             RefreshToken = "refresh-token",
-            TokenExpiresAt = DateTime.UtcNow.AddDays(7),
+            TokenExpiresAt = _fakeTime.GetUtcNow().UtcDateTime.AddDays(7),
             Status = HubStatus.Active,
             LastBatteryPollUtc = lastBatteryPollUtc
         };
@@ -93,7 +96,8 @@ public class PollingServiceTests : IDisposable
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<PollingService>.Instance,
             Options.Create(settings ?? new PollingSettings { IntervalMinutes = 60 }),
-            new Mock<ISystemInfoService>().Object);
+            new Mock<ISystemInfoService>().Object,
+            _fakeTime);
     }
 
     private void SetupSuccessfulHueResponses(string deviceId = "device-001")
@@ -111,7 +115,7 @@ public class PollingServiceTests : IDisposable
                         Enabled = true,
                         Motion = new HueMotionData
                         {
-                            MotionReport = new HueMotionReport { Motion = true, Changed = DateTime.UtcNow }
+                            MotionReport = new HueMotionReport { Motion = true, Changed = _fakeTime.GetUtcNow().UtcDateTime }
                         }
                     }
                 }
@@ -130,7 +134,7 @@ public class PollingServiceTests : IDisposable
                         Enabled = true,
                         Temperature = new HueTemperatureData
                         {
-                            TemperatureReport = new HueTemperatureReport { Temperature = 21.5, Changed = DateTime.UtcNow }
+                            TemperatureReport = new HueTemperatureReport { Temperature = 21.5, Changed = _fakeTime.GetUtcNow().UtcDateTime }
                         }
                     }
                 }
@@ -466,7 +470,7 @@ public class PollingServiceTests : IDisposable
                         Id = "motion-001", Type = "motion",
                         Owner = new HueResourceRef { Rid = "device-001", Rtype = "device" },
                         Enabled = false,
-                        Motion = new HueMotionData { MotionReport = new HueMotionReport { Motion = true, Changed = DateTime.UtcNow } }
+                        Motion = new HueMotionData { MotionReport = new HueMotionReport { Motion = true, Changed = _fakeTime.GetUtcNow().UtcDateTime } }
                     }
                 }
             });
@@ -508,7 +512,7 @@ public class PollingServiceTests : IDisposable
                         Id = "temp-001", Type = "temperature",
                         Owner = new HueResourceRef { Rid = "device-001", Rtype = "device" },
                         Enabled = false,
-                        Temperature = new HueTemperatureData { TemperatureReport = new HueTemperatureReport { Temperature = 21.5, Changed = DateTime.UtcNow } }
+                        Temperature = new HueTemperatureData { TemperatureReport = new HueTemperatureReport { Temperature = 21.5, Changed = _fakeTime.GetUtcNow().UtcDateTime } }
                     }
                 }
             });
@@ -547,7 +551,7 @@ public class PollingServiceTests : IDisposable
                 HueApplicationKey = "appkey",
                 AccessToken = "expired-token",
                 RefreshToken = "refresh",
-                TokenExpiresAt = DateTime.UtcNow.AddHours(-1),
+                TokenExpiresAt = _fakeTime.GetUtcNow().UtcDateTime.AddHours(-1),
                 Status = HubStatus.Active
             });
             await db.SaveChangesAsync();
@@ -575,7 +579,7 @@ public class PollingServiceTests : IDisposable
                 HueApplicationKey = "appkey",
                 AccessToken = "token",
                 RefreshToken = "refresh",
-                TokenExpiresAt = DateTime.UtcNow.AddDays(7),
+                TokenExpiresAt = _fakeTime.GetUtcNow().UtcDateTime.AddDays(7),
                 Status = HubStatus.NeedsReauth
             });
             await db.SaveChangesAsync();
@@ -592,7 +596,7 @@ public class PollingServiceTests : IDisposable
     {
         var hub = await SeedHubAsync();
 
-        var recentChanged = DateTime.UtcNow.AddMinutes(-5);
+        var recentChanged = _fakeTime.GetUtcNow().UtcDateTime.AddMinutes(-5);
         _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueMotionResource>
             {
@@ -637,11 +641,11 @@ public class PollingServiceTests : IDisposable
         using (var db = CreateDb())
         {
             var h = await db.Hubs.FirstAsync(x => x.Id == hub.Id);
-            h.LastPolledAt = DateTime.UtcNow.AddMinutes(-30);
+            h.LastPolledAt = _fakeTime.GetUtcNow().UtcDateTime.AddMinutes(-30);
             await db.SaveChangesAsync();
         }
 
-        var oldChanged = DateTime.UtcNow.AddHours(-2);
+        var oldChanged = _fakeTime.GetUtcNow().UtcDateTime.AddHours(-2);
         _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueMotionResource>
             {
@@ -677,12 +681,12 @@ public class PollingServiceTests : IDisposable
         using (var db = CreateDb())
         {
             var h = await db.Hubs.FirstAsync(x => x.Id == hub.Id);
-            h.LastPolledAt = DateTime.UtcNow.AddHours(-6);
+            h.LastPolledAt = _fakeTime.GetUtcNow().UtcDateTime.AddHours(-6);
             await db.SaveChangesAsync();
         }
 
         // Motion changed 3 hours ago — after LastPolledAt but before intervalCutoff (60 min ago)
-        var changedDuringDowntime = DateTime.UtcNow.AddHours(-3);
+        var changedDuringDowntime = _fakeTime.GetUtcNow().UtcDateTime.AddHours(-3);
         _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueMotionResource>
             {
@@ -720,12 +724,12 @@ public class PollingServiceTests : IDisposable
         using (var db = CreateDb())
         {
             var h = await db.Hubs.FirstAsync(x => x.Id == hub.Id);
-            h.LastPolledAt = DateTime.UtcNow.AddHours(-6);
+            h.LastPolledAt = _fakeTime.GetUtcNow().UtcDateTime.AddHours(-6);
             await db.SaveChangesAsync();
         }
 
         // Motion changed 7 hours ago — before LastPolledAt, already seen
-        var changedBeforeLastPoll = DateTime.UtcNow.AddHours(-7);
+        var changedBeforeLastPoll = _fakeTime.GetUtcNow().UtcDateTime.AddHours(-7);
         _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueMotionResource>
             {
@@ -765,10 +769,10 @@ public class PollingServiceTests : IDisposable
             db.Devices.Add(device);
             await db.SaveChangesAsync();
 
-            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddDays(-8), ReadingType = ReadingTypes.Motion, Value = "{\"motion\":true}" });
-            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddHours(-1), ReadingType = ReadingTypes.Motion, Value = "{\"motion\":false}" });
-            db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow.AddDays(-8), Success = true, ApiCallsMade = 3 });
-            db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow.AddHours(-1), Success = true, ApiCallsMade = 3 });
+            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = _fakeTime.GetUtcNow().UtcDateTime.AddDays(-8), ReadingType = ReadingTypes.Motion, Value = "{\"motion\":true}" });
+            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = _fakeTime.GetUtcNow().UtcDateTime.AddHours(-1), ReadingType = ReadingTypes.Motion, Value = "{\"motion\":false}" });
+            db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = _fakeTime.GetUtcNow().UtcDateTime.AddDays(-8), Success = true, ApiCallsMade = 3 });
+            db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = _fakeTime.GetUtcNow().UtcDateTime.AddHours(-1), Success = true, ApiCallsMade = 3 });
             await db.SaveChangesAsync();
         }
 
@@ -777,12 +781,12 @@ public class PollingServiceTests : IDisposable
 
         using var db2 = CreateDb();
         var readings = await db2.DeviceReadings.ToListAsync();
-        Assert.DoesNotContain(readings, r => r.Timestamp < DateTime.UtcNow.AddHours(-168));
-        Assert.Contains(readings, r => r.Timestamp > DateTime.UtcNow.AddHours(-2));
+        Assert.DoesNotContain(readings, r => r.Timestamp < _fakeTime.GetUtcNow().UtcDateTime.AddHours(-168));
+        Assert.Contains(readings, r => r.Timestamp > _fakeTime.GetUtcNow().UtcDateTime.AddHours(-2));
 
         var logs = await db2.PollingLogs.ToListAsync();
-        Assert.DoesNotContain(logs, l => l.Timestamp < DateTime.UtcNow.AddHours(-168));
-        Assert.Contains(logs, l => l.Timestamp > DateTime.UtcNow.AddHours(-2));
+        Assert.DoesNotContain(logs, l => l.Timestamp < _fakeTime.GetUtcNow().UtcDateTime.AddHours(-168));
+        Assert.Contains(logs, l => l.Timestamp > _fakeTime.GetUtcNow().UtcDateTime.AddHours(-2));
     }
 
     [Fact]
@@ -803,7 +807,7 @@ public class PollingServiceTests : IDisposable
     [Fact]
     public async Task PollHub_AlwaysPollsBattery_OnStartup_EvenWhenRecentlyPolled()
     {
-        var hub = await SeedHubAsync(lastBatteryPollUtc: DateTime.UtcNow.AddHours(-1));
+        var hub = await SeedHubAsync(lastBatteryPollUtc: _fakeTime.GetUtcNow().UtcDateTime.AddHours(-1));
         SetupSuccessfulHueResponses();
 
         var service = CreateService(new PollingSettings { IntervalMinutes = 60, BatteryPollIntervalHours = 84 });
@@ -862,7 +866,7 @@ public class PollingServiceTests : IDisposable
                         Id = "motion-001", Type = "motion",
                         Owner = new HueResourceRef { Rid = "nonexistent-device", Rtype = "device" },
                         Enabled = true,
-                        Motion = new HueMotionData { MotionReport = new HueMotionReport { Motion = true, Changed = DateTime.UtcNow } }
+                        Motion = new HueMotionData { MotionReport = new HueMotionReport { Motion = true, Changed = _fakeTime.GetUtcNow().UtcDateTime } }
                     }
                 }
             });
@@ -942,6 +946,25 @@ public class PollingServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task PollHub_FinallyBlockSaveFailure_DoesNotCrash()
+    {
+        var hub = await SeedHubAsync();
+
+        // When the API call is made, close the SQLite connection so that
+        // the finally-block SaveChangesAsync will fail
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns<string, string, CancellationToken>((token, key, ct) =>
+            {
+                _connection.Close();
+                throw new Exception("API error");
+            });
+
+        var service = CreateService();
+        // Should not throw — the finally block's catch should handle the save failure
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+    }
+
+    [Fact]
     public async Task PollHub_On401_EmptyRefreshToken_KeepsExistingRefreshToken()
     {
         var hub = await SeedHubAsync();
@@ -963,7 +986,7 @@ public class PollingServiceTests : IDisposable
     [Fact]
     public async Task PollHub_SkipsBattery_WhenRecentlyPolledAndNotForced()
     {
-        await SeedHubAsync(lastBatteryPollUtc: DateTime.UtcNow.AddHours(-1));
+        await SeedHubAsync(lastBatteryPollUtc: _fakeTime.GetUtcNow().UtcDateTime.AddHours(-1));
         SetupSuccessfulHueResponses();
 
         var service = CreateService(new PollingSettings { IntervalMinutes = 60, BatteryPollIntervalHours = 84 });
@@ -991,7 +1014,7 @@ public class PollingServiceTests : IDisposable
     [Fact]
     public async Task PollHub_PollsBattery_WhenIntervalElapsed()
     {
-        await SeedHubAsync(lastBatteryPollUtc: DateTime.UtcNow.AddHours(-85));
+        await SeedHubAsync(lastBatteryPollUtc: _fakeTime.GetUtcNow().UtcDateTime.AddHours(-85));
         SetupSuccessfulHueResponses();
 
         var service = CreateService(new PollingSettings { IntervalMinutes = 60, BatteryPollIntervalHours = 84 });
@@ -1008,14 +1031,13 @@ public class PollingServiceTests : IDisposable
         var hub = await SeedHubAsync();
         SetupSuccessfulHueResponses();
 
-        var before = DateTime.UtcNow;
+        var expectedTime = _fakeTime.GetUtcNow().UtcDateTime;
         var service = CreateService();
         await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
-        Assert.NotNull(updatedHub.LastSuccessAt);
-        Assert.True(updatedHub.LastSuccessAt >= before);
+        Assert.Equal(expectedTime, updatedHub.LastSuccessAt);
     }
 
     [Fact]
@@ -1035,7 +1057,7 @@ public class PollingServiceTests : IDisposable
     [Fact]
     public async Task PollHub_WithoutBatteryPoll_SetsApiCallsTo3()
     {
-        await SeedHubAsync(lastBatteryPollUtc: DateTime.UtcNow.AddHours(-1));
+        await SeedHubAsync(lastBatteryPollUtc: _fakeTime.GetUtcNow().UtcDateTime.AddHours(-1));
         SetupSuccessfulHueResponses();
 
         var service = CreateService(new PollingSettings { IntervalMinutes = 60, BatteryPollIntervalHours = 84 });
@@ -1099,7 +1121,7 @@ public class PollingServiceTests : IDisposable
                         Enabled = true,
                         Temperature = new HueTemperatureData
                         {
-                            TemperatureReport = new HueTemperatureReport { Temperature = 22.5, Changed = DateTime.UtcNow }
+                            TemperatureReport = new HueTemperatureReport { Temperature = 22.5, Changed = _fakeTime.GetUtcNow().UtcDateTime }
                         }
                     }
                 }
@@ -1198,14 +1220,13 @@ public class PollingServiceTests : IDisposable
         var hub = await SeedHubAsync();
         SetupSuccessfulHueResponses();
 
-        var before = DateTime.UtcNow;
+        var expectedTime = _fakeTime.GetUtcNow().UtcDateTime;
         var service = CreateService();
         await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
 
         using var db = CreateDb();
         var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
-        Assert.NotNull(updatedHub.LastPolledAt);
-        Assert.True(updatedHub.LastPolledAt >= before);
+        Assert.Equal(expectedTime, updatedHub.LastPolledAt);
     }
 
     [Fact]
@@ -1220,9 +1241,9 @@ public class PollingServiceTests : IDisposable
             await db.SaveChangesAsync();
 
             // Only recent data — should all be kept
-            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddHours(-1), ReadingType = ReadingTypes.Motion, Value = "{\"motion\":true}" });
-            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddHours(-2), ReadingType = ReadingTypes.Temperature, Value = "{\"temperature\":21.5}" });
-            db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = DateTime.UtcNow.AddHours(-1), Success = true, ApiCallsMade = 3 });
+            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = _fakeTime.GetUtcNow().UtcDateTime.AddHours(-1), ReadingType = ReadingTypes.Motion, Value = "{\"motion\":true}" });
+            db.DeviceReadings.Add(new DeviceReading { DeviceId = device.Id, Timestamp = _fakeTime.GetUtcNow().UtcDateTime.AddHours(-2), ReadingType = ReadingTypes.Temperature, Value = "{\"temperature\":21.5}" });
+            db.PollingLogs.Add(new PollingLog { HubId = hub.Id, Timestamp = _fakeTime.GetUtcNow().UtcDateTime.AddHours(-1), Success = true, ApiCallsMade = 3 });
             await db.SaveChangesAsync();
         }
 
@@ -1232,5 +1253,56 @@ public class PollingServiceTests : IDisposable
         using var db2 = CreateDb();
         Assert.Equal(2, await db2.DeviceReadings.CountAsync());
         Assert.Equal(1, await db2.PollingLogs.CountAsync());
+    }
+
+    [Fact]
+    public async Task PollHub_DeviceNameChanged_UpdatedAtUsesTimeProvider()
+    {
+        var hub = await SeedHubAsync();
+
+        // Pre-create a device with a different name so the name-change branch is hit
+        using (var db = CreateDb())
+        {
+            db.Devices.Add(new Device
+            {
+                HubId = hub.Id,
+                HueDeviceId = "device-001",
+                DeviceType = DeviceTypes.MotionSensor,
+                Name = "Old Name"
+            });
+            await db.SaveChangesAsync();
+        }
+
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db2 = CreateDb();
+        var device = await db2.Devices.FirstAsync(d => d.HueDeviceId == "device-001" && d.HubId == hub.Id);
+
+        // Device name should be updated
+        Assert.Equal("Kitchen Sensor", device.Name);
+        // UpdatedAt should use the FakeTimeProvider's time
+        Assert.Equal(_fakeTime.GetUtcNow().UtcDateTime, device.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task PollHub_NewDevice_DoesNotSetUpdatedAtFromTimeProvider()
+    {
+        // When creating a new device (not renaming), UpdatedAt should remain at default
+        await SeedHubAsync();
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db = CreateDb();
+        var device = await db.Devices.FirstAsync(d => d.HueDeviceId == "device-001");
+
+        // New device creation should not hit the name-change branch
+        Assert.Equal("Kitchen Sensor", device.Name);
+        // UpdatedAt should NOT be the FakeTimeProvider's time (it wasn't renamed)
+        Assert.NotEqual(_fakeTime.GetUtcNow().UtcDateTime, device.UpdatedAt);
     }
 }

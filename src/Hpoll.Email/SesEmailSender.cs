@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Interfaces;
+using Hpoll.Core.Utilities;
 
 public class SesEmailSender : IEmailSender
 {
@@ -52,15 +53,15 @@ public class SesEmailSender : IEmailSender
             }
         };
 
-        var toDisplay = string.Join(", ", toAddresses);
+        var toMasked = string.Join(", ", toAddresses.Select(EmailMasker.Mask));
         try
         {
             var response = await _sesClient.SendEmailAsync(sendRequest, ct);
-            _logger.LogInformation("Email sent to {To}, MessageId: {MessageId}", toDisplay, response.MessageId);
+            _logger.LogInformation("Email sent to {To}, MessageId: {MessageId}", toMasked, response.MessageId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send email to {To}", toDisplay);
+            _logger.LogError(ex, "Failed to send email to {To}", toMasked);
             throw;
         }
     }

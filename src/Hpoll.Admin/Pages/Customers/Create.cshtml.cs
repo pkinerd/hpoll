@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using System.Net.Mail;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Options;
-using Hpoll.Core.Configuration;
+using Hpoll.Admin.Services;
 using Hpoll.Core.Constants;
 using Hpoll.Core.Services;
 using Hpoll.Data;
@@ -13,12 +13,12 @@ namespace Hpoll.Admin.Pages.Customers;
 public class CreateModel : PageModel
 {
     private readonly HpollDbContext _db;
-    private readonly EmailSettings _emailSettings;
+    private readonly SendTimeDisplayService _sendTimeService;
 
-    public CreateModel(HpollDbContext db, IOptions<EmailSettings> emailSettings)
+    public CreateModel(HpollDbContext db, SendTimeDisplayService sendTimeService)
     {
         _db = db;
-        _emailSettings = emailSettings.Value;
+        _sendTimeService = sendTimeService;
     }
 
     [BindProperty, Required, StringLength(100)]
@@ -31,13 +31,30 @@ public class CreateModel : PageModel
     public string TimeZoneId { get; set; } = "Australia/Sydney";
 
     [BindProperty]
-    public string SendTimesLocal { get; set; } = "19:30";
+    public string? SendTimesLocal { get; set; }
 
-    public void OnGet() { }
+    public string DefaultSendTimesDisplay { get; set; } = string.Empty;
+
+    public async Task OnGetAsync()
+    {
+        DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
+    }
 
     public async Task<IActionResult> OnPostAsync()
     {
+        DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
+
         if (!ModelState.IsValid) return Page();
+
+        var invalidEmails = Email
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(e => !MailAddress.TryCreate(e, out _))
+            .ToList();
+        if (invalidEmails.Count > 0)
+        {
+            ModelState.AddModelError(nameof(Email), $"Invalid email address(es): {string.Join(", ", invalidEmails)}");
+            return Page();
+        }
 
         try
         {
@@ -71,8 +88,9 @@ public class CreateModel : PageModel
             Status = CustomerStatus.Active
         };
 
+        var effectiveDefaults = await _sendTimeService.GetEffectiveDefaultSendTimesUtcAsync();
         customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
-            customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, _emailSettings.SendTimesUtc);
+            customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, effectiveDefaults);
 
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync();

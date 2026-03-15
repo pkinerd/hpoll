@@ -9,6 +9,7 @@ using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Services;
+using Hpoll.Core.Utilities;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
 
@@ -101,8 +102,8 @@ public class EmailSchedulerService : BackgroundService
         {
             customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
                 customer.SendTimesLocal, customer.TimeZoneId, now, _settings.SendTimesUtc);
-            _logger.LogInformation("Initialized NextSendTimeUtc for customer {Name} (Id={Id}): {NextSend}",
-                customer.Name, customer.Id, customer.NextSendTimeUtc);
+            _logger.LogInformation("Initialized NextSendTimeUtc for customer (Id={Id}): {NextSend}",
+                customer.Id, customer.NextSendTimeUtc);
         }
 
         await db.SaveChangesAsync(ct);
@@ -132,21 +133,17 @@ public class EmailSchedulerService : BackgroundService
                 await SendCustomerEmailAsync(customer, renderer, sender, ct);
                 _totalEmailsSent++;
 
-                try
+                var metricTime = _timeProvider.GetUtcNow().UtcDateTime;
+                await _systemInfo.TrySetBatchAsync("Runtime", new Dictionary<string, string>
                 {
-                    var metricTime = _timeProvider.GetUtcNow().UtcDateTime;
-                    await _systemInfo.SetAsync("Runtime", "runtime.last_email_sent", metricTime.ToString("O"));
-                    await _systemInfo.SetAsync("Runtime", "runtime.total_emails_sent", _totalEmailsSent.ToString());
-                }
-                catch (Exception mex)
-                {
-                    _logger.LogWarning(mex, "Failed to update system info metrics");
-                }
+                    ["runtime.last_email_sent"] = metricTime.ToString("O"),
+                    ["runtime.total_emails_sent"] = _totalEmailsSent.ToString()
+                }, _logger, ct);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send email to {Email} (customer {Name}, Id={Id})",
-                    customer.Email, customer.Name, customer.Id);
+                _logger.LogError(ex, "Failed to send email to {Email} (customer Id={Id})",
+                    MaskEmail(customer.Email), customer.Id);
             }
 
             // Always advance NextSendTimeUtc even on failure, to prevent retry loops
@@ -158,16 +155,11 @@ public class EmailSchedulerService : BackgroundService
 
         await db.SaveChangesAsync(ct);
 
-        try
+        var nextDue = await GetNextDueTimeAsync(ct);
+        await _systemInfo.TrySetBatchAsync("Runtime", new Dictionary<string, string>
         {
-            var nextDue = await GetNextDueTimeAsync(ct);
-            await _systemInfo.SetAsync("Runtime", "runtime.next_email_due",
-                nextDue?.ToString("O") ?? "N/A");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to update next_email_due metric");
-        }
+            ["runtime.next_email_due"] = nextDue?.ToString("O") ?? "N/A"
+        }, _logger, ct);
 
         return true;
     }
@@ -177,22 +169,23 @@ public class EmailSchedulerService : BackgroundService
         var toList = ParseEmailList(customer.Email);
         if (toList == null)
         {
-            _logger.LogWarning("Customer {Name} (Id={Id}) has no valid notification email addresses, skipping",
-                customer.Name, customer.Id);
+            _logger.LogWarning("Customer (Id={Id}) has no valid notification email addresses, skipping",
+                customer.Id);
             return;
         }
 
-        var html = await renderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId, ct: ct);
+        var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
+        var html = await renderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId, nowUtc, ct);
 
         var tz = TimeZoneInfo.FindSystemTimeZoneById(customer.TimeZoneId);
-        var localNow = TimeZoneInfo.ConvertTimeFromUtc(_timeProvider.GetUtcNow().UtcDateTime, tz);
+        var localNow = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, tz);
         var subject = $"hpoll Daily Summary - {localNow:d MMM yyyy}";
         var ccList = ParseEmailList(customer.CcEmails);
         var bccList = ParseEmailList(customer.BccEmails);
         await sender.SendEmailAsync(toList, subject, html, ccList, bccList, ct);
 
-        _logger.LogInformation("Email sent to {Email} (customer {Name}, Id={Id})",
-            customer.Email, customer.Name, customer.Id);
+        _logger.LogInformation("Email sent to {Email} (customer Id={Id})",
+            MaskEmail(customer.Email), customer.Id);
     }
 
     internal async Task<TimeSpan> GetSleepDurationAsync(CancellationToken ct)
@@ -219,6 +212,8 @@ public class EmailSchedulerService : BackgroundService
             .Where(c => c.Status == CustomerStatus.Active && c.NextSendTimeUtc != null)
             .MinAsync(c => (DateTime?)c.NextSendTimeUtc, ct);
     }
+
+    internal static string MaskEmail(string email) => EmailMasker.MaskList(email);
 
     internal static List<string>? ParseEmailList(string commaDelimited)
     {

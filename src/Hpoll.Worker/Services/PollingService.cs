@@ -56,18 +56,13 @@ public class PollingService : BackgroundService
                 _totalPollCycles++;
                 await CleanupOldDataAsync(stoppingToken);
 
-                try
+                var now = _timeProvider.GetUtcNow().UtcDateTime;
+                await _systemInfo.TrySetBatchAsync("Runtime", new Dictionary<string, string>
                 {
-                    var now = _timeProvider.GetUtcNow().UtcDateTime;
-                    await _systemInfo.SetAsync("Runtime", "runtime.last_poll_completed", now.ToString("O"));
-                    await _systemInfo.SetAsync("Runtime", "runtime.next_poll_due",
-                        now.AddMinutes(_settings.IntervalMinutes).ToString("O"));
-                    await _systemInfo.SetAsync("Runtime", "runtime.total_poll_cycles", _totalPollCycles.ToString());
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to update system info metrics");
-                }
+                    ["runtime.last_poll_completed"] = now.ToString("O"),
+                    ["runtime.next_poll_due"] = now.AddMinutes(_settings.IntervalMinutes).ToString("O"),
+                    ["runtime.total_poll_cycles"] = _totalPollCycles.ToString()
+                }, _logger, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -335,7 +330,7 @@ public class PollingService : BackgroundService
         }
     }
 
-    private static async Task<Device> GetOrCreateDeviceAsync(
+    private async Task<Device> GetOrCreateDeviceAsync(
         HpollDbContext db, Hub hub, string hueDeviceId, string deviceType, string name, CancellationToken ct)
     {
         var device = hub.Devices.FirstOrDefault(d => d.HueDeviceId == hueDeviceId);
@@ -355,7 +350,7 @@ public class PollingService : BackgroundService
         else if (device.Name != name)
         {
             device.Name = name;
-            device.UpdatedAt = DateTime.UtcNow;
+            device.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         }
         return device;
     }

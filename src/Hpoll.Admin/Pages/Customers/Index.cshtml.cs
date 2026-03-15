@@ -18,6 +18,7 @@ public class IndexModel : PageModel
         Customers = await _db.Customers
             .Include(c => c.Hubs)
             .OrderBy(c => c.Name)
+            .AsNoTracking()
             .ToListAsync();
     }
 }
