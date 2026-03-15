@@ -154,3 +154,4 @@
 | [0173](issues/0173-customer-detail-updateemails-notfound-untested.md) | Customer Detail POST handlers missing invalid-customer NotFound tests | closed | low | testing |
 | [0174](issues/0174-sendtimedisplayservice-queries-db-every-page-load.md) | SendTimeDisplayService queries database on every page load | closed | low | enhancement, performance |
 | [0179](issues/0179-oauthcallback-error-switch-branches-untested.md) | OAuthCallback error mapping switch branches mostly untested | closed | low | testing |
+| [0181](issues/0181-hub-detail-post-handlers-no-exception-handling.md) | Hub Detail toggle/clear-reauth/delete handlers lack exception handling | open | low | enhancement, code-quality |
