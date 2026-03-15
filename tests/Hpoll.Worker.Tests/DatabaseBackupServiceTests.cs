@@ -50,9 +50,6 @@ public class DatabaseBackupServiceTests : IDisposable
 
     private DatabaseBackupService CreateService(BackupSettings? settings = null, Mock<ISystemInfoService>? systemInfoMock = null, TimeProvider? timeProvider = null)
     {
-        // Set CWD so relative _dataPath resolves to the actual temp directory
-        Directory.SetCurrentDirectory(_tempDir);
-
         var backupSettings = settings ?? new BackupSettings
         {
             IntervalHours = 24,
@@ -63,7 +60,7 @@ public class DatabaseBackupServiceTests : IDisposable
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["DataPath"] = _dataPath
+                ["DataPath"] = Path.Combine(_tempDir, _dataPath)
             })
             .Build();
 
