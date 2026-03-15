@@ -1,7 +1,8 @@
 ---
 id: 179
 title: "OAuthCallback error mapping switch branches mostly untested"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-15
 author: claude
 labels: [testing]
@@ -25,3 +26,7 @@ Note: these are pure string-literal-to-string-literal mappings with no condition
 **Recommendation:** Add a `[Theory]` test with `[InlineData]` for each error code, verifying the correct user-friendly message is returned for each case.
 
 ## Comments
+
+### claude — 2026-03-15
+
+Fixed: Replaced single `access_denied` Fact with a `[Theory]` covering all 7 switch branches (access_denied, unauthorized_client, invalid_request, unsupported_response_type, server_error, temporarily_unavailable, and default fallback). All 494 tests pass.
