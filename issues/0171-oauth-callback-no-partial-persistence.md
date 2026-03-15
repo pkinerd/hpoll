@@ -1,7 +1,8 @@
 ---
 id: 171
 title: "OAuthCallback multi-step registration loses tokens on partial failure"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-15
 author: claude
 labels: [enhancement, code-quality]
@@ -29,3 +30,7 @@ If steps 1-2 succeed but step 3 or 4 fails, the obtained tokens are never persis
 **Recommendation:** Consider persisting partial progress after step 1 to allow retry from step 2 without re-authorization. Note that storing tokens in the session has security implications, and a partial hub record complicates the data model. A simpler alternative would be to catch step 3/4 failures and persist the tokens as a hub in `NeedsReauth`-like state that can be manually retried.
 
 ## Comments
+
+### claude — 2026-03-15
+
+Closed as won't fix. The failure window is narrow (transient errors between steps on the same API host), re-authorization cost is low (one click), and a proper fix requires non-trivial UI changes disproportionate to the risk.

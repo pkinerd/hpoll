@@ -1,7 +1,8 @@
 ---
 id: 174
 title: "SendTimeDisplayService queries database on every page load"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-15
 author: claude
 labels: [enhancement, performance]
@@ -23,3 +24,7 @@ In practice, this is a `FirstOrDefaultAsync` against a tiny key-value table that
 **Recommendation:** If caching is desired, use `IMemoryCache` with a short TTL (e.g., 5 minutes). Do **not** resolve at startup — the Admin and Worker are separate processes sharing SQLite, so startup-time resolution would miss later Worker updates.
 
 ## Comments
+
+### claude — 2026-03-15
+
+Closed as won't fix. The query is a FirstOrDefaultAsync against a tiny SQLite key-value table served from page cache in microseconds. For a single-user admin portal, the real-world impact is negligible and adding IMemoryCache complexity is not warranted.
