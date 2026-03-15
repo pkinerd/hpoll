@@ -1,7 +1,8 @@
 ---
 id: 172
 title: "Hub Detail generic Exception and null-StatusCode error paths untested"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-15
 author: claude
 labels: [testing]
@@ -33,3 +34,13 @@ Several error handling paths in `Hubs/Detail.cshtml.cs` lack test coverage:
 - `OnPostTestConnectionAsync_HttpExceptionNoStatusCode_ShowsCannotReachMessage`
 
 ## Comments
+
+### claude — 2026-03-15
+
+Fixed: Added all 4 recommended tests to `tests/Hpoll.Admin.Tests/Hubs/DetailModelTests.cs`:
+- `OnPostRefreshTokenAsync_GenericException_ShowsGenericErrorMessage`
+- `OnPostRefreshTokenAsync_HttpExceptionNoStatusCode_ShowsCannotReachMessage`
+- `OnPostTestConnectionAsync_GenericException_ShowsGenericErrorMessage`
+- `OnPostTestConnectionAsync_HttpExceptionNoStatusCode_ShowsCannotReachMessage`
+
+All tests pass. Total test count: 488.

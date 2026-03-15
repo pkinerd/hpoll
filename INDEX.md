@@ -150,6 +150,6 @@
 | [0167](issues/0167-oauth-error-param-reflected.md) | OAuth callback reflects error query parameter on AllowAnonymous page | closed | low | security |
 | [0169](issues/0169-adminsettings-passwordhash-says-bcrypt.md) | AdminSettings.PasswordHash XML doc incorrectly says BCrypt | closed | low | documentation |
 | [0171](issues/0171-oauth-callback-no-partial-persistence.md) | OAuthCallback multi-step registration loses tokens on partial failure | closed | low | enhancement, code-quality |
-| [0172](issues/0172-hub-detail-generic-exception-paths-untested.md) | Hub Detail generic Exception and null-StatusCode error paths untested | open | low | testing |
-| [0173](issues/0173-customer-detail-updateemails-notfound-untested.md) | Customer Detail POST handlers missing invalid-customer NotFound tests | open | low | testing |
+| [0172](issues/0172-hub-detail-generic-exception-paths-untested.md) | Hub Detail generic Exception and null-StatusCode error paths untested | closed | low | testing |
+| [0173](issues/0173-customer-detail-updateemails-notfound-untested.md) | Customer Detail POST handlers missing invalid-customer NotFound tests | closed | low | testing |
 | [0174](issues/0174-sendtimedisplayservice-queries-db-every-page-load.md) | SendTimeDisplayService queries database on every page load | closed | low | enhancement, performance |

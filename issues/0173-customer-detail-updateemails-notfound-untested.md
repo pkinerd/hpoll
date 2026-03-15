@@ -1,7 +1,8 @@
 ---
 id: 173
 title: "Customer Detail POST handlers missing invalid-customer NotFound tests"
-status: open
+status: closed
+closed: 2026-03-15
 created: 2026-03-15
 author: claude
 labels: [testing]
@@ -28,3 +29,11 @@ Other handlers (`OnPostUpdateNameAsync`, `OnPostUpdateSendTimesAsync`, `OnPostUp
 - `OnPostToggleStatusAsync_InvalidCustomer_ReturnsNotFound`
 
 ## Comments
+
+### claude — 2026-03-15
+
+Fixed: Added both recommended tests to `tests/Hpoll.Admin.Tests/Customers/DetailModelTests.cs`:
+- `OnPostUpdateEmailsAsync_InvalidCustomer_ReturnsNotFound`
+- `OnPostToggleStatusAsync_InvalidCustomer_ReturnsNotFound`
+
+All tests pass. Total test count: 488.
