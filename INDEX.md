@@ -155,3 +155,6 @@
 | [0174](issues/0174-sendtimedisplayservice-queries-db-every-page-load.md) | SendTimeDisplayService queries database on every page load | closed | low | enhancement, performance |
 | [0179](issues/0179-oauthcallback-error-switch-branches-untested.md) | OAuthCallback error mapping switch branches mostly untested | closed | low | testing |
 | [0181](issues/0181-hub-detail-post-handlers-no-exception-handling.md) | Hub Detail toggle/clear-reauth/delete handlers lack exception handling | closed | low | enhancement, code-quality |
+| [0182](issues/0182-emailmasker-mask-null-nre.md) | EmailMasker.Mask(null) lacks null guard | open | low | enhancement, code-quality |
+| [0184](issues/0184-hueapiclient-malformed-json-200.md) | HueApiClient logs unclear error on malformed JSON 200 response | open | low | enhancement, code-quality |
+| [0187](issues/0187-systeminfoextensions-trysetbatch-exception-uncovered.md) | SystemInfoServiceExtensions.TrySetBatchAsync OperationCanceledException path uncovered | open | low | testing |
