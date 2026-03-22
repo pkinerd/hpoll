@@ -679,6 +679,184 @@ public class DetailModelTests : IDisposable
         Assert.IsType<NotFoundResult>(result);
     }
 
+    [Fact]
+    public async Task OnGetAsync_LoadsBatteryStatuses_WithValidReadings()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "bat-001",
+            DeviceType = DeviceTypes.Battery,
+            Name = "Hallway Sensor"
+        };
+        _db.Devices.Add(batteryDevice);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = batteryDevice.Id,
+            Timestamp = DateTime.UtcNow.AddHours(-1),
+            ReadingType = ReadingTypes.Battery,
+            Value = "{\"battery_level\":42,\"battery_state\":\"normal\"}"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Single(model.BatteryStatuses);
+        Assert.Equal("Hallway Sensor", model.BatteryStatuses[0].DeviceName);
+        Assert.Equal(42, model.BatteryStatuses[0].BatteryLevel);
+        Assert.Equal("normal", model.BatteryStatuses[0].BatteryState);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_BatteryStatuses_SortedByLevelAscending()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+
+        var bat1 = new Device { HubId = hub.Id, HueDeviceId = "bat-high", DeviceType = DeviceTypes.Battery, Name = "High" };
+        var bat2 = new Device { HubId = hub.Id, HueDeviceId = "bat-low", DeviceType = DeviceTypes.Battery, Name = "Low" };
+        _db.Devices.AddRange(bat1, bat2);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = bat1.Id, Timestamp = DateTime.UtcNow.AddHours(-1),
+            ReadingType = ReadingTypes.Battery, Value = "{\"battery_level\":90,\"battery_state\":\"normal\"}"
+        });
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = bat2.Id, Timestamp = DateTime.UtcNow.AddHours(-1),
+            ReadingType = ReadingTypes.Battery, Value = "{\"battery_level\":15,\"battery_state\":\"low\"}"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Equal(2, model.BatteryStatuses.Count);
+        Assert.Equal("Low", model.BatteryStatuses[0].DeviceName);
+        Assert.Equal("High", model.BatteryStatuses[1].DeviceName);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_BatteryStatuses_ShowsLatestReadingPerDevice()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id, HueDeviceId = "bat-multi", DeviceType = DeviceTypes.Battery, Name = "Study"
+        };
+        _db.Devices.Add(batteryDevice);
+        await _db.SaveChangesAsync();
+
+        // Older reading at 80%, newer reading at 20%
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = batteryDevice.Id, Timestamp = DateTime.UtcNow.AddDays(-2),
+            ReadingType = ReadingTypes.Battery, Value = "{\"battery_level\":80,\"battery_state\":\"normal\"}"
+        });
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = batteryDevice.Id, Timestamp = DateTime.UtcNow.AddHours(-1),
+            ReadingType = ReadingTypes.Battery, Value = "{\"battery_level\":20,\"battery_state\":\"low\"}"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Single(model.BatteryStatuses);
+        Assert.Equal(20, model.BatteryStatuses[0].BatteryLevel);
+        Assert.Equal("low", model.BatteryStatuses[0].BatteryState);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_NoBatteryDevices_EmptyBatteryStatuses()
+    {
+        var customer = await SeedCustomerAsync();
+        await SeedHubAsync(customer.Id);
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Empty(model.BatteryStatuses);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_MalformedBatteryJson_SkipsGracefully()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id, HueDeviceId = "bat-bad", DeviceType = DeviceTypes.Battery, Name = "Bad Sensor"
+        };
+        _db.Devices.Add(batteryDevice);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = batteryDevice.Id, Timestamp = DateTime.UtcNow.AddHours(-1),
+            ReadingType = ReadingTypes.Battery, Value = "not-valid-json"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Empty(model.BatteryStatuses);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_LoadsEmailPreviewHtml()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+
+        var device = new Device
+        {
+            HubId = hub.Id, HueDeviceId = "dev-001", DeviceType = DeviceTypes.MotionSensor, Name = "Sensor"
+        };
+        _db.Devices.Add(device);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = device.Id,
+            Timestamp = DateTime.UtcNow.AddHours(-2),
+            ReadingType = ReadingTypes.Motion,
+            Value = $"{{\"motion\":true,\"changed\":\"{DateTime.UtcNow.AddHours(-2):O}\"}}"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.NotEmpty(model.EmailPreviewHtml);
+        Assert.Contains("Daily Activity Summary", model.EmailPreviewHtml);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_EmailPreview_ContainsCustomerName()
+    {
+        var customer = await SeedCustomerAsync(name: "Alice Smith");
+        await SeedHubAsync(customer.Id);
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Contains("for Alice Smith", model.EmailPreviewHtml);
+    }
+
     private class TestSession : ISession
     {
         private readonly Dictionary<string, byte[]> _store = new();
