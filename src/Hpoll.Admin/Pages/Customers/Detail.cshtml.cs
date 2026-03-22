@@ -312,9 +312,13 @@ public class DetailModel : PageModel
             .Select(d => d.Id)
             .ToListAsync();
 
-        MotionSensorCount = await _db.Devices
+        var motionSensors = await _db.Devices
             .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == DeviceTypes.MotionSensor)
-            .CountAsync();
+            .AsNoTracking()
+            .ToListAsync();
+
+        MotionSensorCount = motionSensors.Count;
+        var motionDeviceNames = motionSensors.ToDictionary(d => d.Id, d => d.Name);
 
         var readings = await _db.DeviceReadings
             .Where(r => deviceIds.Contains(r.DeviceId)
@@ -359,6 +363,28 @@ public class DetailModel : PageModel
                 .OrderBy(t => t)
                 .ToList();
 
+            // Find the motion sensor with the latest "changed" timestamp in this window
+            string? latestMotionSensor = null;
+            DateTime latestChanged = DateTime.MinValue;
+            foreach (var r in motionReadings)
+            {
+                try
+                {
+                    using var j = JsonDocument.Parse(r.Value);
+                    if (!j.RootElement.GetProperty("motion").GetBoolean()) continue;
+                    if (j.RootElement.TryGetProperty("changed", out var changedProp))
+                    {
+                        var changed = changedProp.GetDateTime();
+                        if (changed > latestChanged)
+                        {
+                            latestChanged = changed;
+                            latestMotionSensor = motionDeviceNames.TryGetValue(r.DeviceId, out var name) ? name : null;
+                        }
+                    }
+                }
+                catch (JsonException) { }
+            }
+
             var displayEnd = windowEndLocal > nowLocal ? nowLocal : windowEndLocal;
             ActivityWindows.Add(new ActivityWindow
             {
@@ -366,6 +392,7 @@ public class DetailModel : PageModel
                 DevicesWithMotion = devicesWithMotion,
                 TotalMotionSensors = MotionSensorCount > 0 ? MotionSensorCount : 1,
                 TotalMotionEvents = totalMotionEvents,
+                LatestMotionSensor = latestMotionSensor,
                 TemperatureMin = temperatures.Count > 0 ? temperatures.First() : null,
                 TemperatureMedian = temperatures.Count > 0 ? temperatures[temperatures.Count / 2] : null,
                 TemperatureMax = temperatures.Count > 0 ? temperatures.Last() : null,
@@ -433,6 +460,7 @@ public class DetailModel : PageModel
         public int DevicesWithMotion { get; set; }
         public int TotalMotionSensors { get; set; }
         public int TotalMotionEvents { get; set; }
+        public string? LatestMotionSensor { get; set; }
         public double? TemperatureMin { get; set; }
         public double? TemperatureMedian { get; set; }
         public double? TemperatureMax { get; set; }

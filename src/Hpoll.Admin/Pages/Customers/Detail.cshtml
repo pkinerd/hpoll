@@ -178,7 +178,7 @@ else
     <div class="card">
         <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: #666; margin-bottom: 0.5rem;">Motion Activity</h3>
         <table style="margin-bottom: 1rem;">
-            <thead><tr><th>Window</th><th>Events</th><th>Active Sensors</th></tr></thead>
+            <thead><tr><th>Window</th><th>Events</th><th>Active Sensors</th><th>Latest</th></tr></thead>
             <tbody>
             @foreach (var w in Model.ActivityWindows)
             {
@@ -188,6 +188,7 @@ else
                     <td>@w.Label</td>
                     <td><span style="color: @color; font-weight: 600;">@label</span></td>
                     <td>@w.DevicesWithMotion / @w.TotalMotionSensors</td>
+                    <td>@(w.LatestMotionSensor ?? "—")</td>
                 </tr>
             }
             </tbody>
