@@ -178,7 +178,7 @@ else
     <div class="card">
         <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: #666; margin-bottom: 0.5rem;">Motion Activity</h3>
         <table style="margin-bottom: 1rem;">
-            <thead><tr><th>Window</th><th>Events</th><th>Active Sensors</th></tr></thead>
+            <thead><tr><th>Window</th><th>Events</th><th>Active Sensors</th><th>Latest</th></tr></thead>
             <tbody>
             @foreach (var w in Model.ActivityWindows)
             {
@@ -188,6 +188,7 @@ else
                     <td>@w.Label</td>
                     <td><span style="color: @color; font-weight: 600;">@label</span></td>
                     <td>@w.DevicesWithMotion / @w.TotalMotionSensors</td>
+                    <td>@(w.LatestMotionSensor ?? "—")</td>
                 </tr>
             }
             </tbody>
@@ -220,4 +221,34 @@ else
 else
 {
     <p>No activity data available for the current summary window.</p>
+}
+
+<h2>Battery Status</h2>
+@if (Model.BatteryStatuses.Any())
+{
+    <table>
+        <thead><tr><th>Device</th><th>Level</th><th>State</th><th>Last Updated</th></tr></thead>
+        <tbody>
+        @foreach (var b in Model.BatteryStatuses)
+        {
+            var color = b.BatteryLevel <= 30 ? "#e74c3c" : b.BatteryLevel <= 50 ? "#f39c12" : "#27ae60";
+            <tr>
+                <td>@b.DeviceName</td>
+                <td><span style="color: @color; font-weight: 600;">@b.BatteryLevel%</span></td>
+                <td>@b.BatteryState</td>
+                <td>@b.LastUpdated.ToString("yyyy-MM-dd HH:mm") UTC</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No battery data available.</p>
+}
+
+@if (!string.IsNullOrEmpty(Model.EmailPreviewHtml))
+{
+    <h2>Email Preview</h2>
+    <iframe srcdoc="@Model.EmailPreviewHtml" style="width:100%;max-width:420px;height:800px;border:1px solid #ddd;border-radius:4px;" sandbox=""></iframe>
 }

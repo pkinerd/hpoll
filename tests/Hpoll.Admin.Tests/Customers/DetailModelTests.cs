@@ -10,8 +10,10 @@ using Hpoll.Admin.Pages.Customers;
 using Hpoll.Admin.Services;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
+using Hpoll.Core.Interfaces;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
+using Hpoll.Email;
 
 namespace Hpoll.Admin.Tests.Customers;
 
@@ -34,7 +36,8 @@ public class DetailModelTests : IDisposable
         var hueApp = Options.Create(hueAppSettings ?? new HueAppSettings());
         var emailSettings = Options.Create(emailSettingsOverride ?? new EmailSettings());
         var sendTimeService = new SendTimeDisplayService(_db, emailSettings);
-        var model = new DetailModel(_db, hueApp, emailSettings, sendTimeService, NullLogger<DetailModel>.Instance);
+        var emailRenderer = new EmailRenderer(_db, NullLogger<EmailRenderer>.Instance, emailSettings);
+        var model = new DetailModel(_db, hueApp, emailSettings, sendTimeService, emailRenderer, NullLogger<DetailModel>.Instance);
         var httpContext = new DefaultHttpContext();
         httpContext.Session = new TestSession();
         model.PageContext = new PageContext
