@@ -7,9 +7,14 @@
 #   ./update-hpoll.sh --tag latest # Use a different image tag
 #   ./update-hpoll.sh --project hpoll-prod --tag latest --compose-dir /volume1/Data/hpoll/prod/server
 #
-# Synology Container Manager stores projects and uses docker compose under the hood.
-# To update, we stop the project, remove containers and old images, pull the new
-# images, and rebuild/start the project.
+# How it works:
+#   1. Records the current image ID for each image
+#   2. Pulls the latest version from the registry
+#   3. Compares the new image ID to the old one
+#   4. If any image changed, restarts the compose project
+#
+# This avoids fragile digest comparison between local RepoDigests and remote
+# manifest digests, which can differ even when images are identical.
 
 set -euo pipefail
 
@@ -39,22 +44,11 @@ done
 log()  { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 fail() { log "ERROR: $*" >&2; exit 1; }
 
-get_local_digest() {
-    local img="$1:$TAG"
-    docker image inspect "$img" --format '{{index .RepoDigests 0}}' 2>/dev/null \
-        | sed 's/.*@//' || echo "not-pulled"
+get_image_id() {
+    docker image inspect "$1:$TAG" --format '{{.Id}}' 2>/dev/null || echo "none"
 }
 
-get_remote_digest() {
-    local img="$1"
-    # Use docker manifest inspect to get the remote digest without pulling.
-    # This requires experimental CLI features on older Docker versions; on
-    # Synology DSM 7.2+ the bundled Docker supports this natively.
-    docker manifest inspect "docker.io/$img:$TAG" 2>/dev/null \
-        | grep -m1 '"digest"' | sed 's/.*"digest": *"//;s/".*//' || echo "unknown"
-}
-
-# ── Check current vs remote versions ─────────────────────────────────────────
+# ── Pull images and detect changes ───────────────────────────────────────────
 log "Project:  $PROJECT"
 log "Tag:      $TAG"
 log "Compose:  $COMPOSE_DIR"
@@ -63,24 +57,25 @@ echo
 update_available=false
 
 for img in "${IMAGES[@]}"; do
-    local_digest=$(get_local_digest "$img")
-    remote_digest=$(get_remote_digest "$img")
+    old_id=$(get_image_id "$img")
+    old_short="${old_id:0:19}"
 
-    local_short="${local_digest:0:16}"
-    remote_short="${remote_digest:0:16}"
+    log "Pulling $img:$TAG..."
+    docker pull -q "$img:$TAG" >/dev/null
 
-    if [[ "$local_digest" == "not-pulled" ]]; then
-        log "$img:$TAG — not present locally (will pull)"
+    new_id=$(get_image_id "$img")
+    new_short="${new_id:0:19}"
+
+    if [[ "$old_id" == "none" ]]; then
+        log "  $img:$TAG — newly pulled ($new_short)"
         update_available=true
-    elif [[ "$remote_digest" == "unknown" ]]; then
-        log "$img:$TAG — local: $local_short | remote: could not check"
-    elif [[ "$local_digest" != "$remote_digest" ]]; then
-        log "$img:$TAG — UPDATE AVAILABLE"
-        log "  local:  $local_short"
-        log "  remote: $remote_short"
+    elif [[ "$old_id" != "$new_id" ]]; then
+        log "  $img:$TAG — UPDATE AVAILABLE"
+        log "    old: $old_short"
+        log "    new: $new_short"
         update_available=true
     else
-        log "$img:$TAG — up to date ($local_short)"
+        log "  $img:$TAG — up to date ($new_short)"
     fi
 done
 
@@ -100,21 +95,8 @@ fi
 COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
 [[ -f "$COMPOSE_FILE" ]] || fail "Compose file not found: $COMPOSE_FILE"
 
-log "Stopping project $PROJECT..."
-docker compose -p "$PROJECT" -f "$COMPOSE_FILE" down --remove-orphans
-
-log "Removing old images..."
-for img in "${IMAGES[@]}"; do
-    docker image rm "$img:$TAG" 2>/dev/null && log "  Removed $img:$TAG" || log "  $img:$TAG not present (skipped)"
-done
-
-log "Pulling latest images..."
-for img in "${IMAGES[@]}"; do
-    docker pull "$img:$TAG"
-done
-
-log "Starting project $PROJECT..."
-docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d
+log "Restarting project $PROJECT with new images..."
+docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d --force-recreate
 
 echo
 log "Update complete. Container status:"
