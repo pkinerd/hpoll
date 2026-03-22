@@ -1,11 +1,12 @@
 ---
 id: 189
 title: "Stale motion and temperature devices not cleaned up when removed from hub"
-status: open
+status: closed
 created: 2026-03-22
 author: claude
 labels: [bug]
 priority: medium
+closed: 2026-03-22
 ---
 
 ## Description
