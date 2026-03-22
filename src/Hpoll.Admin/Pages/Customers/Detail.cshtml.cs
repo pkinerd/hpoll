@@ -92,10 +92,6 @@ public class DetailModel : PageModel
     {
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
-        Customer = customer;
-        EditEmail = customer.Email;
-        EditCcEmails = customer.CcEmails;
-        EditBccEmails = customer.BccEmails;
 
         if (string.IsNullOrWhiteSpace(EditName))
         {
@@ -116,8 +112,6 @@ public class DetailModel : PageModel
     {
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
-        Customer = customer;
-        EditName = customer.Name;
 
         if (string.IsNullOrWhiteSpace(EditEmail))
             ModelState.AddModelError(nameof(EditEmail), "At least one email address is required.");
@@ -139,8 +133,6 @@ public class DetailModel : PageModel
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         SuccessMessage = "Email addresses updated.";
-        EditCcEmails = customer.CcEmails;
-        EditBccEmails = customer.BccEmails;
         await PreparePageDataAsync(customer);
         return Page();
     }
@@ -149,11 +141,6 @@ public class DetailModel : PageModel
     {
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
-        Customer = customer;
-        EditEmail = customer.Email;
-        EditName = customer.Name;
-        EditCcEmails = customer.CcEmails;
-        EditBccEmails = customer.BccEmails;
 
         var newSendTimes = (EditSendTimesLocal ?? string.Empty).Trim();
 
@@ -179,7 +166,6 @@ public class DetailModel : PageModel
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
-        EditSendTimesLocal = customer.SendTimesLocal;
         SuccessMessage = $"Send times updated. Next email: {customer.NextSendTimeUtc:yyyy-MM-dd HH:mm} UTC.";
         await PreparePageDataAsync(customer);
         return Page();
@@ -189,12 +175,6 @@ public class DetailModel : PageModel
     {
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
-        Customer = customer;
-        EditEmail = customer.Email;
-        EditName = customer.Name;
-        EditCcEmails = customer.CcEmails;
-        EditBccEmails = customer.BccEmails;
-        EditSendTimesLocal = customer.SendTimesLocal;
 
         var newTzId = (EditTimeZoneId ?? string.Empty).Trim();
         if (string.IsNullOrEmpty(newTzId))
@@ -245,11 +225,6 @@ public class DetailModel : PageModel
     {
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
-        Customer = customer;
-        EditEmail = customer.Email;
-        EditName = customer.Name;
-        EditCcEmails = customer.CcEmails;
-        EditBccEmails = customer.BccEmails;
 
         if (string.IsNullOrEmpty(_hueApp.ClientId) || string.IsNullOrEmpty(_hueApp.CallbackUrl))
         {
@@ -274,8 +249,20 @@ public class DetailModel : PageModel
         return Page();
     }
 
+    private void PopulateEditFields(Customer customer)
+    {
+        Customer = customer;
+        EditName = customer.Name;
+        EditEmail = customer.Email;
+        EditCcEmails = customer.CcEmails;
+        EditBccEmails = customer.BccEmails;
+        EditSendTimesLocal = customer.SendTimesLocal;
+        EditTimeZoneId = customer.TimeZoneId;
+    }
+
     private async Task PreparePageDataAsync(Customer customer)
     {
+        PopulateEditFields(customer);
         DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
         await LoadActivitySummaryAsync(customer);
         await LoadBatteryStatusAsync(customer);
