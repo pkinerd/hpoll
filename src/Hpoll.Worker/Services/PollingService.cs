@@ -151,9 +151,12 @@ public class PollingService : BackgroundService
                 : intervalCutoff;
 
             // Process motion readings
+            var currentMotionDeviceIds = new HashSet<string>();
             foreach (var motion in motionResponse.Data)
             {
                 if (!motion.Enabled || motion.Motion.MotionReport == null) continue;
+
+                currentMotionDeviceIds.Add(motion.Owner.Rid);
 
                 // owner.rid is the parent device ID
                 var deviceName = deviceById.TryGetValue(motion.Owner.Rid, out var ownerDevice)
@@ -177,10 +180,15 @@ public class PollingService : BackgroundService
                 });
             }
 
+            await RemoveStaleDevicesAsync(db, hub, DeviceTypes.MotionSensor, currentMotionDeviceIds, ct);
+
             // Process temperature readings
+            var currentTempDeviceIds = new HashSet<string>();
             foreach (var temp in tempResponse.Data)
             {
                 if (!temp.Enabled || temp.Temperature.TemperatureReport == null) continue;
+
+                currentTempDeviceIds.Add(temp.Owner.Rid);
 
                 // owner.rid is the parent device ID
                 var deviceName = deviceById.TryGetValue(temp.Owner.Rid, out var ownerDevice)
@@ -201,6 +209,8 @@ public class PollingService : BackgroundService
                     })
                 });
             }
+
+            await RemoveStaleDevicesAsync(db, hub, DeviceTypes.TemperatureSensor, currentTempDeviceIds, ct);
 
             // Process battery readings (only when polled this cycle)
             if (shouldPollBattery && batteryResponse.Data.Count > 0)
@@ -234,24 +244,7 @@ public class PollingService : BackgroundService
                     });
                 }
 
-                // Remove battery devices that are no longer present on the hub
-                // (e.g. retired/removed devices whose old readings would still appear in emails).
-                var staleDevices = await db.Devices
-                    .Where(d => d.HubId == hub.Id && d.DeviceType == DeviceTypes.Battery && !currentBatteryDeviceIds.Contains(d.HueDeviceId))
-                    .ToListAsync(ct);
-
-                if (staleDevices.Count > 0)
-                {
-                    var staleDeviceIds = staleDevices.Select(d => d.Id).ToList();
-                    var staleReadings = await db.DeviceReadings
-                        .Where(r => staleDeviceIds.Contains(r.DeviceId))
-                        .ToListAsync(ct);
-                    db.DeviceReadings.RemoveRange(staleReadings);
-                    db.Devices.RemoveRange(staleDevices);
-                    _logger.LogInformation(
-                        "Hub {BridgeId}: removed {Count} stale battery device(s) no longer on hub",
-                        hub.HueBridgeId, staleDevices.Count);
-                }
+                await RemoveStaleDevicesAsync(db, hub, DeviceTypes.Battery, currentBatteryDeviceIds, ct);
 
                 hub.LastBatteryPollUtc = pollTime;
 
@@ -352,6 +345,27 @@ public class PollingService : BackgroundService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Data retention cleanup failed");
+        }
+    }
+
+    private async Task RemoveStaleDevicesAsync(
+        HpollDbContext db, Hub hub, string deviceType, HashSet<string> currentDeviceIds, CancellationToken ct)
+    {
+        var staleDevices = await db.Devices
+            .Where(d => d.HubId == hub.Id && d.DeviceType == deviceType && !currentDeviceIds.Contains(d.HueDeviceId))
+            .ToListAsync(ct);
+
+        if (staleDevices.Count > 0)
+        {
+            var staleDeviceIds = staleDevices.Select(d => d.Id).ToList();
+            var staleReadings = await db.DeviceReadings
+                .Where(r => staleDeviceIds.Contains(r.DeviceId))
+                .ToListAsync(ct);
+            db.DeviceReadings.RemoveRange(staleReadings);
+            db.Devices.RemoveRange(staleDevices);
+            _logger.LogInformation(
+                "Hub {BridgeId}: removed {Count} stale {DeviceType} device(s) no longer on hub",
+                hub.HueBridgeId, staleDevices.Count, deviceType);
         }
     }
 

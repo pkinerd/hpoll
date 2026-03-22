@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Hpoll.Admin.Services;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
+using Hpoll.Core.Interfaces;
 using Hpoll.Core.Services;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
@@ -21,14 +22,16 @@ public class DetailModel : PageModel
     private readonly HueAppSettings _hueApp;
     private readonly EmailSettings _emailSettings;
     private readonly SendTimeDisplayService _sendTimeService;
+    private readonly IEmailRenderer _emailRenderer;
     private readonly ILogger<DetailModel> _logger;
 
-    public DetailModel(HpollDbContext db, IOptions<HueAppSettings> hueApp, IOptions<EmailSettings> emailSettings, SendTimeDisplayService sendTimeService, ILogger<DetailModel> logger)
+    public DetailModel(HpollDbContext db, IOptions<HueAppSettings> hueApp, IOptions<EmailSettings> emailSettings, SendTimeDisplayService sendTimeService, IEmailRenderer emailRenderer, ILogger<DetailModel> logger)
     {
         _db = db;
         _hueApp = hueApp.Value;
         _emailSettings = emailSettings.Value;
         _sendTimeService = sendTimeService;
+        _emailRenderer = emailRenderer;
         _logger = logger;
     }
 
@@ -59,6 +62,8 @@ public class DetailModel : PageModel
     public bool EditingTimeZone { get; set; }
     public List<ActivityWindow> ActivityWindows { get; set; } = new();
     public int MotionSensorCount { get; set; }
+    public List<BatteryStatus> BatteryStatuses { get; set; } = new();
+    public string EmailPreviewHtml { get; set; } = string.Empty;
 
     public async Task<IActionResult> OnGetAsync(int id, bool editTz = false)
     {
@@ -77,6 +82,8 @@ public class DetailModel : PageModel
         EditingTimeZone = editTz;
         DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
         await LoadActivitySummaryAsync(customer);
+        await LoadBatteryStatusAsync(customer);
+        await LoadEmailPreviewAsync(customer);
 
         return Page();
     }
@@ -85,10 +92,6 @@ public class DetailModel : PageModel
     {
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
-        Customer = customer;
-        EditEmail = customer.Email;
-        EditCcEmails = customer.CcEmails;
-        EditBccEmails = customer.BccEmails;
 
         if (string.IsNullOrWhiteSpace(EditName))
         {
@@ -109,8 +112,6 @@ public class DetailModel : PageModel
     {
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
-        Customer = customer;
-        EditName = customer.Name;
 
         if (string.IsNullOrWhiteSpace(EditEmail))
             ModelState.AddModelError(nameof(EditEmail), "At least one email address is required.");
@@ -132,8 +133,6 @@ public class DetailModel : PageModel
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         SuccessMessage = "Email addresses updated.";
-        EditCcEmails = customer.CcEmails;
-        EditBccEmails = customer.BccEmails;
         await PreparePageDataAsync(customer);
         return Page();
     }
@@ -142,11 +141,6 @@ public class DetailModel : PageModel
     {
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
-        Customer = customer;
-        EditEmail = customer.Email;
-        EditName = customer.Name;
-        EditCcEmails = customer.CcEmails;
-        EditBccEmails = customer.BccEmails;
 
         var newSendTimes = (EditSendTimesLocal ?? string.Empty).Trim();
 
@@ -172,7 +166,6 @@ public class DetailModel : PageModel
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
-        EditSendTimesLocal = customer.SendTimesLocal;
         SuccessMessage = $"Send times updated. Next email: {customer.NextSendTimeUtc:yyyy-MM-dd HH:mm} UTC.";
         await PreparePageDataAsync(customer);
         return Page();
@@ -182,12 +175,6 @@ public class DetailModel : PageModel
     {
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
-        Customer = customer;
-        EditEmail = customer.Email;
-        EditName = customer.Name;
-        EditCcEmails = customer.CcEmails;
-        EditBccEmails = customer.BccEmails;
-        EditSendTimesLocal = customer.SendTimesLocal;
 
         var newTzId = (EditTimeZoneId ?? string.Empty).Trim();
         if (string.IsNullOrEmpty(newTzId))
@@ -238,11 +225,6 @@ public class DetailModel : PageModel
     {
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
-        Customer = customer;
-        EditEmail = customer.Email;
-        EditName = customer.Name;
-        EditCcEmails = customer.CcEmails;
-        EditBccEmails = customer.BccEmails;
 
         if (string.IsNullOrEmpty(_hueApp.ClientId) || string.IsNullOrEmpty(_hueApp.CallbackUrl))
         {
@@ -267,10 +249,37 @@ public class DetailModel : PageModel
         return Page();
     }
 
+    private void PopulateEditFields(Customer customer)
+    {
+        Customer = customer;
+        EditName = customer.Name;
+        EditEmail = customer.Email;
+        EditCcEmails = customer.CcEmails;
+        EditBccEmails = customer.BccEmails;
+        EditSendTimesLocal = customer.SendTimesLocal;
+        EditTimeZoneId = customer.TimeZoneId;
+    }
+
     private async Task PreparePageDataAsync(Customer customer)
     {
+        PopulateEditFields(customer);
         DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
         await LoadActivitySummaryAsync(customer);
+        await LoadBatteryStatusAsync(customer);
+        await LoadEmailPreviewAsync(customer);
+    }
+
+    private async Task LoadEmailPreviewAsync(Customer customer)
+    {
+        try
+        {
+            EmailPreviewHtml = await _emailRenderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to render email preview for customer {CustomerId}", customer.Id);
+            EmailPreviewHtml = string.Empty;
+        }
     }
 
     private void ValidateEmailField(string? commaDelimited, string fieldName)
@@ -309,9 +318,13 @@ public class DetailModel : PageModel
             .Select(d => d.Id)
             .ToListAsync();
 
-        MotionSensorCount = await _db.Devices
+        var motionSensors = await _db.Devices
             .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == DeviceTypes.MotionSensor)
-            .CountAsync();
+            .AsNoTracking()
+            .ToListAsync();
+
+        MotionSensorCount = motionSensors.Count;
+        var motionDeviceNames = motionSensors.ToDictionary(d => d.Id, d => d.Name);
 
         var readings = await _db.DeviceReadings
             .Where(r => deviceIds.Contains(r.DeviceId)
@@ -356,6 +369,28 @@ public class DetailModel : PageModel
                 .OrderBy(t => t)
                 .ToList();
 
+            // Find the motion sensor with the latest "changed" timestamp in this window
+            string? latestMotionSensor = null;
+            DateTime latestChanged = DateTime.MinValue;
+            foreach (var r in motionReadings)
+            {
+                try
+                {
+                    using var j = JsonDocument.Parse(r.Value);
+                    if (!j.RootElement.GetProperty("motion").GetBoolean()) continue;
+                    if (j.RootElement.TryGetProperty("changed", out var changedProp))
+                    {
+                        var changed = changedProp.GetDateTime();
+                        if (changed > latestChanged)
+                        {
+                            latestChanged = changed;
+                            latestMotionSensor = motionDeviceNames.TryGetValue(r.DeviceId, out var name) ? name : null;
+                        }
+                    }
+                }
+                catch (JsonException) { }
+            }
+
             var displayEnd = windowEndLocal > nowLocal ? nowLocal : windowEndLocal;
             ActivityWindows.Add(new ActivityWindow
             {
@@ -363,6 +398,7 @@ public class DetailModel : PageModel
                 DevicesWithMotion = devicesWithMotion,
                 TotalMotionSensors = MotionSensorCount > 0 ? MotionSensorCount : 1,
                 TotalMotionEvents = totalMotionEvents,
+                LatestMotionSensor = latestMotionSensor,
                 TemperatureMin = temperatures.Count > 0 ? temperatures.First() : null,
                 TemperatureMedian = temperatures.Count > 0 ? temperatures[temperatures.Count / 2] : null,
                 TemperatureMax = temperatures.Count > 0 ? temperatures.Last() : null,
@@ -372,14 +408,75 @@ public class DetailModel : PageModel
         ActivityWindows.Reverse();
     }
 
+    private async Task LoadBatteryStatusAsync(Customer customer)
+    {
+        var hubIds = await _db.Hubs
+            .Where(h => h.CustomerId == customer.Id && h.Status == HubStatus.Active)
+            .Select(h => h.Id)
+            .ToListAsync();
+
+        var batteryDevices = await _db.Devices
+            .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == DeviceTypes.Battery)
+            .ToListAsync();
+
+        if (batteryDevices.Count == 0) return;
+
+        var batteryDeviceIds = batteryDevices.Select(d => d.Id).ToList();
+
+        // Get the most recent battery reading for each device
+        var latestReadings = await _db.DeviceReadings
+            .Where(r => batteryDeviceIds.Contains(r.DeviceId) && r.ReadingType == ReadingTypes.Battery)
+            .GroupBy(r => r.DeviceId)
+            .Select(g => g.OrderByDescending(r => r.Timestamp).First())
+            .AsNoTracking()
+            .ToListAsync();
+
+        var deviceMap = batteryDevices.ToDictionary(d => d.Id);
+
+        foreach (var reading in latestReadings)
+        {
+            if (!deviceMap.TryGetValue(reading.DeviceId, out var device)) continue;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(reading.Value);
+                var level = doc.RootElement.GetProperty("battery_level").GetInt32();
+                var state = doc.RootElement.GetProperty("battery_state").GetString() ?? "unknown";
+
+                BatteryStatuses.Add(new BatteryStatus
+                {
+                    DeviceName = device.Name,
+                    BatteryLevel = level,
+                    BatteryState = state,
+                    LastUpdated = reading.Timestamp,
+                });
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse battery reading for DeviceId {DeviceId}", reading.DeviceId);
+            }
+        }
+
+        BatteryStatuses = BatteryStatuses.OrderBy(b => b.BatteryLevel).ToList();
+    }
+
     public class ActivityWindow
     {
         public string Label { get; set; } = string.Empty;
         public int DevicesWithMotion { get; set; }
         public int TotalMotionSensors { get; set; }
         public int TotalMotionEvents { get; set; }
+        public string? LatestMotionSensor { get; set; }
         public double? TemperatureMin { get; set; }
         public double? TemperatureMedian { get; set; }
         public double? TemperatureMax { get; set; }
+    }
+
+    public class BatteryStatus
+    {
+        public string DeviceName { get; set; } = string.Empty;
+        public int BatteryLevel { get; set; }
+        public string BatteryState { get; set; } = string.Empty;
+        public DateTime LastUpdated { get; set; }
     }
 }
