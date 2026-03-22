@@ -48,6 +48,21 @@ get_image_id() {
     docker image inspect "$1:$TAG" --format '{{.Id}}' 2>/dev/null || echo "none"
 }
 
+# Look up a Synology Container Manager project ID by name.
+# Returns empty string if synowebapi or jq is unavailable (non-Synology host).
+get_syno_project_id() {
+    synowebapi --exec api=SYNO.Docker.Project version=1 method=list 2>/dev/null \
+        | jq -r ".data[] | select(.name == \"$1\") | .id" 2>/dev/null || echo ""
+}
+
+syno_project_stop() {
+    synowebapi --exec api=SYNO.Docker.Project version=1 method=stop "id=\"$1\"" >/dev/null 2>&1
+}
+
+syno_project_start() {
+    synowebapi --exec api=SYNO.Docker.Project version=1 method=start "id=\"$1\"" >/dev/null 2>&1
+}
+
 # ── Pull images and detect changes ───────────────────────────────────────────
 log "Project:  $PROJECT"
 log "Tag:      $TAG"
@@ -95,8 +110,29 @@ fi
 COMPOSE_FILE="$COMPOSE_DIR/compose.yaml"
 [[ -f "$COMPOSE_FILE" ]] || fail "Compose file not found: $COMPOSE_FILE"
 
+# Stop the project through Synology's API so Container Manager treats it as an
+# intentional stop (no "stopped unexpectedly" alert).
+SYNO_ID=$(get_syno_project_id "$PROJECT")
+if [[ -n "$SYNO_ID" ]]; then
+    log "Stopping project via Synology Container Manager..."
+    syno_project_stop "$SYNO_ID"
+    # Ensure the project is restarted even if compose fails
+    trap 'log "Restarting project via Synology Container Manager..."; syno_project_start "'"$SYNO_ID"'"' EXIT
+else
+    log "Warning: Synology Container Manager not detected — alert suppression skipped."
+fi
+
 log "Restarting project $PROJECT with new images..."
 docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d --force-recreate
+
+sleep 5  # let containers stabilize before Container Manager resumes monitoring
+
+# Clear the trap and restart explicitly for clean log output
+trap - EXIT
+if [[ -n "$SYNO_ID" ]]; then
+    log "Restarting project via Synology Container Manager..."
+    syno_project_start "$SYNO_ID"
+fi
 
 echo
 log "Update complete. Container status:"
