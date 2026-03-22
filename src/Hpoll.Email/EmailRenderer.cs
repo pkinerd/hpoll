@@ -126,9 +126,8 @@ public class EmailRenderer : IEmailRenderer
                 .OrderBy(t => t)
                 .ToList();
 
-            // Find the motion sensor with the latest "changed" timestamp in this window
-            string? latestMotionSensor = null;
-            var latestChanged = DateTime.MinValue;
+            // Find the two motion sensors with the latest "changed" timestamps in this window
+            var motionEvents = new List<(DateTime ChangedUtc, string SensorName)>();
             foreach (var r in motionReadings)
             {
                 try
@@ -138,15 +137,21 @@ public class EmailRenderer : IEmailRenderer
                     if (j.RootElement.TryGetProperty("changed", out var changedProp))
                     {
                         var changed = changedProp.GetDateTime();
-                        if (changed > latestChanged)
-                        {
-                            latestChanged = changed;
-                            latestMotionSensor = motionDeviceNames.TryGetValue(r.DeviceId, out var name) ? name : null;
-                        }
+                        if (motionDeviceNames.TryGetValue(r.DeviceId, out var name))
+                            motionEvents.Add((changed, name));
                     }
                 }
                 catch (JsonException) { }
             }
+            var latestLocations = motionEvents
+                .OrderByDescending(e => e.ChangedUtc)
+                .Take(2)
+                .Select(e => new LatestLocation
+                {
+                    SensorName = e.SensorName,
+                    LocalTime = TimeZoneInfo.ConvertTimeFromUtc(e.ChangedUtc, tz)
+                })
+                .ToList();
 
             var displayEnd = windowEndLocal > nowLocal ? nowLocal : windowEndLocal;
             windows.Add(new WindowSummary
@@ -157,7 +162,7 @@ public class EmailRenderer : IEmailRenderer
                 DevicesWithMotion = devicesWithMotion,
                 TotalMotionSensors = motionSensorCount > 0 ? motionSensorCount : 1,
                 TotalMotionEvents = totalMotionEvents,
-                LatestMotionSensor = latestMotionSensor,
+                LatestLocations = latestLocations,
                 TemperatureMin = temperatures.Count > 0 ? temperatures.First() : null,
                 TemperatureMedian = temperatures.Count > 0 ? temperatures[temperatures.Count / 2] : null,
                 TemperatureMax = temperatures.Count > 0 ? temperatures.Last() : null,
@@ -290,11 +295,15 @@ public class EmailRenderer : IEmailRenderer
 
         // Latest Location — name of most recently active motion sensor per window
         sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-bottom:20px;\">");
-        sb.AppendLine("<tr><td colspan=\"2\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Latest Location</td></tr>");
+        sb.AppendLine("<tr><td colspan=\"2\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Latest Locations</td></tr>");
         foreach (var w in windows)
         {
-            var location = !string.IsNullOrEmpty(w.LatestMotionSensor) ? Encode(w.LatestMotionSensor) : "<span style=\"color:#999;\">\u2014</span>";
-            sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;white-space:nowrap;\">{FormatLabelHtml(w)}</td>");
+            string location;
+            if (w.LatestLocations.Count > 0)
+                location = string.Join("<br>", w.LatestLocations.Select(l => $"{Encode(l.SensorName)} ({l.LocalTime:HH:mm})"));
+            else
+                location = "<span style=\"color:#999;\">\u2014</span>";
+            sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;white-space:nowrap;vertical-align:top;\">{FormatLabelHtml(w)}</td>");
             sb.AppendLine($"<td style=\"font-size:13px;color:#2c3e50;\">{location}</td>");
             sb.AppendLine("</tr>");
         }
@@ -373,10 +382,16 @@ public class EmailRenderer : IEmailRenderer
         public int DevicesWithMotion { get; set; }
         public int TotalMotionSensors { get; set; }
         public int TotalMotionEvents { get; set; }
-        public string? LatestMotionSensor { get; set; }
+        public List<LatestLocation> LatestLocations { get; set; } = new();
         public double? TemperatureMin { get; set; }
         public double? TemperatureMedian { get; set; }
         public double? TemperatureMax { get; set; }
+    }
+
+    private class LatestLocation
+    {
+        public string SensorName { get; set; } = string.Empty;
+        public DateTime LocalTime { get; set; }
     }
 
     private class BatteryStatus
