@@ -63,6 +63,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: TestResults
+          override_branch: ${{ github.head_ref || github.ref_name }}
           fail_ci_if_error: false
 
       - name: Upload test results to Codecov
@@ -72,6 +73,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: TestResults/*.junit.xml
           report_type: test_results
+          override_branch: ${{ github.head_ref || github.ref_name }}
           fail_ci_if_error: false
 
       - name: Upload test reports
