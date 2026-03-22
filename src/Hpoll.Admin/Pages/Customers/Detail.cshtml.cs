@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Hpoll.Admin.Services;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
+using Hpoll.Core.Interfaces;
 using Hpoll.Core.Services;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
@@ -21,14 +22,16 @@ public class DetailModel : PageModel
     private readonly HueAppSettings _hueApp;
     private readonly EmailSettings _emailSettings;
     private readonly SendTimeDisplayService _sendTimeService;
+    private readonly IEmailRenderer _emailRenderer;
     private readonly ILogger<DetailModel> _logger;
 
-    public DetailModel(HpollDbContext db, IOptions<HueAppSettings> hueApp, IOptions<EmailSettings> emailSettings, SendTimeDisplayService sendTimeService, ILogger<DetailModel> logger)
+    public DetailModel(HpollDbContext db, IOptions<HueAppSettings> hueApp, IOptions<EmailSettings> emailSettings, SendTimeDisplayService sendTimeService, IEmailRenderer emailRenderer, ILogger<DetailModel> logger)
     {
         _db = db;
         _hueApp = hueApp.Value;
         _emailSettings = emailSettings.Value;
         _sendTimeService = sendTimeService;
+        _emailRenderer = emailRenderer;
         _logger = logger;
     }
 
@@ -60,6 +63,7 @@ public class DetailModel : PageModel
     public List<ActivityWindow> ActivityWindows { get; set; } = new();
     public int MotionSensorCount { get; set; }
     public List<BatteryStatus> BatteryStatuses { get; set; } = new();
+    public string EmailPreviewHtml { get; set; } = string.Empty;
 
     public async Task<IActionResult> OnGetAsync(int id, bool editTz = false)
     {
@@ -79,6 +83,7 @@ public class DetailModel : PageModel
         DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
         await LoadActivitySummaryAsync(customer);
         await LoadBatteryStatusAsync(customer);
+        await LoadEmailPreviewAsync(customer);
 
         return Page();
     }
@@ -274,6 +279,20 @@ public class DetailModel : PageModel
         DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
         await LoadActivitySummaryAsync(customer);
         await LoadBatteryStatusAsync(customer);
+        await LoadEmailPreviewAsync(customer);
+    }
+
+    private async Task LoadEmailPreviewAsync(Customer customer)
+    {
+        try
+        {
+            EmailPreviewHtml = await _emailRenderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to render email preview for customer {CustomerId}", customer.Id);
+            EmailPreviewHtml = string.Empty;
+        }
     }
 
     private void ValidateEmailField(string? commaDelimited, string fieldName)

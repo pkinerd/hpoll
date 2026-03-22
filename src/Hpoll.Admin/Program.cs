@@ -10,6 +10,7 @@ using Hpoll.Admin.Services;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Services;
 using Hpoll.Data;
+using Hpoll.Email;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +76,7 @@ builder.Services.AddAntiforgery(options =>
 });
 
 builder.Services.AddScoped<SendTimeDisplayService>();
+builder.Services.AddScoped<IEmailRenderer, EmailRenderer>();
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
