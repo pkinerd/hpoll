@@ -1,8 +1,8 @@
 # Open Issues Summary
 
-*Last updated: 2026-03-16*
+*Last updated: 2026-03-22*
 
-**13 open issues** | 1 medium | 12 low
+**14 open issues** | 4 medium | 10 low
 
 ## By Priority
 
@@ -11,6 +11,7 @@
 - [#0030](issues/0030-encrypt-tokens-at-rest.md) — Encrypt OAuth tokens at rest in SQLite database `security`
 - [#0075](issues/0075-activity-window-duplication-persists.md) — Activity window duplication persists — ActivitySummaryBuilder never extracted `enhancement` `code-quality`
 - [#0148](issues/0148-send-email-now-button.md) — Add 'Send Email Now' button to Customer Detail page `feature` `enhancement`
+- [#0189](issues/0189-stale-motion-temperature-devices-not-cleaned-up.md) — Stale motion and temperature devices not cleaned up when removed from hub `bug`
 
 ### Low
 
@@ -26,6 +27,10 @@
 - [#0187](issues/0187-systeminfoextensions-trysetbatch-exception-uncovered.md) — SystemInfoServiceExtensions.TrySetBatchAsync OperationCanceledException path uncovered `testing`
 
 ## By Label
+
+### bug
+
+- [#0189](issues/0189-stale-motion-temperature-devices-not-cleaned-up.md) — Stale motion and temperature devices not cleaned up when removed from hub (medium)
 
 ### code-quality
 

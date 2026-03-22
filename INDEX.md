@@ -158,3 +158,4 @@
 | [0182](issues/0182-emailmasker-mask-null-nre.md) | EmailMasker.Mask(null) lacks null guard | open | low | enhancement, code-quality |
 | [0184](issues/0184-hueapiclient-malformed-json-200.md) | HueApiClient logs unclear error on malformed JSON 200 response | open | low | enhancement, code-quality |
 | [0187](issues/0187-systeminfoextensions-trysetbatch-exception-uncovered.md) | SystemInfoServiceExtensions.TrySetBatchAsync OperationCanceledException path uncovered | open | low | testing |
+| [0189](issues/0189-stale-motion-temperature-devices-not-cleaned-up.md) | Stale motion and temperature devices not cleaned up when removed from hub | open | medium | bug |
