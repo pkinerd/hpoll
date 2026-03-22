@@ -126,8 +126,8 @@ public class EmailRenderer : IEmailRenderer
                 .OrderBy(t => t)
                 .ToList();
 
-            // Find the two motion sensors with the latest "changed" timestamps in this window
-            var motionEvents = new List<(DateTime ChangedUtc, string SensorName)>();
+            // Find the two distinct motion sensors with the latest "changed" timestamps in this window
+            var motionEvents = new List<(DateTime ChangedUtc, int DeviceId, string SensorName)>();
             foreach (var r in motionReadings)
             {
                 try
@@ -138,12 +138,14 @@ public class EmailRenderer : IEmailRenderer
                     {
                         var changed = changedProp.GetDateTime();
                         if (motionDeviceNames.TryGetValue(r.DeviceId, out var name))
-                            motionEvents.Add((changed, name));
+                            motionEvents.Add((changed, r.DeviceId, name));
                     }
                 }
                 catch (JsonException) { }
             }
             var latestLocations = motionEvents
+                .GroupBy(e => e.DeviceId)
+                .Select(g => g.OrderByDescending(e => e.ChangedUtc).First())
                 .OrderByDescending(e => e.ChangedUtc)
                 .Take(2)
                 .Select(e => new LatestLocation
