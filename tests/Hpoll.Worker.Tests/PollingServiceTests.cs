@@ -919,6 +919,55 @@ public class PollingServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task PollHub_RemovesStaleDevices_WhenDeviceNoLongerOnHub()
+    {
+        var hub = await SeedHubAsync();
+
+        // Pre-seed a battery device that is no longer present on the hub (retired device)
+        using (var seedDb = CreateDb())
+        {
+            var staleDevice = new Device
+            {
+                HubId = hub.Id,
+                HueDeviceId = "retired-device",
+                DeviceType = DeviceTypes.Battery,
+                Name = "Old Sensor"
+            };
+            seedDb.Devices.Add(staleDevice);
+            await seedDb.SaveChangesAsync();
+
+            seedDb.DeviceReadings.Add(new DeviceReading
+            {
+                DeviceId = staleDevice.Id,
+                Timestamp = _fakeTime.GetUtcNow().UtcDateTime.AddDays(-1),
+                ReadingType = ReadingTypes.Battery,
+                Value = "{\"battery_level\":42,\"battery_state\":\"normal\"}"
+            });
+            await seedDb.SaveChangesAsync();
+        }
+
+        // Hub now only reports device-001 as having battery
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db = CreateDb();
+        // The retired device and its readings should be removed
+        var devices = await db.Devices.Where(d => d.HueDeviceId == "retired-device").ToListAsync();
+        Assert.Empty(devices);
+        var staleReadings = await db.DeviceReadings
+            .Where(r => r.Device.HueDeviceId == "retired-device")
+            .ToListAsync();
+        Assert.Empty(staleReadings);
+
+        // The current device's battery reading should still exist
+        var currentReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Battery).ToListAsync();
+        Assert.NotEmpty(currentReadings);
+        Assert.Contains("\"battery_level\":85", currentReadings.First().Value);
+    }
+
+    [Fact]
     public async Task PollHub_ErrorMessage_TruncatedTo500Chars()
     {
         var hub = await SeedHubAsync();
