@@ -205,9 +205,15 @@ public class PollingService : BackgroundService
             // Process battery readings (only when polled this cycle)
             if (shouldPollBattery && batteryResponse.Data.Count > 0)
             {
+                // Track which device IDs are still present on the hub so we can
+                // remove stale battery devices that have been retired/removed.
+                var currentBatteryDeviceIds = new HashSet<string>();
+
                 foreach (var power in batteryResponse.Data)
                 {
                     if (power.PowerState.BatteryLevel == null) continue;
+
+                    currentBatteryDeviceIds.Add(power.Owner.Rid);
 
                     var deviceName = deviceById.TryGetValue(power.Owner.Rid, out var ownerDevice)
                         ? ownerDevice.Metadata.Name
@@ -226,6 +232,25 @@ public class PollingService : BackgroundService
                             battery_state = power.PowerState.BatteryState ?? "unknown"
                         })
                     });
+                }
+
+                // Remove battery devices that are no longer present on the hub
+                // (e.g. retired/removed devices whose old readings would still appear in emails).
+                var staleDevices = await db.Devices
+                    .Where(d => d.HubId == hub.Id && d.DeviceType == DeviceTypes.Battery && !currentBatteryDeviceIds.Contains(d.HueDeviceId))
+                    .ToListAsync(ct);
+
+                if (staleDevices.Count > 0)
+                {
+                    var staleDeviceIds = staleDevices.Select(d => d.Id).ToList();
+                    var staleReadings = await db.DeviceReadings
+                        .Where(r => staleDeviceIds.Contains(r.DeviceId))
+                        .ToListAsync(ct);
+                    db.DeviceReadings.RemoveRange(staleReadings);
+                    db.Devices.RemoveRange(staleDevices);
+                    _logger.LogInformation(
+                        "Hub {BridgeId}: removed {Count} stale battery device(s) no longer on hub",
+                        hub.HueBridgeId, staleDevices.Count);
                 }
 
                 hub.LastBatteryPollUtc = pollTime;
