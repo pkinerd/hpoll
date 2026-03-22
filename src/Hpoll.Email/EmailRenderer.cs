@@ -71,10 +71,20 @@ public class EmailRenderer : IEmailRenderer
                 customerId, totalHours + windowHours, startUtc, endUtc);
         }
 
-        // Count motion sensors specifically (not all devices)
-        var motionSensorCount = await _db.Devices
+        // Look up customer name for header
+        var customerName = await _db.Customers
+            .Where(c => c.Id == customerId)
+            .Select(c => c.Name)
+            .FirstOrDefaultAsync(ct);
+
+        // Get motion sensors with names for latest-location lookup
+        var motionSensors = await _db.Devices
             .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == DeviceTypes.MotionSensor)
-            .CountAsync(ct);
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+        var motionSensorCount = motionSensors.Count;
+        var motionDeviceNames = motionSensors.ToDictionary(d => d.Id, d => d.Name);
 
         var windows = new List<WindowSummary>();
         for (int i = 0; i < windowCount; i++)
@@ -116,6 +126,28 @@ public class EmailRenderer : IEmailRenderer
                 .OrderBy(t => t)
                 .ToList();
 
+            // Find the motion sensor with the latest "changed" timestamp in this window
+            string? latestMotionSensor = null;
+            var latestChanged = DateTime.MinValue;
+            foreach (var r in motionReadings)
+            {
+                try
+                {
+                    using var j = JsonDocument.Parse(r.Value);
+                    if (!j.RootElement.GetProperty("motion").GetBoolean()) continue;
+                    if (j.RootElement.TryGetProperty("changed", out var changedProp))
+                    {
+                        var changed = changedProp.GetDateTime();
+                        if (changed > latestChanged)
+                        {
+                            latestChanged = changed;
+                            latestMotionSensor = motionDeviceNames.TryGetValue(r.DeviceId, out var name) ? name : null;
+                        }
+                    }
+                }
+                catch (JsonException) { }
+            }
+
             var displayEnd = windowEndLocal > nowLocal ? nowLocal : windowEndLocal;
             windows.Add(new WindowSummary
             {
@@ -125,6 +157,7 @@ public class EmailRenderer : IEmailRenderer
                 DevicesWithMotion = devicesWithMotion,
                 TotalMotionSensors = motionSensorCount > 0 ? motionSensorCount : 1,
                 TotalMotionEvents = totalMotionEvents,
+                LatestMotionSensor = latestMotionSensor,
                 TemperatureMin = temperatures.Count > 0 ? temperatures.First() : null,
                 TemperatureMedian = temperatures.Count > 0 ? temperatures[temperatures.Count / 2] : null,
                 TemperatureMax = temperatures.Count > 0 ? temperatures.Last() : null,
@@ -185,10 +218,10 @@ public class EmailRenderer : IEmailRenderer
         }
 
         var displayEndLocal = bucketEndLocal > nowLocal ? nowLocal : bucketEndLocal;
-        return BuildHtml(bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, _emailSettings.BatteryAlertThreshold, _emailSettings.BatteryLevelCritical, _emailSettings.BatteryLevelWarning);
+        return BuildHtml(customerName, bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, _emailSettings.BatteryAlertThreshold, _emailSettings.BatteryLevelCritical, _emailSettings.BatteryLevelWarning);
     }
 
-    private static string BuildHtml(DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses, int batteryAlertThreshold, int batteryLevelCritical, int batteryLevelWarning)
+    private static string BuildHtml(string? customerName, DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses, int batteryAlertThreshold, int batteryLevelCritical, int batteryLevelWarning)
     {
         var sb = new StringBuilder();
         sb.AppendLine("<!DOCTYPE html>");
@@ -199,6 +232,8 @@ public class EmailRenderer : IEmailRenderer
         // Header
         sb.AppendLine("<tr><td style=\"background-color:#2c3e50;color:#ffffff;padding:20px;text-align:center;\">");
         sb.AppendLine($"<h1 style=\"margin:0;font-size:22px;\">Daily Activity Summary</h1>");
+        if (!string.IsNullOrEmpty(customerName))
+            sb.AppendLine($"<p style=\"margin:5px 0 0;font-size:16px;opacity:0.9;\">for {Encode(customerName)}</p>");
         sb.AppendLine($"<p style=\"margin:5px 0 0;font-size:14px;opacity:0.8;\">{startLocal:d MMM yyyy HH:mm} \u2013 {endLocal:d MMM yyyy HH:mm} ({Encode(tzName)})</p>");
         sb.AppendLine("</td></tr>");
 
@@ -249,6 +284,18 @@ public class EmailRenderer : IEmailRenderer
             sb.AppendLine("</tr></table></td>");
             var diversityLabel = active >= 5 ? "5+" : active.ToString();
             sb.AppendLine($"<td style=\"font-size:11px;color:#777;width:24px;text-align:right;\">{diversityLabel}</td>");
+            sb.AppendLine("</tr>");
+        }
+        sb.AppendLine("</table>");
+
+        // Latest Location — name of most recently active motion sensor per window
+        sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-bottom:20px;\">");
+        sb.AppendLine("<tr><td colspan=\"2\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Latest Location</td></tr>");
+        foreach (var w in windows)
+        {
+            var location = !string.IsNullOrEmpty(w.LatestMotionSensor) ? Encode(w.LatestMotionSensor) : "<span style=\"color:#999;\">\u2014</span>";
+            sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;white-space:nowrap;\">{FormatLabelHtml(w)}</td>");
+            sb.AppendLine($"<td style=\"font-size:13px;color:#2c3e50;\">{location}</td>");
             sb.AppendLine("</tr>");
         }
         sb.AppendLine("</table>");
@@ -326,6 +373,7 @@ public class EmailRenderer : IEmailRenderer
         public int DevicesWithMotion { get; set; }
         public int TotalMotionSensors { get; set; }
         public int TotalMotionEvents { get; set; }
+        public string? LatestMotionSensor { get; set; }
         public double? TemperatureMin { get; set; }
         public double? TemperatureMedian { get; set; }
         public double? TemperatureMax { get; set; }
