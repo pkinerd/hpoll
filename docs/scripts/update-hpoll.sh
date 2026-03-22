@@ -92,7 +92,7 @@ if [[ "$CHECK_ONLY" == true ]]; then
 fi
 
 # ── Apply update ──────────────────────────────────────────────────────────────
-COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
+COMPOSE_FILE="$COMPOSE_DIR/compose.yaml"
 [[ -f "$COMPOSE_FILE" ]] || fail "Compose file not found: $COMPOSE_FILE"
 
 log "Restarting project $PROJECT with new images..."
