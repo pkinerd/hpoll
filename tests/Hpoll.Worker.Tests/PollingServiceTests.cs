@@ -968,6 +968,95 @@ public class PollingServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task PollHub_RemovesStaleMotionDevices_WhenDeviceNoLongerOnHub()
+    {
+        var hub = await SeedHubAsync();
+
+        // Pre-seed a stale motion sensor device that is no longer present on the hub
+        using (var seedDb = CreateDb())
+        {
+            var staleDevice = new Device
+            {
+                HubId = hub.Id,
+                HueDeviceId = "retired-motion-device",
+                DeviceType = DeviceTypes.MotionSensor,
+                Name = "Old Motion Sensor"
+            };
+            seedDb.Devices.Add(staleDevice);
+            await seedDb.SaveChangesAsync();
+
+            seedDb.DeviceReadings.Add(new DeviceReading
+            {
+                DeviceId = staleDevice.Id,
+                Timestamp = _fakeTime.GetUtcNow().UtcDateTime.AddDays(-1),
+                ReadingType = ReadingTypes.Motion,
+                Value = "{\"motion\":true,\"changed\":\"2026-03-14T12:00:00Z\"}"
+            });
+            await seedDb.SaveChangesAsync();
+        }
+
+        // Hub API only reports device-001 — retired-motion-device is no longer present
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db = CreateDb();
+        var staleDevices = await db.Devices.Where(d => d.HueDeviceId == "retired-motion-device").ToListAsync();
+        Assert.Empty(staleDevices);
+        var staleReadings = await db.DeviceReadings.Where(r => r.Device.HueDeviceId == "retired-motion-device").ToListAsync();
+        Assert.Empty(staleReadings);
+
+        // Current motion device should still have readings
+        var currentReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Motion).ToListAsync();
+        Assert.NotEmpty(currentReadings);
+    }
+
+    [Fact]
+    public async Task PollHub_RemovesStaleTemperatureDevices_WhenDeviceNoLongerOnHub()
+    {
+        var hub = await SeedHubAsync();
+
+        // Pre-seed a stale temperature sensor device
+        using (var seedDb = CreateDb())
+        {
+            var staleDevice = new Device
+            {
+                HubId = hub.Id,
+                HueDeviceId = "retired-temp-device",
+                DeviceType = DeviceTypes.TemperatureSensor,
+                Name = "Old Temp Sensor"
+            };
+            seedDb.Devices.Add(staleDevice);
+            await seedDb.SaveChangesAsync();
+
+            seedDb.DeviceReadings.Add(new DeviceReading
+            {
+                DeviceId = staleDevice.Id,
+                Timestamp = _fakeTime.GetUtcNow().UtcDateTime.AddDays(-1),
+                ReadingType = ReadingTypes.Temperature,
+                Value = "{\"temperature\":21.5,\"changed\":\"2026-03-14T12:00:00Z\"}"
+            });
+            await seedDb.SaveChangesAsync();
+        }
+
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db = CreateDb();
+        var staleDevices = await db.Devices.Where(d => d.HueDeviceId == "retired-temp-device").ToListAsync();
+        Assert.Empty(staleDevices);
+        var staleReadings = await db.DeviceReadings.Where(r => r.Device.HueDeviceId == "retired-temp-device").ToListAsync();
+        Assert.Empty(staleReadings);
+
+        // Current temperature device should still have readings
+        var currentReadings = await db.DeviceReadings.Where(r => r.ReadingType == ReadingTypes.Temperature).ToListAsync();
+        Assert.NotEmpty(currentReadings);
+    }
+
+    [Fact]
     public async Task PollHub_ErrorMessage_TruncatedTo500Chars()
     {
         var hub = await SeedHubAsync();

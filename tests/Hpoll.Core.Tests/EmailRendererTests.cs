@@ -1057,4 +1057,246 @@ public class EmailRendererTests : IDisposable
         // Latest reading is 90% (above 30% threshold) so no battery section shown
         Assert.DoesNotContain("Battery Status", html);
     }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_LatestLocations_ShowsTwoDistinctSensors()
+    {
+        var (customer, hub, device1) = await SeedBaseDataAsync();
+
+        var device2 = new Device { HubId = hub.Id, HueDeviceId = "device-002", DeviceType = DeviceTypes.MotionSensor, Name = "Bedroom" };
+        var device3 = new Device { HubId = hub.Id, HueDeviceId = "device-003", DeviceType = DeviceTypes.MotionSensor, Name = "Kitchen" };
+        _db.Devices.AddRange(device2, device3);
+        await _db.SaveChangesAsync();
+
+        // Three devices with motion in the 08:00–12:00 window on Feb 27
+        // device3 latest at 11:30, device2 at 11:00, device1 at 10:00
+        AddMotion(device1.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        AddMotion(device2.Id, new DateTime(2026, 2, 27, 11, 0, 0, DateTimeKind.Utc));
+        AddMotion(device3.Id, new DateTime(2026, 2, 27, 11, 30, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        // Should show Kitchen (11:30) and Bedroom (11:00), NOT Sensor 1
+        Assert.Contains("Kitchen (11:30)", html);
+        Assert.Contains("Bedroom (11:00)", html);
+        Assert.DoesNotContain("Sensor 1 (10:00)", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_LatestLocations_GroupsByDeviceId_NotName()
+    {
+        var (customer, hub, device1) = await SeedBaseDataAsync();
+
+        // Two devices with same name but different IDs
+        var device2 = new Device { HubId = hub.Id, HueDeviceId = "device-002", DeviceType = DeviceTypes.MotionSensor, Name = "Sensor 1" };
+        _db.Devices.Add(device2);
+        await _db.SaveChangesAsync();
+
+        // Both devices named "Sensor 1" with motion in the same window
+        AddMotion(device1.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        AddMotion(device2.Id, new DateTime(2026, 2, 27, 11, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        // Both devices should appear since they have different IDs, even though same name
+        // Count occurrences of "Sensor 1" in the Latest Locations section
+        var latestSection = html.Substring(html.IndexOf("Latest Locations"));
+        var tempSection = latestSection.IndexOf("Temperature Range");
+        latestSection = latestSection.Substring(0, tempSection);
+        var count = latestSection.Split("Sensor 1").Length - 1;
+        Assert.True(count >= 2, $"Expected at least 2 occurrences of 'Sensor 1' in Latest Locations, found {count}");
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_LatestLocations_DeduplicatesMultipleReadingsPerDevice()
+    {
+        var (customer, hub, device1) = await SeedBaseDataAsync();
+
+        var device2 = new Device { HubId = hub.Id, HueDeviceId = "device-002", DeviceType = DeviceTypes.MotionSensor, Name = "Bedroom" };
+        _db.Devices.Add(device2);
+        await _db.SaveChangesAsync();
+
+        // device1 has multiple motion readings in the same window — should only show latest
+        AddMotion(device1.Id, new DateTime(2026, 2, 27, 9, 0, 0, DateTimeKind.Utc));
+        AddMotion(device1.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        AddMotion(device1.Id, new DateTime(2026, 2, 27, 11, 0, 0, DateTimeKind.Utc));
+        AddMotion(device2.Id, new DateTime(2026, 2, 27, 10, 30, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        // Should show Sensor 1 with latest time (11:00) and Bedroom (10:30)
+        Assert.Contains("Sensor 1 (11:00)", html);
+        Assert.Contains("Bedroom (10:30)", html);
+        // Should NOT show earlier Sensor 1 timestamps
+        Assert.DoesNotContain("Sensor 1 (09:00)", html);
+        Assert.DoesNotContain("Sensor 1 (10:00)", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_LatestLocations_SingleDevice_ShowsOneEntry()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("Sensor 1 (10:00)", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_LatestLocations_NoMotion_ShowsEmDash()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        // Only temperature readings, no motion
+        AddTemp(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 20.0);
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("Latest Locations", html);
+        // Em dash for no data
+        Assert.Contains("\u2014", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_LatestLocations_MotionFalse_NotIncluded()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        // motion:false readings should not appear in latest locations
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = device.Id,
+            Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
+            ReadingType = ReadingTypes.Motion,
+            Value = "{\"motion\":false,\"changed\":\"2026-02-27T10:00:00Z\"}"
+        });
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        // Should not show sensor name with time in Latest Locations
+        Assert.DoesNotContain("Sensor 1 (10:00)", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_CustomerName_RenderedInHeader()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("for Test User", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_CustomerNameEmpty_NoSubHeading()
+    {
+        var customer = new Customer { Name = "", Email = "noname@example.com", TimeZoneId = "UTC" };
+        _db.Customers.Add(customer);
+        await _db.SaveChangesAsync();
+
+        var hub = new Hub
+        {
+            CustomerId = customer.Id,
+            HueBridgeId = "001788FFFE111111",
+            HueApplicationKey = "testkey",
+            AccessToken = "token",
+            RefreshToken = "refresh",
+            TokenExpiresAt = DateTime.UtcNow.AddDays(7),
+            Status = HubStatus.Active
+        };
+        _db.Hubs.Add(hub);
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.DoesNotContain("for ", html.Split("Daily Activity Summary")[1].Split("</td>")[0]);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_CustomerNameWithHtml_IsEncoded()
+    {
+        var customer = new Customer { Name = "<b>Evil</b>", Email = "xss@example.com", TimeZoneId = "UTC" };
+        _db.Customers.Add(customer);
+        await _db.SaveChangesAsync();
+
+        var hub = new Hub
+        {
+            CustomerId = customer.Id,
+            HueBridgeId = "001788FFFE222222",
+            HueApplicationKey = "testkey",
+            AccessToken = "token",
+            RefreshToken = "refresh",
+            TokenExpiresAt = DateTime.UtcNow.AddDays(7),
+            Status = HubStatus.Active
+        };
+        _db.Hubs.Add(hub);
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.DoesNotContain("<b>Evil</b>", html);
+        Assert.Contains("&lt;b&gt;Evil&lt;/b&gt;", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_LatestLocations_XssInSensorName_IsEncoded()
+    {
+        var (customer, hub, _) = await SeedBaseDataAsync();
+
+        var xssDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-xss-motion",
+            DeviceType = DeviceTypes.MotionSensor,
+            Name = "<img src=x onerror=alert(1)>"
+        };
+        _db.Devices.Add(xssDevice);
+        await _db.SaveChangesAsync();
+
+        AddMotion(xssDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.DoesNotContain("<img src=x", html);
+        Assert.Contains("&lt;img", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_BatterySection_SortedByLevelAscending()
+    {
+        var (customer, hub, _) = await SeedBaseDataAsync();
+
+        var bat1 = new Device { HubId = hub.Id, HueDeviceId = "bat-high", DeviceType = DeviceTypes.Battery, Name = "High Battery" };
+        var bat2 = new Device { HubId = hub.Id, HueDeviceId = "bat-low", DeviceType = DeviceTypes.Battery, Name = "Low Battery" };
+        var bat3 = new Device { HubId = hub.Id, HueDeviceId = "bat-mid", DeviceType = DeviceTypes.Battery, Name = "Mid Battery" };
+        _db.Devices.AddRange(bat1, bat2, bat3);
+        await _db.SaveChangesAsync();
+
+        AddBattery(bat1.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 80);
+        AddBattery(bat2.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 5, "critical");
+        AddBattery(bat3.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 40);
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("Battery Status", html);
+        // Low Battery (5%) should appear before Mid Battery (40%) before High Battery (80%)
+        var lowIdx = html.IndexOf("Low Battery");
+        var midIdx = html.IndexOf("Mid Battery");
+        var highIdx = html.IndexOf("High Battery");
+        Assert.True(lowIdx < midIdx, "Low Battery should appear before Mid Battery");
+        Assert.True(midIdx < highIdx, "Mid Battery should appear before High Battery");
+    }
 }
