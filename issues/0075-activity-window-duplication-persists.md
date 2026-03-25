@@ -218,3 +218,14 @@ and `Detail.cshtml.cs` contain identical inline `JsonDocument.Parse` lambdas for
 Creating typed models (`MotionReadingValue`, `TemperatureReadingValue`, `BatteryReadingValue`)
 in `Hpoll.Core.Models` with `TryParse` methods would eliminate the inline JSON parsing at all
 consumption points and complement the `ActivitySummaryBuilder` extraction.
+
+### claude — 2026-03-25
+
+Comprehensive review (2026-03-25) confirms duplication scope has grown since last review.
+Battery status retrieval is now also duplicated: `LoadBatteryStatusAsync` in Detail.cshtml.cs
+(lines 411-461) vs `EmailRenderer.cs` (lines 178-214). Both query active hubs, battery devices,
+latest readings, and parse `battery_level`/`battery_state` from JSON, using slightly different
+query strategies. Both files also define their own `BatteryStatus` DTOs with overlapping fields.
+Total duplication now includes: activity windowing (~100 lines), battery status (~50 lines), and
+6+ JSON parsing lambdas. Recommended extraction scope should include battery status alongside
+the activity summary builder.

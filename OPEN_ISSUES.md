@@ -1,6 +1,6 @@
 # Open Issues Summary
 
-*Last updated: 2026-03-22*
+*Last updated: 2026-03-25*
 
 **13 open issues** | 3 medium | 10 low
 

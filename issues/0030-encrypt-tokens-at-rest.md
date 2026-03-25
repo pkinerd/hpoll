@@ -179,3 +179,11 @@ the `DatabaseBackupService` creates periodic `VACUUM INTO` copies under `data/ba
 plaintext tokens are replicated into backup files on the same volume. This increases the number of
 files containing sensitive data. The backup files are particularly concerning if external backup
 mechanisms (e.g., volume snapshots, NAS sync) are used, as tokens would propagate to external storage.
+
+### claude — 2026-03-25
+
+Comprehensive review (2026-03-25, security review) reconfirms medium severity. Also notes that
+`HubExtensions.cs` (lines 15-17) copies tokens between entities during hub operations, further
+spreading plaintext credentials through code paths. No new remediation options beyond those already
+discussed. The related issue #0048 (Data Protection key persistence) remains open and should be
+addressed alongside this issue if encryption is pursued.
