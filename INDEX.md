@@ -136,7 +136,7 @@
 | [0145](issues/0145-repetitive-customer-loading-detail-page.md) | Repetitive customer-loading boilerplate in Detail page handlers | closed | low | enhancement, code-quality |
 | [0146](issues/0146-getorcreatedeviceasync-untested.md) | GetOrCreateDeviceAsync edge case (null/empty HueDeviceId) not tested | closed | low | testing |
 | [0147](issues/0147-hueapiclient-cancellationtoken-untested.md) | HueApiClient CancellationToken propagation untested | closed | low | testing |
-| [0148](issues/0148-send-email-now-button.md) | Add 'Send Email Now' button to Customer Detail page | open | medium | feature, enhancement |
+| [0148](issues/0148-send-email-now-button.md) | Add 'Send Email Now' button to Customer Detail page | closed | medium | feature, enhancement |
 | [0150](issues/0150-backup-tests-cwd-mutation.md) | DatabaseBackupServiceTests mutates process-wide CWD creating test isolation risk | closed | low | testing, code-quality |
 | [0152](issues/0152-adminsettings-passwordhash-doc-inaccurate.md) | AdminSettings.PasswordHash doc comment says 'Null' but code checks IsNullOrEmpty | closed | low | documentation |
 | [0156](issues/0156-emailscheduler-tests-datetime-utcnow-flaky.md) | EmailSchedulerServiceTests use DateTime.UtcNow instead of mock TimeProvider | closed | low | testing, code-quality |

@@ -1,8 +1,8 @@
 # Open Issues Summary
 
-*Last updated: 2026-03-25*
+*Last updated: 2026-03-26*
 
-**13 open issues** | 3 medium | 10 low
+**12 open issues** | 2 medium | 10 low
 
 ## By Priority
 
@@ -10,7 +10,6 @@
 
 - [#0030](issues/0030-encrypt-tokens-at-rest.md) — Encrypt OAuth tokens at rest in SQLite database `security`
 - [#0075](issues/0075-activity-window-duplication-persists.md) — Activity window duplication persists — ActivitySummaryBuilder never extracted `enhancement` `code-quality`
-- [#0148](issues/0148-send-email-now-button.md) — Add 'Send Email Now' button to Customer Detail page `feature` `enhancement`
 
 ### Low
 
@@ -42,13 +41,8 @@
 - [#0075](issues/0075-activity-window-duplication-persists.md) — Activity window duplication persists — ActivitySummaryBuilder never extracted (medium)
 - [#0106](issues/0106-hueapiclient-intermediate-string-deserialization.md) — HueApiClient deserializes JSON via intermediate string allocation (low)
 - [#0121](issues/0121-admin-missing-exception-handler.md) — Admin portal lacks UseExceptionHandler middleware for production errors (low)
-- [#0148](issues/0148-send-email-now-button.md) — Add 'Send Email Now' button to Customer Detail page (medium)
 - [#0182](issues/0182-emailmasker-mask-null-nre.md) — EmailMasker.Mask(null) lacks null guard (low)
 - [#0184](issues/0184-hueapiclient-malformed-json-200.md) — HueApiClient logs unclear error on malformed JSON 200 response (low)
-
-### feature
-
-- [#0148](issues/0148-send-email-now-button.md) — Add 'Send Email Now' button to Customer Detail page (medium)
 
 ### performance
 

@@ -1,7 +1,8 @@
 ---
 id: 148
 title: "Add 'Send Email Now' button to Customer Detail page"
-status: open
+status: closed
+closed: 2026-03-26
 created: 2026-03-15
 author: claude
 labels: [feature, enhancement]
@@ -91,3 +92,9 @@ Add `SendEmailRequested` boolean to `Customer`. Admin sets it to `true`; Worker 
 | Deployment complexity | Higher | None | Moderate |
 
 ## Comments
+
+### claude — 2026-03-26
+
+Closed as won't do. An email preview has been added to the customer details screen instead,
+which addresses the core need (verifying email content) without requiring email sending
+infrastructure in the Admin portal.
