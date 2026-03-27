@@ -165,6 +165,7 @@ public class EmailRenderer : IEmailRenderer
                 TotalMotionSensors = motionSensorCount > 0 ? motionSensorCount : 1,
                 TotalMotionEvents = totalMotionEvents,
                 LatestLocations = latestLocations,
+                HasReadings = windowReadings.Count > 0,
                 TemperatureMin = temperatures.Count > 0 ? temperatures.First() : null,
                 TemperatureMedian = temperatures.Count > 0 ? temperatures[temperatures.Count / 2] : null,
                 TemperatureMax = temperatures.Count > 0 ? temperatures.Last() : null,
@@ -253,13 +254,24 @@ public class EmailRenderer : IEmailRenderer
         sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Motion Activity</td></tr>");
         foreach (var w in windows)
         {
-            var cappedEvents = Math.Min(w.TotalMotionEvents, 5);
-            var pct = cappedEvents * 20;
-            var color = w.TotalMotionEvents == 0 ? "#e74c3c"
+            string color, label;
+            int barWidth;
+            if (!w.HasReadings)
+            {
+                color = "#333333";
+                barWidth = 100;
+                label = "offline";
+            }
+            else
+            {
+                var cappedEvents = Math.Min(w.TotalMotionEvents, 5);
+                var pct = cappedEvents * 20;
+                color = w.TotalMotionEvents == 0 ? "#e74c3c"
                       : w.TotalMotionEvents == 1 ? "#f39c12"
                       : "#27ae60";
-            var barWidth = Math.Max(pct, 10);
-            var label = w.TotalMotionEvents >= 5 ? "5+" : w.TotalMotionEvents.ToString();
+                barWidth = Math.Max(pct, 10);
+                label = w.TotalMotionEvents >= 5 ? "5+" : w.TotalMotionEvents.ToString();
+            }
 
             sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;white-space:nowrap;\">{FormatLabelHtml(w)}</td>");
             sb.AppendLine($"<td><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"><tr>");
@@ -276,20 +288,31 @@ public class EmailRenderer : IEmailRenderer
         sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Location Diversity</td></tr>");
         foreach (var w in windows)
         {
-            var total = Math.Max(w.TotalMotionSensors, 1);
-            var active = Math.Min(w.DevicesWithMotion, total);
-            var pct = (int)(100.0 * active / total);
-            var color = active == 0 ? "#e74c3c"
+            string color, diversityLabel;
+            int barWidth;
+            if (!w.HasReadings)
+            {
+                color = "#333333";
+                barWidth = 100;
+                diversityLabel = "offline";
+            }
+            else
+            {
+                var total = Math.Max(w.TotalMotionSensors, 1);
+                var active = Math.Min(w.DevicesWithMotion, total);
+                var pct = (int)(100.0 * active / total);
+                color = active == 0 ? "#e74c3c"
                       : active == 1 ? "#f39c12"
                       : "#27ae60";
-            var barWidth = Math.Max(pct, 10);
+                barWidth = Math.Max(pct, 10);
+                diversityLabel = active >= 5 ? "5+" : active.ToString();
+            }
 
             sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;white-space:nowrap;\">{FormatLabelHtml(w)}</td>");
             sb.AppendLine($"<td><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"><tr>");
             sb.AppendLine($"<td style=\"background-color:{color};width:{barWidth}%;height:16px;border-radius:3px;\"></td>");
             sb.AppendLine($"<td style=\"width:{100 - barWidth}%;\"></td>");
             sb.AppendLine("</tr></table></td>");
-            var diversityLabel = active >= 5 ? "5+" : active.ToString();
             sb.AppendLine($"<td style=\"font-size:11px;color:#777;width:24px;text-align:right;\">{diversityLabel}</td>");
             sb.AppendLine("</tr>");
         }
@@ -357,11 +380,6 @@ public class EmailRenderer : IEmailRenderer
 
         sb.AppendLine("</td></tr>");
 
-        // Footer
-        sb.AppendLine("<tr><td style=\"background-color:#f8f9fa;padding:15px;text-align:center;font-size:11px;color:#999;\">");
-        sb.AppendLine("This is an automated summary from hpoll. No individual device or location details are included for privacy.");
-        sb.AppendLine("</td></tr>");
-
         sb.AppendLine("</table></body></html>");
         return sb.ToString();
     }
@@ -384,6 +402,7 @@ public class EmailRenderer : IEmailRenderer
         public int DevicesWithMotion { get; set; }
         public int TotalMotionSensors { get; set; }
         public int TotalMotionEvents { get; set; }
+        public bool HasReadings { get; set; }
         public List<LatestLocation> LatestLocations { get; set; } = new();
         public double? TemperatureMin { get; set; }
         public double? TemperatureMedian { get; set; }
