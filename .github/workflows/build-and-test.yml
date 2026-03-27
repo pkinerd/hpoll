@@ -115,10 +115,8 @@ jobs:
           TAGS="${IMAGE}:${SHORT_SHA},${IMAGE}:latest-any"
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             TAGS="${TAGS},${IMAGE}:latest"
-          elif [ "${{ github.ref }}" = "refs/heads/dev" ]; then
-            TAGS="${TAGS},${IMAGE}:dev"
           elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            TAGS="${TAGS},${IMAGE}:pr-${{ github.event.pull_request.number }}"
+            TAGS="${TAGS},${IMAGE}:dev,${IMAGE}:pr-${{ github.event.pull_request.number }}"
           else
             # Branch build — sanitize branch name for use as a tag
             BRANCH_TAG=$(echo "${{ github.ref_name }}" | sed 's|[^a-zA-Z0-9._-]|-|g' | cut -c1-128)
@@ -172,10 +170,8 @@ jobs:
           TAGS="${IMAGE}:${SHORT_SHA},${IMAGE}:latest-any"
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             TAGS="${TAGS},${IMAGE}:latest"
-          elif [ "${{ github.ref }}" = "refs/heads/dev" ]; then
-            TAGS="${TAGS},${IMAGE}:dev"
           elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            TAGS="${TAGS},${IMAGE}:pr-${{ github.event.pull_request.number }}"
+            TAGS="${TAGS},${IMAGE}:dev,${IMAGE}:pr-${{ github.event.pull_request.number }}"
           else
             # Branch build — sanitize branch name for use as a tag
             BRANCH_TAG=$(echo "${{ github.ref_name }}" | sed 's|[^a-zA-Z0-9._-]|-|g' | cut -c1-128)
