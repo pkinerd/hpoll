@@ -357,11 +357,6 @@ public class EmailRenderer : IEmailRenderer
 
         sb.AppendLine("</td></tr>");
 
-        // Footer
-        sb.AppendLine("<tr><td style=\"background-color:#f8f9fa;padding:15px;text-align:center;font-size:11px;color:#999;\">");
-        sb.AppendLine("This is an automated summary from hpoll. No individual device or location details are included for privacy.");
-        sb.AppendLine("</td></tr>");
-
         sb.AppendLine("</table></body></html>");
         return sb.ToString();
     }
