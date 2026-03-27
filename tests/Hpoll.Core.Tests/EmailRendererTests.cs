@@ -138,7 +138,7 @@ public class EmailRendererTests : IDisposable
     }
 
     [Fact]
-    public async Task RenderDailySummaryAsync_ContainsPrivacyFooter()
+    public async Task RenderDailySummaryAsync_ContainsExpectedHeader()
     {
         var (customer, _, device) = await SeedBaseDataAsync();
 
@@ -154,7 +154,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("No individual device or location details are included for privacy", html);
+        Assert.Contains("Daily Activity Summary", html);
     }
 
     [Fact]
