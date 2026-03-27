@@ -80,6 +80,40 @@ public class EmailRendererTests : IDisposable
     }
 
     [Fact]
+    public async Task RenderDailySummaryAsync_WithNoReadings_ShowsOfflineBar()
+    {
+        var (customer, _, _) = await SeedBaseDataAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // All windows have no readings — should show dark grey offline bars
+        Assert.Contains("#333333", html);
+        Assert.Contains("offline", html);
+        // Should not show red (which is reserved for windows with readings but no motion)
+        Assert.DoesNotContain("#e74c3c", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_WithReadingsButNoMotion_ShowsRedNotOffline()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+
+        // Temperature reading in one window — has readings, but no motion events
+        AddTemp(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 21.0);
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // The window with readings but no motion should show red, not offline
+        Assert.Contains("#e74c3c", html);
+        // Dark grey and "offline" may still appear for other windows with no readings at all,
+        // but should not be the only colour — red must be present for the window that has data
+        Assert.Contains("#333333", html);
+    }
+
+    [Fact]
     public async Task RenderDailySummaryAsync_WithMotionReadings_ShowsActivity()
     {
         var (customer, _, device) = await SeedBaseDataAsync();
