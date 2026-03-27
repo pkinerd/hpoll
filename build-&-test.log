@@ -1,0 +1,754 @@
+﻿2026-03-27T22:31:22.5006015Z Current runner version: '2.333.0'
+2026-03-27T22:31:22.5029108Z ##[group]Runner Image Provisioner
+2026-03-27T22:31:22.5029903Z Hosted Compute Agent
+2026-03-27T22:31:22.5030912Z Version: 20260213.493
+2026-03-27T22:31:22.5031644Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+2026-03-27T22:31:22.5032311Z Build Date: 2026-02-13T00:28:41Z
+2026-03-27T22:31:22.5032942Z Worker ID: {965d496a-733e-4bf6-85fe-1c19099038e8}
+2026-03-27T22:31:22.5033646Z Azure Region: westus
+2026-03-27T22:31:22.5034175Z ##[endgroup]
+2026-03-27T22:31:22.5035626Z ##[group]Operating System
+2026-03-27T22:31:22.5036270Z Ubuntu
+2026-03-27T22:31:22.5036733Z 24.04.4
+2026-03-27T22:31:22.5037170Z LTS
+2026-03-27T22:31:22.5037652Z ##[endgroup]
+2026-03-27T22:31:22.5038144Z ##[group]Runner Image
+2026-03-27T22:31:22.5038685Z Image: ubuntu-24.04
+2026-03-27T22:31:22.5039237Z Version: 20260323.65.1
+2026-03-27T22:31:22.5040602Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260323.65/images/ubuntu/Ubuntu2404-Readme.md
+2026-03-27T22:31:22.5042139Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260323.65
+2026-03-27T22:31:22.5043070Z ##[endgroup]
+2026-03-27T22:31:22.5044062Z ##[group]GITHUB_TOKEN Permissions
+2026-03-27T22:31:22.5045953Z Contents: read
+2026-03-27T22:31:22.5046509Z Metadata: read
+2026-03-27T22:31:22.5047100Z ##[endgroup]
+2026-03-27T22:31:22.5049473Z Secret source: Actions
+2026-03-27T22:31:22.5050177Z Prepare workflow directory
+2026-03-27T22:31:22.5371392Z Prepare all required actions
+2026-03-27T22:31:22.5408518Z Getting action download info
+2026-03-27T22:31:23.0786675Z Download action repository 'actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332' (SHA:692973e3d937129bcbf40652eb9f2f61becf3332)
+2026-03-27T22:31:23.2756491Z Download action repository 'actions/setup-dotnet@3e891b0cb619bf60e2c25674b222b8940e2c1c25' (SHA:3e891b0cb619bf60e2c25674b222b8940e2c1c25)
+2026-03-27T22:31:23.9733452Z Download action repository 'codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24' (SHA:18283e04ce6e62d37312384ff67231eb8fd56d24)
+2026-03-27T22:31:24.3492068Z Download action repository 'actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4' (SHA:330a01c490aca151604b8cf639adc76d48f6c5d4)
+2026-03-27T22:31:24.6905638Z Getting action download info
+2026-03-27T22:31:24.9335463Z Download action repository 'actions/github-script@v7' (SHA:f28e40c7f34bde8b3046d885e986cb6290c5673b)
+2026-03-27T22:31:25.5477394Z Getting action download info
+2026-03-27T22:31:25.8041318Z Complete job name: Build & Test
+2026-03-27T22:31:25.8787187Z ##[group]Run actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+2026-03-27T22:31:25.8787915Z with:
+2026-03-27T22:31:25.8788148Z   repository: pkinerd/hpoll
+2026-03-27T22:31:25.8788631Z   token: ***
+2026-03-27T22:31:25.8788855Z   ssh-strict: true
+2026-03-27T22:31:25.8789090Z   ssh-user: git
+2026-03-27T22:31:25.8789332Z   persist-credentials: true
+2026-03-27T22:31:25.8789604Z   clean: true
+2026-03-27T22:31:25.8789847Z   sparse-checkout-cone-mode: true
+2026-03-27T22:31:25.8790156Z   fetch-depth: 1
+2026-03-27T22:31:25.8790586Z   fetch-tags: false
+2026-03-27T22:31:25.8790831Z   show-progress: true
+2026-03-27T22:31:25.8791057Z   lfs: false
+2026-03-27T22:31:25.8791274Z   submodules: false
+2026-03-27T22:31:25.8791510Z   set-safe-directory: true
+2026-03-27T22:31:25.8792009Z ##[endgroup]
+2026-03-27T22:31:25.9875547Z Syncing repository: pkinerd/hpoll
+2026-03-27T22:31:25.9876883Z ##[group]Getting Git version info
+2026-03-27T22:31:25.9877372Z Working directory is '/home/runner/work/hpoll/hpoll'
+2026-03-27T22:31:25.9877956Z [command]/usr/bin/git version
+2026-03-27T22:31:25.9937483Z git version 2.53.0
+2026-03-27T22:31:25.9964185Z ##[endgroup]
+2026-03-27T22:31:25.9978153Z Temporarily overriding HOME='/home/runner/work/_temp/510c31ad-6573-4017-9e02-651f070c1c11' before making global git config changes
+2026-03-27T22:31:25.9979130Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-27T22:31:25.9989957Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hpoll/hpoll
+2026-03-27T22:31:26.0024351Z Deleting the contents of '/home/runner/work/hpoll/hpoll'
+2026-03-27T22:31:26.0028944Z ##[group]Initializing the repository
+2026-03-27T22:31:26.0034132Z [command]/usr/bin/git init /home/runner/work/hpoll/hpoll
+2026-03-27T22:31:26.0141580Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-03-27T22:31:26.0142835Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-03-27T22:31:26.0143962Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-03-27T22:31:26.0144786Z hint: call:
+2026-03-27T22:31:26.0145390Z hint:
+2026-03-27T22:31:26.0146048Z hint: 	git config --global init.defaultBranch <name>
+2026-03-27T22:31:26.0146691Z hint:
+2026-03-27T22:31:26.0147359Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-03-27T22:31:26.0147963Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-03-27T22:31:26.0148413Z hint:
+2026-03-27T22:31:26.0148645Z hint: 	git branch -m <name>
+2026-03-27T22:31:26.0148940Z hint:
+2026-03-27T22:31:26.0149495Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-03-27T22:31:26.0150436Z Initialized empty Git repository in /home/runner/work/hpoll/hpoll/.git/
+2026-03-27T22:31:26.0152043Z [command]/usr/bin/git remote add origin https://github.com/pkinerd/hpoll
+2026-03-27T22:31:26.0183297Z ##[endgroup]
+2026-03-27T22:31:26.0184024Z ##[group]Disabling automatic garbage collection
+2026-03-27T22:31:26.0187951Z [command]/usr/bin/git config --local gc.auto 0
+2026-03-27T22:31:26.0216926Z ##[endgroup]
+2026-03-27T22:31:26.0217332Z ##[group]Setting up auth
+2026-03-27T22:31:26.0226857Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-27T22:31:26.0257236Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-27T22:31:26.0551499Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-27T22:31:26.0579161Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-27T22:31:26.0792042Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-03-27T22:31:26.0831694Z ##[endgroup]
+2026-03-27T22:31:26.0832191Z ##[group]Fetching the repository
+2026-03-27T22:31:26.0839817Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +5333ce71aeab93b9c682b0206e9baf12609bff24:refs/remotes/origin/main
+2026-03-27T22:31:26.5917125Z From https://github.com/pkinerd/hpoll
+2026-03-27T22:31:26.5920782Z  * [new ref]         5333ce71aeab93b9c682b0206e9baf12609bff24 -> origin/main
+2026-03-27T22:31:26.5946853Z ##[endgroup]
+2026-03-27T22:31:26.5948345Z ##[group]Determining the checkout info
+2026-03-27T22:31:26.5949870Z ##[endgroup]
+2026-03-27T22:31:26.5956566Z [command]/usr/bin/git sparse-checkout disable
+2026-03-27T22:31:26.5994378Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-03-27T22:31:26.6023213Z ##[group]Checking out the ref
+2026-03-27T22:31:26.6027070Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-03-27T22:31:26.6169856Z Switched to a new branch 'main'
+2026-03-27T22:31:26.6172773Z branch 'main' set up to track 'origin/main'.
+2026-03-27T22:31:26.6179535Z ##[endgroup]
+2026-03-27T22:31:26.6213858Z [command]/usr/bin/git log -1 --format='%H'
+2026-03-27T22:31:26.6235425Z '5333ce71aeab93b9c682b0206e9baf12609bff24'
+2026-03-27T22:31:26.6429068Z ##[group]Run actions/setup-dotnet@3e891b0cb619bf60e2c25674b222b8940e2c1c25
+2026-03-27T22:31:26.6429494Z with:
+2026-03-27T22:31:26.6429712Z   dotnet-version: 8.0.x
+2026-03-27T22:31:26.6430132Z   cache: false
+2026-03-27T22:31:26.6430545Z ##[endgroup]
+2026-03-27T22:31:26.8130111Z [command]/home/runner/work/_actions/actions/setup-dotnet/3e891b0cb619bf60e2c25674b222b8940e2c1c25/externals/install-dotnet.sh --skip-non-versioned-files --runtime dotnet --channel LTS
+2026-03-27T22:31:27.1430694Z dotnet-install: .NET Core Runtime with version '10.0.5' is already installed.
+2026-03-27T22:31:27.1460592Z [command]/home/runner/work/_actions/actions/setup-dotnet/3e891b0cb619bf60e2c25674b222b8940e2c1c25/externals/install-dotnet.sh --skip-non-versioned-files --channel 8.0
+2026-03-27T22:31:27.3161307Z dotnet-install: .NET Core SDK with version '8.0.419' is already installed.
+2026-03-27T22:31:27.3313969Z ##[group]Run dotnet restore
+2026-03-27T22:31:27.3314336Z [36;1mdotnet restore[0m
+2026-03-27T22:31:27.3345669Z shell: /usr/bin/bash -e {0}
+2026-03-27T22:31:27.3345961Z env:
+2026-03-27T22:31:27.3346190Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:31:27.3346459Z ##[endgroup]
+2026-03-27T22:31:32.0642626Z   Determining projects to restore...
+2026-03-27T22:31:37.5063527Z   Restored /home/runner/work/hpoll/hpoll/src/Hpoll.Admin/Hpoll.Admin.csproj (in 4.46 sec).
+2026-03-27T22:31:37.7068644Z   Restored /home/runner/work/hpoll/hpoll/src/Hpoll.Data/Hpoll.Data.csproj (in 4.64 sec).
+2026-03-27T22:31:37.8453453Z   Restored /home/runner/work/hpoll/hpoll/src/Hpoll.Email/Hpoll.Email.csproj (in 25 ms).
+2026-03-27T22:31:37.8599092Z   Restored /home/runner/work/hpoll/hpoll/src/Hpoll.Worker/Hpoll.Worker.csproj (in 4.82 sec).
+2026-03-27T22:31:37.8822574Z   Restored /home/runner/work/hpoll/hpoll/src/Hpoll.Core/Hpoll.Core.csproj (in 16 ms).
+2026-03-27T22:31:38.1811927Z   Restored /home/runner/work/hpoll/hpoll/tests/Hpoll.Core.Tests/Hpoll.Core.Tests.csproj (in 310 ms).
+2026-03-27T22:31:38.1922818Z   Restored /home/runner/work/hpoll/hpoll/tests/Hpoll.Admin.Tests/Hpoll.Admin.Tests.csproj (in 5.16 sec).
+2026-03-27T22:31:38.1924253Z   Restored /home/runner/work/hpoll/hpoll/tests/Hpoll.Worker.Tests/Hpoll.Worker.Tests.csproj (in 330 ms).
+2026-03-27T22:31:38.2441852Z ##[group]Run dotnet build --no-restore -c Release \
+2026-03-27T22:31:38.2442307Z [36;1mdotnet build --no-restore -c Release \[0m
+2026-03-27T22:31:38.2442630Z [36;1m  -p:BuildBranch="main" \[0m
+2026-03-27T22:31:38.2442988Z [36;1m  -p:BuildCommit="5333ce71aeab93b9c682b0206e9baf12609bff24" \[0m
+2026-03-27T22:31:38.2443330Z [36;1m  -p:BuildNumber="268" \[0m
+2026-03-27T22:31:38.2443608Z [36;1m  -p:BuildRunId="23670255991" \[0m
+2026-03-27T22:31:38.2443881Z [36;1m  -p:PullRequestNumber=""[0m
+2026-03-27T22:31:38.2469485Z shell: /usr/bin/bash -e {0}
+2026-03-27T22:31:38.2469734Z env:
+2026-03-27T22:31:38.2469934Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:31:38.2470168Z ##[endgroup]
+2026-03-27T22:31:44.5277905Z   Hpoll.Core -> /home/runner/work/hpoll/hpoll/src/Hpoll.Core/bin/Release/net8.0/Hpoll.Core.dll
+2026-03-27T22:31:45.4339197Z   Hpoll.Data -> /home/runner/work/hpoll/hpoll/src/Hpoll.Data/bin/Release/net8.0/Hpoll.Data.dll
+2026-03-27T22:31:45.9666943Z   Hpoll.Email -> /home/runner/work/hpoll/hpoll/src/Hpoll.Email/bin/Release/net8.0/Hpoll.Email.dll
+2026-03-27T22:31:46.8234332Z   Hpoll.Worker -> /home/runner/work/hpoll/hpoll/src/Hpoll.Worker/bin/Release/net8.0/Hpoll.Worker.dll
+2026-03-27T22:31:50.7363113Z   Hpoll.Admin -> /home/runner/work/hpoll/hpoll/src/Hpoll.Admin/bin/Release/net8.0/Hpoll.Admin.dll
+2026-03-27T22:31:51.3054449Z   Hpoll.Core.Tests -> /home/runner/work/hpoll/hpoll/tests/Hpoll.Core.Tests/bin/Release/net8.0/Hpoll.Core.Tests.dll
+2026-03-27T22:31:52.5233325Z   Hpoll.Worker.Tests -> /home/runner/work/hpoll/hpoll/tests/Hpoll.Worker.Tests/bin/Release/net8.0/Hpoll.Worker.Tests.dll
+2026-03-27T22:31:53.4266397Z   Hpoll.Admin.Tests -> /home/runner/work/hpoll/hpoll/tests/Hpoll.Admin.Tests/bin/Release/net8.0/Hpoll.Admin.Tests.dll
+2026-03-27T22:31:53.4898048Z 
+2026-03-27T22:31:53.4900971Z Build succeeded.
+2026-03-27T22:31:53.4904165Z     0 Warning(s)
+2026-03-27T22:31:53.4904559Z     0 Error(s)
+2026-03-27T22:31:53.4904753Z 
+2026-03-27T22:31:53.4905055Z Time Elapsed 00:00:14.99
+2026-03-27T22:31:53.5184200Z ##[group]Run dotnet test --no-build -c Release \
+2026-03-27T22:31:53.5184602Z [36;1mdotnet test --no-build -c Release \[0m
+2026-03-27T22:31:53.5184894Z [36;1m  --settings coverlet.runsettings \[0m
+2026-03-27T22:31:53.5185183Z [36;1m  --collect:"XPlat Code Coverage" \[0m
+2026-03-27T22:31:53.5185539Z [36;1m  --logger "junit;LogFilePath=TestResults/{assembly}.junit.xml" \[0m
+2026-03-27T22:31:53.5185911Z [36;1m  --results-directory TestResults[0m
+2026-03-27T22:31:53.5211691Z shell: /usr/bin/bash -e {0}
+2026-03-27T22:31:53.5211927Z env:
+2026-03-27T22:31:53.5212104Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:31:53.5212327Z ##[endgroup]
+2026-03-27T22:31:54.5867031Z Test run for /home/runner/work/hpoll/hpoll/tests/Hpoll.Core.Tests/bin/Release/net8.0/Hpoll.Core.Tests.dll (.NETCoreApp,Version=v8.0)
+2026-03-27T22:31:54.7375383Z Test run for /home/runner/work/hpoll/hpoll/tests/Hpoll.Worker.Tests/bin/Release/net8.0/Hpoll.Worker.Tests.dll (.NETCoreApp,Version=v8.0)
+2026-03-27T22:31:54.7401911Z Test run for /home/runner/work/hpoll/hpoll/tests/Hpoll.Admin.Tests/bin/Release/net8.0/Hpoll.Admin.Tests.dll (.NETCoreApp,Version=v8.0)
+2026-03-27T22:31:55.0882830Z A total of 1 test files matched the specified pattern.
+2026-03-27T22:31:55.0887092Z A total of 1 test files matched the specified pattern.
+2026-03-27T22:31:55.0890839Z A total of 1 test files matched the specified pattern.
+2026-03-27T22:32:01.6442463Z Results File: TestResults/Hpoll.Core.Tests.junit.xml
+2026-03-27T22:32:01.6442952Z 
+2026-03-27T22:32:01.6545558Z Passed!  - Failed:     0, Passed:   150, Skipped:     0, Total:   150, Duration: 1 s - Hpoll.Core.Tests.dll (net8.0)
+2026-03-27T22:32:06.6048367Z Results File: TestResults/Hpoll.Admin.Tests.junit.xml
+2026-03-27T22:32:06.6052379Z 
+2026-03-27T22:32:06.6096674Z Passed!  - Failed:     0, Passed:   232, Skipped:     0, Total:   232, Duration: 5 s - Hpoll.Admin.Tests.dll (net8.0)
+2026-03-27T22:32:51.2834583Z Results File: TestResults/Hpoll.Worker.Tests.junit.xml
+2026-03-27T22:32:51.2838947Z 
+2026-03-27T22:32:51.2875469Z Passed!  - Failed:     0, Passed:   135, Skipped:     0, Total:   135, Duration: 51 s - Hpoll.Worker.Tests.dll (net8.0)
+2026-03-27T22:32:51.4900558Z 
+2026-03-27T22:32:51.4907232Z Attachments:
+2026-03-27T22:32:51.4909297Z   /home/runner/work/hpoll/hpoll/TestResults/37a9c48f-1bbc-41d3-9b45-c5f7383d365c/coverage.cobertura.xml
+2026-03-27T22:32:51.4910883Z   /home/runner/work/hpoll/hpoll/TestResults/f27ff09c-55a1-4a0d-9d63-dfa820dea184/coverage.cobertura.xml
+2026-03-27T22:32:51.4911647Z   /home/runner/work/hpoll/hpoll/TestResults/1a5309d6-a299-43e6-8e02-f1b258843bf9/coverage.cobertura.xml
+2026-03-27T22:32:51.5704812Z ##[group]Run codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24
+2026-03-27T22:32:51.5705191Z with:
+2026-03-27T22:32:51.5705484Z   token: ***
+2026-03-27T22:32:51.5705664Z   directory: TestResults
+2026-03-27T22:32:51.5705859Z   override_branch: main
+2026-03-27T22:32:51.5706051Z   fail_ci_if_error: false
+2026-03-27T22:32:51.5706248Z   disable_file_fixes: false
+2026-03-27T22:32:51.5706463Z   disable_search: false
+2026-03-27T22:32:51.5706658Z   disable_safe_directory: false
+2026-03-27T22:32:51.5706864Z   disable_telem: false
+2026-03-27T22:32:51.5707052Z   dry_run: false
+2026-03-27T22:32:51.5707218Z   git_service: github
+2026-03-27T22:32:51.5707402Z   gcov_executable: gcov
+2026-03-27T22:32:51.5707601Z   handle_no_reports_found: false
+2026-03-27T22:32:51.5707819Z   recurse_submodules: false
+2026-03-27T22:32:51.5708047Z   run_command: upload-coverage
+2026-03-27T22:32:51.5708265Z   skip_validation: false
+2026-03-27T22:32:51.5708469Z   use_legacy_upload_endpoint: false
+2026-03-27T22:32:51.5708711Z   use_oidc: false
+2026-03-27T22:32:51.5708883Z   use_pypi: false
+2026-03-27T22:32:51.5709049Z   verbose: false
+2026-03-27T22:32:51.5709205Z   version: latest
+2026-03-27T22:32:51.5709368Z env:
+2026-03-27T22:32:51.5709527Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:51.5709743Z ##[endgroup]
+2026-03-27T22:32:51.5791585Z ##[group]Run CC_ACTION_VERSION=$(cat ${GITHUB_ACTION_PATH}/src/version)
+2026-03-27T22:32:51.5792173Z [36;1mCC_ACTION_VERSION=$(cat ${GITHUB_ACTION_PATH}/src/version)[0m
+2026-03-27T22:32:51.5792600Z [36;1mecho -e "\033[0;32m==>\033[0m Running Action version $CC_ACTION_VERSION"[0m
+2026-03-27T22:32:51.5819450Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:51.5819763Z env:
+2026-03-27T22:32:51.5819939Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:51.5820155Z ##[endgroup]
+2026-03-27T22:32:51.5878197Z [0;32m==>[0m Running Action version 5.4.3
+2026-03-27T22:32:51.5915667Z ##[group]Run git config --global --add safe.directory "/home/runner/work/hpoll/hpoll"
+2026-03-27T22:32:51.5916215Z [36;1mgit config --global --add safe.directory "/home/runner/work/hpoll/hpoll"[0m
+2026-03-27T22:32:51.5916681Z [36;1mgit config --global --add safe.directory "$GITHUB_WORKSPACE"[0m
+2026-03-27T22:32:51.5941610Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:51.5941927Z env:
+2026-03-27T22:32:51.5942102Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:51.5942338Z ##[endgroup]
+2026-03-27T22:32:51.6057823Z ##[group]Run CC_FORK="false"
+2026-03-27T22:32:51.6058250Z [36;1mCC_FORK="false"[0m
+2026-03-27T22:32:51.6059221Z [36;1mif [ -n "$GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME" ] && [ "$GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME" != "$GITHUB_REPOSITORY" ];[0m
+2026-03-27T22:32:51.6060487Z [36;1mthen[0m
+2026-03-27T22:32:51.6060896Z [36;1m  echo -e "\033[0;32m==>\033[0m Fork detected"[0m
+2026-03-27T22:32:51.6061412Z [36;1m  CC_FORK="true"[0m
+2026-03-27T22:32:51.6061763Z [36;1mfi[0m
+2026-03-27T22:32:51.6062128Z [36;1mecho "CC_FORK=$CC_FORK" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:51.6091121Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:51.6091446Z env:
+2026-03-27T22:32:51.6091616Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:51.6091866Z   GITHUB_EVENT_PULL_REQUEST_HEAD_LABEL: 
+2026-03-27T22:32:51.6092145Z   GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME: 
+2026-03-27T22:32:51.6092441Z   GITHUB_REPOSITORY: pkinerd/hpoll
+2026-03-27T22:32:51.6092665Z ##[endgroup]
+2026-03-27T22:32:51.6191227Z ##[group]Run actions/github-script@v7
+2026-03-27T22:32:51.6191476Z with:
+2026-03-27T22:32:51.6192044Z   script: if (process.env.CC_USE_OIDC === 'true' && process.env.CC_FORK != 'true') {
+  const id_token = await core.getIDToken(process.env.CC_OIDC_AUDIENCE)
+  return id_token
+}
+
+2026-03-27T22:32:51.6192821Z   github-token: ***
+2026-03-27T22:32:51.6193061Z   debug: false
+2026-03-27T22:32:51.6193268Z   user-agent: actions/github-script
+2026-03-27T22:32:51.6193509Z   result-encoding: json
+2026-03-27T22:32:51.6193901Z   retries: 0
+2026-03-27T22:32:51.6194111Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-03-27T22:32:51.6194362Z env:
+2026-03-27T22:32:51.6194529Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:51.6194740Z   CC_FORK: false
+2026-03-27T22:32:51.6194930Z   CC_OIDC_AUDIENCE: https://codecov.io
+2026-03-27T22:32:51.6195163Z   CC_USE_OIDC: false
+2026-03-27T22:32:51.6195335Z ##[endgroup]
+2026-03-27T22:32:51.7122164Z ##[group]Run if [ "false" == 'true' ] && [ "$CC_FORK" != 'true' ];
+2026-03-27T22:32:51.7122580Z [36;1mif [ "false" == 'true' ] && [ "$CC_FORK" != 'true' ];[0m
+2026-03-27T22:32:51.7122881Z [36;1mthen[0m
+2026-03-27T22:32:51.7123103Z [36;1m  echo "CC_TOKEN=$CC_OIDC_TOKEN" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:51.7123399Z [36;1melif [ -n "" ];[0m
+2026-03-27T22:32:51.7123589Z [36;1mthen[0m
+2026-03-27T22:32:51.7123803Z [36;1m  echo -e "\033[0;32m==>\033[0m Token set from env"[0m
+2026-03-27T22:32:51.7124102Z [36;1m    echo "CC_TOKEN=" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:51.7124346Z [36;1melse[0m
+2026-03-27T22:32:51.7124678Z [36;1m  if [ -n "***" ];[0m
+2026-03-27T22:32:51.7124878Z [36;1m  then[0m
+2026-03-27T22:32:51.7125102Z [36;1m    echo -e "\033[0;32m==>\033[0m Token set from input"[0m
+2026-03-27T22:32:51.7125509Z [36;1m    CC_TOKEN=$(echo "***" | tr -d '\n')[0m
+2026-03-27T22:32:51.7125805Z [36;1m    echo "CC_TOKEN=$CC_TOKEN" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:51.7126217Z [36;1m  fi[0m
+2026-03-27T22:32:51.7126377Z [36;1mfi[0m
+2026-03-27T22:32:51.7152052Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:51.7152364Z env:
+2026-03-27T22:32:51.7152532Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:51.7152753Z   CC_FORK: false
+2026-03-27T22:32:51.7152917Z   CC_OIDC_TOKEN: 
+2026-03-27T22:32:51.7153119Z   CC_OIDC_AUDIENCE: https://codecov.io
+2026-03-27T22:32:51.7153365Z ##[endgroup]
+2026-03-27T22:32:51.7198543Z [0;32m==>[0m Token set from input
+2026-03-27T22:32:51.7234608Z ##[group]Run if [ -z "$CC_BRANCH" ] && [ -z "$CC_TOKEN" ] && [ "$CC_FORK" == 'true' ]
+2026-03-27T22:32:51.7235089Z [36;1mif [ -z "$CC_BRANCH" ] && [ -z "$CC_TOKEN" ] && [ "$CC_FORK" == 'true' ][0m
+2026-03-27T22:32:51.7235422Z [36;1mthen[0m
+2026-03-27T22:32:51.7235803Z [36;1m  echo -e "\033[0;32m==>\033[0m Fork detected, setting branch to $GITHUB_EVENT_PULL_REQUEST_HEAD_LABEL"[0m
+2026-03-27T22:32:51.7236310Z [36;1m  TOKENLESS="$GITHUB_EVENT_PULL_REQUEST_HEAD_LABEL"[0m
+2026-03-27T22:32:51.7236667Z [36;1m  CC_BRANCH="$GITHUB_EVENT_PULL_REQUEST_HEAD_LABEL"[0m
+2026-03-27T22:32:51.7236994Z [36;1m  echo "TOKENLESS=$TOKENLESS" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:51.7237253Z [36;1mfi[0m
+2026-03-27T22:32:51.7237412Z [36;1m[0m
+2026-03-27T22:32:51.7237608Z [36;1mecho "CC_BRANCH=$CC_BRANCH" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:51.7260957Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:51.7261262Z env:
+2026-03-27T22:32:51.7261435Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:51.7261655Z   CC_FORK: false
+2026-03-27T22:32:51.7261923Z   CC_TOKEN: ***
+2026-03-27T22:32:51.7262091Z   CC_BRANCH: main
+2026-03-27T22:32:51.7262277Z   GITHUB_EVENT_PULL_REQUEST_HEAD_LABEL: 
+2026-03-27T22:32:51.7262550Z   GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME: 
+2026-03-27T22:32:51.7262825Z   GITHUB_REPOSITORY: pkinerd/hpoll
+2026-03-27T22:32:51.7263051Z ##[endgroup]
+2026-03-27T22:32:51.7324107Z ##[group]Run if [ -z "$CC_SHA" ];
+2026-03-27T22:32:51.7324388Z [36;1mif [ -z "$CC_SHA" ];[0m
+2026-03-27T22:32:51.7324600Z [36;1mthen[0m
+2026-03-27T22:32:51.7324821Z [36;1m  CC_SHA="$GITHUB_EVENT_PULL_REQUEST_HEAD_SHA"[0m
+2026-03-27T22:32:51.7325094Z [36;1mfi[0m
+2026-03-27T22:32:51.7325361Z [36;1mif [ -z "$CC_PR" ] && [ "${GITHUB_EVENT_NAME}" == "pull_request_target" ];[0m
+2026-03-27T22:32:51.7325686Z [36;1mthen[0m
+2026-03-27T22:32:51.7325872Z [36;1m  CC_PR="$GITHUB_EVENT_NUMBER"[0m
+2026-03-27T22:32:51.7326102Z [36;1mfi[0m
+2026-03-27T22:32:51.7326252Z [36;1m[0m
+2026-03-27T22:32:51.7326439Z [36;1mecho "CC_SHA=$CC_SHA" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:51.7326860Z [36;1mecho "CC_PR=$CC_PR" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:51.7349797Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:51.7350111Z env:
+2026-03-27T22:32:51.7350544Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:51.7350770Z   CC_FORK: false
+2026-03-27T22:32:51.7351042Z   CC_TOKEN: ***
+2026-03-27T22:32:51.7351214Z   CC_BRANCH: main
+2026-03-27T22:32:51.7351383Z   CC_PR: 
+2026-03-27T22:32:51.7351529Z   CC_SHA: 
+2026-03-27T22:32:51.7351685Z   GITHUB_EVENT_NAME: push
+2026-03-27T22:32:51.7351890Z   GITHUB_EVENT_NUMBER: 
+2026-03-27T22:32:51.7352099Z   GITHUB_EVENT_PULL_REQUEST_HEAD_SHA: 
+2026-03-27T22:32:51.7352360Z ##[endgroup]
+2026-03-27T22:32:51.7418943Z ##[group]Run ${GITHUB_ACTION_PATH}/dist/codecov.sh
+2026-03-27T22:32:51.7419297Z [36;1m${GITHUB_ACTION_PATH}/dist/codecov.sh[0m
+2026-03-27T22:32:51.7442792Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:51.7443102Z env:
+2026-03-27T22:32:51.7443276Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:51.7443497Z   CC_FORK: false
+2026-03-27T22:32:51.7443765Z   CC_TOKEN: ***
+2026-03-27T22:32:51.7443945Z   CC_BRANCH: main
+2026-03-27T22:32:51.7444109Z   CC_SHA: 
+2026-03-27T22:32:51.7444258Z   CC_PR: 
+2026-03-27T22:32:51.7444409Z   CC_BASE_SHA: 
+2026-03-27T22:32:51.7444563Z   CC_BINARY: 
+2026-03-27T22:32:51.7444719Z   CC_BUILD: 
+2026-03-27T22:32:51.7444867Z   CC_BUILD_URL: 
+2026-03-27T22:32:51.7445183Z   CC_CODE: 
+2026-03-27T22:32:51.7445341Z   CC_DIR: TestResults
+2026-03-27T22:32:51.7445538Z   CC_DISABLE_FILE_FIXES: false
+2026-03-27T22:32:51.7445755Z   CC_DISABLE_SEARCH: false
+2026-03-27T22:32:51.7445954Z   CC_DISABLE_TELEM: false
+2026-03-27T22:32:51.7446144Z   CC_DRY_RUN: false
+2026-03-27T22:32:51.7446324Z   CC_ENTERPRISE_URL: 
+2026-03-27T22:32:51.7446500Z   CC_ENV: 
+2026-03-27T22:32:51.7446653Z   CC_EXCLUDES: 
+2026-03-27T22:32:51.7446820Z   CC_FAIL_ON_ERROR: false
+2026-03-27T22:32:51.7447005Z   CC_FILES: 
+2026-03-27T22:32:51.7447156Z   CC_FLAGS: 
+2026-03-27T22:32:51.7447299Z   CC_FORCE: 
+2026-03-27T22:32:51.7447454Z   CC_GCOV_ARGS: 
+2026-03-27T22:32:51.7447621Z   CC_GCOV_EXECUTABLE: gcov
+2026-03-27T22:32:51.7447813Z   CC_GCOV_IGNORE: 
+2026-03-27T22:32:51.7447981Z   CC_GCOV_INCLUDE: 
+2026-03-27T22:32:51.7448152Z   CC_GIT_SERVICE: github
+2026-03-27T22:32:51.7448355Z   CC_HANDLE_NO_REPORTS_FOUND: false
+2026-03-27T22:32:51.7448572Z   CC_JOB_CODE: 
+2026-03-27T22:32:51.7448738Z   CC_LEGACY: false
+2026-03-27T22:32:51.7448907Z   CC_NAME: 
+2026-03-27T22:32:51.7449058Z   CC_NETWORK_FILTER: 
+2026-03-27T22:32:51.7449238Z   CC_NETWORK_PREFIX: 
+2026-03-27T22:32:51.7449414Z   CC_NETWORK_ROOT_FOLDER: 
+2026-03-27T22:32:51.7449598Z   CC_OS: 
+2026-03-27T22:32:51.7449748Z   CC_PARENT_SHA: 
+2026-03-27T22:32:51.7449911Z   CC_PLUGINS: 
+2026-03-27T22:32:51.7450085Z   CC_RECURSE_SUBMODULES: false
+2026-03-27T22:32:51.7450510Z   CC_REPORT_TYPE: 
+2026-03-27T22:32:51.7450707Z   CC_RUN_CMD: upload-coverage
+2026-03-27T22:32:51.7450912Z   CC_SERVICE: github
+2026-03-27T22:32:51.7451092Z   CC_SKIP_VALIDATION: false
+2026-03-27T22:32:51.7451289Z   CC_SLUG: 
+2026-03-27T22:32:51.7451439Z   CC_SWIFT_PROJECT: 
+2026-03-27T22:32:51.7451645Z   CC_USE_PYPI: false
+2026-03-27T22:32:51.7451814Z   CC_VERBOSE: false
+2026-03-27T22:32:51.7451984Z   CC_VERSION: latest
+2026-03-27T22:32:51.7452147Z   CC_YML_PATH: 
+2026-03-27T22:32:51.7452312Z ##[endgroup]
+2026-03-27T22:32:51.7515563Z      _____          _
+2026-03-27T22:32:51.7515899Z     / ____|        | |
+2026-03-27T22:32:51.7516243Z    | |     ___   __| | ___  ___ _____   __
+2026-03-27T22:32:51.7516580Z    | |    / _ \ / _` |/ _ \/ __/ _ \ \ / /
+2026-03-27T22:32:51.7516826Z    | |___| (_) | (_| |  __/ (_| (_) \ V /
+2026-03-27T22:32:51.7517063Z     \_____\___/ \__,_|\___|\___\___/ \_/
+2026-03-27T22:32:51.7517470Z                            [0;31m Wrapper-0.2.1[0m
+2026-03-27T22:32:51.7517761Z                                   
+2026-03-27T22:32:51.7571720Z [0;32m==>[0m Detected [0;36mlinux[0m
+2026-03-27T22:32:51.7572275Z [0;32m ->[0m Downloading [0;36mhttps://cli.codecov.io/latest/linux/codecov[0m
+2026-03-27T22:32:51.7621516Z   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+2026-03-27T22:32:51.7622278Z                                  Dload  Upload   Total   Spent    Left  Speed
+2026-03-27T22:32:51.7622641Z 
+2026-03-27T22:32:51.9193079Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+2026-03-27T22:32:51.9194095Z 100 10.6M  100 10.6M    0     0  67.7M      0 --:--:-- --:--:-- --:--:-- 67.8M
+2026-03-27T22:32:51.9230083Z [0;32m==>[0m Finishing downloading [0;36mlinux:latest[0m
+2026-03-27T22:32:51.9681493Z       Version: [0;36mv11.2.8[0m
+2026-03-27T22:32:51.9681971Z  
+2026-03-27T22:32:52.2674444Z gpg: directory '/home/runner/.gnupg' created
+2026-03-27T22:32:52.2676416Z gpg: keybox '/home/runner/.gnupg/pubring.kbx' created
+2026-03-27T22:32:52.2688456Z gpg: /home/runner/.gnupg/trustdb.gpg: trustdb created
+2026-03-27T22:32:52.2689429Z gpg: key 806BB28AED779869: public key "Codecov Uploader (Codecov Uploader Verification Key) <security@codecov.io>" imported
+2026-03-27T22:32:52.2919778Z gpg: Total number processed: 1
+2026-03-27T22:32:52.2920084Z gpg:               imported: 1
+2026-03-27T22:32:52.2925043Z [0;32m==>[0m Verifying GPG signature integrity
+2026-03-27T22:32:52.2925761Z [0;32m ->[0m Downloading [0;36mhttps://cli.codecov.io/latest/linux/codecov.SHA256SUM[0m
+2026-03-27T22:32:52.2926681Z [0;32m ->[0m Downloading [0;36mhttps://cli.codecov.io/latest/linux/codecov.SHA256SUM.sig[0m
+2026-03-27T22:32:52.2927564Z  
+2026-03-27T22:32:52.3771159Z gpg: Signature made Thu Mar 26 18:58:26 2026 UTC
+2026-03-27T22:32:52.3771909Z gpg:                using RSA key 27034E7FDB850E0BBC2C62FF806BB28AED779869
+2026-03-27T22:32:52.3774116Z gpg: Good signature from "Codecov Uploader (Codecov Uploader Verification Key) <security@codecov.io>" [unknown]
+2026-03-27T22:32:52.3775206Z gpg: WARNING: This key is not certified with a trusted signature!
+2026-03-27T22:32:52.3775997Z gpg:          There is no indication that the signature belongs to the owner.
+2026-03-27T22:32:52.3776866Z Primary key fingerprint: 2703 4E7F DB85 0E0B BC2C  62FF 806B B28A ED77 9869
+2026-03-27T22:32:52.4532579Z codecov: OK
+2026-03-27T22:32:52.4542196Z [0;32m==>[0m CLI integrity verified
+2026-03-27T22:32:52.4542431Z 
+2026-03-27T22:32:52.4617750Z [0;32m ->[0m Token of length 36 detected
+2026-03-27T22:32:52.5171890Z [0;32m==>[0m Running upload-coverage
+2026-03-27T22:32:52.5181236Z       [0;36m./codecov  upload-coverage -t <redacted> --git-service github --branch main --dir TestResults --gcov-executable gcov[0m
+2026-03-27T22:32:52.8681013Z info - 2026-03-27 22:32:52,867 -- ci service found: github-actions
+2026-03-27T22:32:52.9100037Z warning - 2026-03-27 22:32:52,909 -- xcrun is not installed or can't be found.
+2026-03-27T22:32:52.9110230Z warning - 2026-03-27 22:32:52,910 -- No gcov data found.
+2026-03-27T22:32:52.9114177Z warning - 2026-03-27 22:32:52,911 -- coverage.py is not installed or can't be found.
+2026-03-27T22:32:52.9272816Z info - 2026-03-27 22:32:52,927 -- Found 3 coverage files to report
+2026-03-27T22:32:52.9273888Z info - 2026-03-27 22:32:52,927 -- > TestResults/37a9c48f-1bbc-41d3-9b45-c5f7383d365c/coverage.cobertura.xml
+2026-03-27T22:32:52.9275150Z info - 2026-03-27 22:32:52,927 -- > TestResults/f27ff09c-55a1-4a0d-9d63-dfa820dea184/coverage.cobertura.xml
+2026-03-27T22:32:52.9276385Z info - 2026-03-27 22:32:52,927 -- > TestResults/1a5309d6-a299-43e6-8e02-f1b258843bf9/coverage.cobertura.xml
+2026-03-27T22:32:53.4064905Z info - 2026-03-27 22:32:53,406 -- Your upload is now queued for processing. When finished, results will be available at: https://app.codecov.io/github/pkinerd/hpoll/commit/5333ce71aeab93b9c682b0206e9baf12609bff24
+2026-03-27T22:32:53.4066659Z info - 2026-03-27 22:32:53,406 -- Sending upload (72981 bytes) to storage
+2026-03-27T22:32:53.7121621Z info - 2026-03-27 22:32:53,711 -- Upload queued for processing complete
+2026-03-27T22:32:53.8489743Z ##[group]Run codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24
+2026-03-27T22:32:53.8490138Z with:
+2026-03-27T22:32:53.8490858Z   token: ***
+2026-03-27T22:32:53.8491061Z   files: TestResults/*.junit.xml
+2026-03-27T22:32:53.8491295Z   report_type: test_results
+2026-03-27T22:32:53.8491505Z   override_branch: main
+2026-03-27T22:32:53.8491696Z   fail_ci_if_error: false
+2026-03-27T22:32:53.8491903Z   disable_file_fixes: false
+2026-03-27T22:32:53.8492105Z   disable_search: false
+2026-03-27T22:32:53.8492314Z   disable_safe_directory: false
+2026-03-27T22:32:53.8492530Z   disable_telem: false
+2026-03-27T22:32:53.8492719Z   dry_run: false
+2026-03-27T22:32:53.8492893Z   git_service: github
+2026-03-27T22:32:53.8493087Z   gcov_executable: gcov
+2026-03-27T22:32:53.8493288Z   handle_no_reports_found: false
+2026-03-27T22:32:53.8493516Z   recurse_submodules: false
+2026-03-27T22:32:53.8493736Z   run_command: upload-coverage
+2026-03-27T22:32:53.8493957Z   skip_validation: false
+2026-03-27T22:32:53.8494195Z   use_legacy_upload_endpoint: false
+2026-03-27T22:32:53.8494420Z   use_oidc: false
+2026-03-27T22:32:53.8494594Z   use_pypi: false
+2026-03-27T22:32:53.8494761Z   verbose: false
+2026-03-27T22:32:53.8494931Z   version: latest
+2026-03-27T22:32:53.8495094Z env:
+2026-03-27T22:32:53.8495259Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:53.8495474Z   CC_FORK: false
+2026-03-27T22:32:53.8495684Z   CC_TOKEN: ***
+2026-03-27T22:32:53.8495851Z   CC_BRANCH: main
+2026-03-27T22:32:53.8496015Z   CC_SHA: 
+2026-03-27T22:32:53.8496163Z   CC_PR: 
+2026-03-27T22:32:53.8496501Z ##[endgroup]
+2026-03-27T22:32:53.8513258Z ##[group]Run CC_ACTION_VERSION=$(cat ${GITHUB_ACTION_PATH}/src/version)
+2026-03-27T22:32:53.8513708Z [36;1mCC_ACTION_VERSION=$(cat ${GITHUB_ACTION_PATH}/src/version)[0m
+2026-03-27T22:32:53.8514137Z [36;1mecho -e "\033[0;32m==>\033[0m Running Action version $CC_ACTION_VERSION"[0m
+2026-03-27T22:32:53.8539622Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:53.8539936Z env:
+2026-03-27T22:32:53.8540104Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:53.8540547Z   CC_FORK: false
+2026-03-27T22:32:53.8540829Z   CC_TOKEN: ***
+2026-03-27T22:32:53.8541008Z   CC_BRANCH: main
+2026-03-27T22:32:53.8541181Z   CC_SHA: 
+2026-03-27T22:32:53.8541326Z   CC_PR: 
+2026-03-27T22:32:53.8541480Z ##[endgroup]
+2026-03-27T22:32:53.8598617Z [0;32m==>[0m Running Action version 5.4.3
+2026-03-27T22:32:53.8617556Z ##[group]Run git config --global --add safe.directory "/home/runner/work/hpoll/hpoll"
+2026-03-27T22:32:53.8618093Z [36;1mgit config --global --add safe.directory "/home/runner/work/hpoll/hpoll"[0m
+2026-03-27T22:32:53.8618563Z [36;1mgit config --global --add safe.directory "$GITHUB_WORKSPACE"[0m
+2026-03-27T22:32:53.8641866Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:53.8642174Z env:
+2026-03-27T22:32:53.8642341Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:53.8642561Z   CC_FORK: false
+2026-03-27T22:32:53.8642808Z   CC_TOKEN: ***
+2026-03-27T22:32:53.8642985Z   CC_BRANCH: main
+2026-03-27T22:32:53.8643155Z   CC_SHA: 
+2026-03-27T22:32:53.8643300Z   CC_PR: 
+2026-03-27T22:32:53.8643452Z ##[endgroup]
+2026-03-27T22:32:53.8731510Z ##[group]Run CC_FORK="false"
+2026-03-27T22:32:53.8731741Z [36;1mCC_FORK="false"[0m
+2026-03-27T22:32:53.8732261Z [36;1mif [ -n "$GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME" ] && [ "$GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME" != "$GITHUB_REPOSITORY" ];[0m
+2026-03-27T22:32:53.8732812Z [36;1mthen[0m
+2026-03-27T22:32:53.8733019Z [36;1m  echo -e "\033[0;32m==>\033[0m Fork detected"[0m
+2026-03-27T22:32:53.8733298Z [36;1m  CC_FORK="true"[0m
+2026-03-27T22:32:53.8733483Z [36;1mfi[0m
+2026-03-27T22:32:53.8733673Z [36;1mecho "CC_FORK=$CC_FORK" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:53.8756977Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:53.8757285Z env:
+2026-03-27T22:32:53.8757450Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:53.8757665Z   CC_FORK: false
+2026-03-27T22:32:53.8758108Z   CC_TOKEN: ***
+2026-03-27T22:32:53.8758288Z   CC_BRANCH: main
+2026-03-27T22:32:53.8758457Z   CC_SHA: 
+2026-03-27T22:32:53.8758603Z   CC_PR: 
+2026-03-27T22:32:53.8758775Z   GITHUB_EVENT_PULL_REQUEST_HEAD_LABEL: 
+2026-03-27T22:32:53.8759056Z   GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME: 
+2026-03-27T22:32:53.8759329Z   GITHUB_REPOSITORY: pkinerd/hpoll
+2026-03-27T22:32:53.8759552Z ##[endgroup]
+2026-03-27T22:32:53.8837312Z ##[group]Run actions/github-script@v7
+2026-03-27T22:32:53.8837546Z with:
+2026-03-27T22:32:53.8838111Z   script: if (process.env.CC_USE_OIDC === 'true' && process.env.CC_FORK != 'true') {
+  const id_token = await core.getIDToken(process.env.CC_OIDC_AUDIENCE)
+  return id_token
+}
+
+2026-03-27T22:32:53.8838885Z   github-token: ***
+2026-03-27T22:32:53.8839078Z   debug: false
+2026-03-27T22:32:53.8839264Z   user-agent: actions/github-script
+2026-03-27T22:32:53.8839497Z   result-encoding: json
+2026-03-27T22:32:53.8839683Z   retries: 0
+2026-03-27T22:32:53.8839887Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-03-27T22:32:53.8840143Z env:
+2026-03-27T22:32:53.8840682Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:53.8840898Z   CC_FORK: false
+2026-03-27T22:32:53.8841117Z   CC_TOKEN: ***
+2026-03-27T22:32:53.8841282Z   CC_BRANCH: main
+2026-03-27T22:32:53.8841440Z   CC_SHA: 
+2026-03-27T22:32:53.8841590Z   CC_PR: 
+2026-03-27T22:32:53.8841768Z   CC_OIDC_AUDIENCE: https://codecov.io
+2026-03-27T22:32:53.8842002Z   CC_USE_OIDC: false
+2026-03-27T22:32:53.8842180Z ##[endgroup]
+2026-03-27T22:32:53.9733244Z ##[group]Run if [ "false" == 'true' ] && [ "$CC_FORK" != 'true' ];
+2026-03-27T22:32:53.9733830Z [36;1mif [ "false" == 'true' ] && [ "$CC_FORK" != 'true' ];[0m
+2026-03-27T22:32:53.9734121Z [36;1mthen[0m
+2026-03-27T22:32:53.9734353Z [36;1m  echo "CC_TOKEN=$CC_OIDC_TOKEN" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:53.9734656Z [36;1melif [ -n "" ];[0m
+2026-03-27T22:32:53.9734855Z [36;1mthen[0m
+2026-03-27T22:32:53.9735086Z [36;1m  echo -e "\033[0;32m==>\033[0m Token set from env"[0m
+2026-03-27T22:32:53.9735414Z [36;1m    echo "CC_TOKEN=" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:53.9735655Z [36;1melse[0m
+2026-03-27T22:32:53.9735982Z [36;1m  if [ -n "***" ];[0m
+2026-03-27T22:32:53.9736186Z [36;1m  then[0m
+2026-03-27T22:32:53.9736411Z [36;1m    echo -e "\033[0;32m==>\033[0m Token set from input"[0m
+2026-03-27T22:32:53.9736827Z [36;1m    CC_TOKEN=$(echo "***" | tr -d '\n')[0m
+2026-03-27T22:32:53.9737135Z [36;1m    echo "CC_TOKEN=$CC_TOKEN" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:53.9737395Z [36;1m  fi[0m
+2026-03-27T22:32:53.9737561Z [36;1mfi[0m
+2026-03-27T22:32:53.9763364Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:53.9763685Z env:
+2026-03-27T22:32:53.9763850Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:53.9764066Z   CC_FORK: false
+2026-03-27T22:32:53.9764327Z   CC_TOKEN: ***
+2026-03-27T22:32:53.9764506Z   CC_BRANCH: main
+2026-03-27T22:32:53.9764675Z   CC_SHA: 
+2026-03-27T22:32:53.9764823Z   CC_PR: 
+2026-03-27T22:32:53.9764975Z   CC_OIDC_TOKEN: 
+2026-03-27T22:32:53.9765182Z   CC_OIDC_AUDIENCE: https://codecov.io
+2026-03-27T22:32:53.9765433Z ##[endgroup]
+2026-03-27T22:32:53.9812336Z [0;32m==>[0m Token set from input
+2026-03-27T22:32:53.9846867Z ##[group]Run if [ -z "$CC_BRANCH" ] && [ -z "$CC_TOKEN" ] && [ "$CC_FORK" == 'true' ]
+2026-03-27T22:32:53.9847339Z [36;1mif [ -z "$CC_BRANCH" ] && [ -z "$CC_TOKEN" ] && [ "$CC_FORK" == 'true' ][0m
+2026-03-27T22:32:53.9847670Z [36;1mthen[0m
+2026-03-27T22:32:53.9848043Z [36;1m  echo -e "\033[0;32m==>\033[0m Fork detected, setting branch to $GITHUB_EVENT_PULL_REQUEST_HEAD_LABEL"[0m
+2026-03-27T22:32:53.9848546Z [36;1m  TOKENLESS="$GITHUB_EVENT_PULL_REQUEST_HEAD_LABEL"[0m
+2026-03-27T22:32:53.9848889Z [36;1m  CC_BRANCH="$GITHUB_EVENT_PULL_REQUEST_HEAD_LABEL"[0m
+2026-03-27T22:32:53.9849212Z [36;1m  echo "TOKENLESS=$TOKENLESS" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:53.9849469Z [36;1mfi[0m
+2026-03-27T22:32:53.9849626Z [36;1m[0m
+2026-03-27T22:32:53.9849821Z [36;1mecho "CC_BRANCH=$CC_BRANCH" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:53.9874152Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:53.9874471Z env:
+2026-03-27T22:32:53.9874643Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:53.9874860Z   CC_FORK: false
+2026-03-27T22:32:53.9875118Z   CC_TOKEN: ***
+2026-03-27T22:32:53.9875299Z   CC_BRANCH: main
+2026-03-27T22:32:53.9875466Z   CC_SHA: 
+2026-03-27T22:32:53.9875615Z   CC_PR: 
+2026-03-27T22:32:53.9875792Z   GITHUB_EVENT_PULL_REQUEST_HEAD_LABEL: 
+2026-03-27T22:32:53.9876076Z   GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME: 
+2026-03-27T22:32:53.9876375Z   GITHUB_REPOSITORY: pkinerd/hpoll
+2026-03-27T22:32:53.9876597Z ##[endgroup]
+2026-03-27T22:32:53.9936631Z ##[group]Run if [ -z "$CC_SHA" ];
+2026-03-27T22:32:53.9936899Z [36;1mif [ -z "$CC_SHA" ];[0m
+2026-03-27T22:32:53.9937106Z [36;1mthen[0m
+2026-03-27T22:32:53.9937326Z [36;1m  CC_SHA="$GITHUB_EVENT_PULL_REQUEST_HEAD_SHA"[0m
+2026-03-27T22:32:53.9937596Z [36;1mfi[0m
+2026-03-27T22:32:53.9937871Z [36;1mif [ -z "$CC_PR" ] && [ "${GITHUB_EVENT_NAME}" == "pull_request_target" ];[0m
+2026-03-27T22:32:53.9938199Z [36;1mthen[0m
+2026-03-27T22:32:53.9938385Z [36;1m  CC_PR="$GITHUB_EVENT_NUMBER"[0m
+2026-03-27T22:32:53.9938612Z [36;1mfi[0m
+2026-03-27T22:32:53.9938760Z [36;1m[0m
+2026-03-27T22:32:53.9938947Z [36;1mecho "CC_SHA=$CC_SHA" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:53.9939217Z [36;1mecho "CC_PR=$CC_PR" >> "$GITHUB_ENV"[0m
+2026-03-27T22:32:53.9962397Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:53.9962699Z env:
+2026-03-27T22:32:53.9962868Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:53.9963236Z   CC_FORK: false
+2026-03-27T22:32:53.9963501Z   CC_TOKEN: ***
+2026-03-27T22:32:53.9963674Z   CC_BRANCH: main
+2026-03-27T22:32:53.9963836Z   CC_SHA: 
+2026-03-27T22:32:53.9963989Z   CC_PR: 
+2026-03-27T22:32:53.9964144Z   GITHUB_EVENT_NAME: push
+2026-03-27T22:32:53.9964350Z   GITHUB_EVENT_NUMBER: 
+2026-03-27T22:32:53.9964558Z   GITHUB_EVENT_PULL_REQUEST_HEAD_SHA: 
+2026-03-27T22:32:53.9964785Z ##[endgroup]
+2026-03-27T22:32:54.0028538Z ##[group]Run ${GITHUB_ACTION_PATH}/dist/codecov.sh
+2026-03-27T22:32:54.0028860Z [36;1m${GITHUB_ACTION_PATH}/dist/codecov.sh[0m
+2026-03-27T22:32:54.0051961Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-03-27T22:32:54.0052257Z env:
+2026-03-27T22:32:54.0052427Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:54.0052635Z   CC_FORK: false
+2026-03-27T22:32:54.0052888Z   CC_TOKEN: ***
+2026-03-27T22:32:54.0053061Z   CC_BRANCH: main
+2026-03-27T22:32:54.0053224Z   CC_SHA: 
+2026-03-27T22:32:54.0053376Z   CC_PR: 
+2026-03-27T22:32:54.0053537Z   CC_BASE_SHA: 
+2026-03-27T22:32:54.0053693Z   CC_BINARY: 
+2026-03-27T22:32:54.0053853Z   CC_BUILD: 
+2026-03-27T22:32:54.0054003Z   CC_BUILD_URL: 
+2026-03-27T22:32:54.0054170Z   CC_CODE: 
+2026-03-27T22:32:54.0054318Z   CC_DIR: 
+2026-03-27T22:32:54.0054477Z   CC_DISABLE_FILE_FIXES: false
+2026-03-27T22:32:54.0054694Z   CC_DISABLE_SEARCH: false
+2026-03-27T22:32:54.0054898Z   CC_DISABLE_TELEM: false
+2026-03-27T22:32:54.0055092Z   CC_DRY_RUN: false
+2026-03-27T22:32:54.0055276Z   CC_ENTERPRISE_URL: 
+2026-03-27T22:32:54.0055448Z   CC_ENV: 
+2026-03-27T22:32:54.0055600Z   CC_EXCLUDES: 
+2026-03-27T22:32:54.0055768Z   CC_FAIL_ON_ERROR: false
+2026-03-27T22:32:54.0055974Z   CC_FILES: TestResults/*.junit.xml
+2026-03-27T22:32:54.0056196Z   CC_FLAGS: 
+2026-03-27T22:32:54.0056346Z   CC_FORCE: 
+2026-03-27T22:32:54.0056501Z   CC_GCOV_ARGS: 
+2026-03-27T22:32:54.0056670Z   CC_GCOV_EXECUTABLE: gcov
+2026-03-27T22:32:54.0056867Z   CC_GCOV_IGNORE: 
+2026-03-27T22:32:54.0057038Z   CC_GCOV_INCLUDE: 
+2026-03-27T22:32:54.0057215Z   CC_GIT_SERVICE: github
+2026-03-27T22:32:54.0057422Z   CC_HANDLE_NO_REPORTS_FOUND: false
+2026-03-27T22:32:54.0057634Z   CC_JOB_CODE: 
+2026-03-27T22:32:54.0057798Z   CC_LEGACY: false
+2026-03-27T22:32:54.0057966Z   CC_NAME: 
+2026-03-27T22:32:54.0058119Z   CC_NETWORK_FILTER: 
+2026-03-27T22:32:54.0058303Z   CC_NETWORK_PREFIX: 
+2026-03-27T22:32:54.0058479Z   CC_NETWORK_ROOT_FOLDER: 
+2026-03-27T22:32:54.0058665Z   CC_OS: 
+2026-03-27T22:32:54.0058961Z   CC_PARENT_SHA: 
+2026-03-27T22:32:54.0059129Z   CC_PLUGINS: 
+2026-03-27T22:32:54.0059303Z   CC_RECURSE_SUBMODULES: false
+2026-03-27T22:32:54.0059513Z   CC_REPORT_TYPE: test_results
+2026-03-27T22:32:54.0059728Z   CC_RUN_CMD: upload-coverage
+2026-03-27T22:32:54.0059933Z   CC_SERVICE: github
+2026-03-27T22:32:54.0060113Z   CC_SKIP_VALIDATION: false
+2026-03-27T22:32:54.0060453Z   CC_SLUG: 
+2026-03-27T22:32:54.0060607Z   CC_SWIFT_PROJECT: 
+2026-03-27T22:32:54.0060782Z   CC_USE_PYPI: false
+2026-03-27T22:32:54.0060954Z   CC_VERBOSE: false
+2026-03-27T22:32:54.0061129Z   CC_VERSION: latest
+2026-03-27T22:32:54.0061300Z   CC_YML_PATH: 
+2026-03-27T22:32:54.0061465Z ##[endgroup]
+2026-03-27T22:32:54.0124701Z      _____          _
+2026-03-27T22:32:54.0124998Z     / ____|        | |
+2026-03-27T22:32:54.0125207Z    | |     ___   __| | ___  ___ _____   __
+2026-03-27T22:32:54.0125439Z    | |    / _ \ / _` |/ _ \/ __/ _ \ \ / /
+2026-03-27T22:32:54.0125663Z    | |___| (_) | (_| |  __/ (_| (_) \ V /
+2026-03-27T22:32:54.0125899Z     \_____\___/ \__,_|\___|\___\___/ \_/
+2026-03-27T22:32:54.0126305Z                            [0;31m Wrapper-0.2.1[0m
+2026-03-27T22:32:54.0126559Z                                   
+2026-03-27T22:32:54.0173060Z [0;32m==>[0m Detected [0;36mlinux[0m
+2026-03-27T22:32:54.0173630Z [0;32m ->[0m Downloading [0;36mhttps://cli.codecov.io/latest/linux/codecov[0m
+2026-03-27T22:32:54.0222386Z   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+2026-03-27T22:32:54.0223088Z                                  Dload  Upload   Total   Spent    Left  Speed
+2026-03-27T22:32:54.0223734Z 
+2026-03-27T22:32:54.1027841Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+2026-03-27T22:32:54.1028880Z 100 10.6M  100 10.6M    0     0   132M      0 --:--:-- --:--:-- --:--:--  133M
+2026-03-27T22:32:54.1068078Z [0;32m==>[0m Finishing downloading [0;36mlinux:latest[0m
+2026-03-27T22:32:54.1522329Z       Version: [0;36mv11.2.8[0m
+2026-03-27T22:32:54.1522747Z  
+2026-03-27T22:32:54.3985899Z gpg: key 806BB28AED779869: "Codecov Uploader (Codecov Uploader Verification Key) <security@codecov.io>" not changed
+2026-03-27T22:32:54.3986587Z gpg: Total number processed: 1
+2026-03-27T22:32:54.3986899Z gpg:              unchanged: 1
+2026-03-27T22:32:54.3990532Z [0;32m==>[0m Verifying GPG signature integrity
+2026-03-27T22:32:54.3991685Z [0;32m ->[0m Downloading [0;36mhttps://cli.codecov.io/latest/linux/codecov.SHA256SUM[0m
+2026-03-27T22:32:54.3993364Z [0;32m ->[0m Downloading [0;36mhttps://cli.codecov.io/latest/linux/codecov.SHA256SUM.sig[0m
+2026-03-27T22:32:54.3993811Z  
+2026-03-27T22:32:54.4792121Z gpg: Signature made Thu Mar 26 18:58:26 2026 UTC
+2026-03-27T22:32:54.4792894Z gpg:                using RSA key 27034E7FDB850E0BBC2C62FF806BB28AED779869
+2026-03-27T22:32:54.4794652Z gpg: Good signature from "Codecov Uploader (Codecov Uploader Verification Key) <security@codecov.io>" [unknown]
+2026-03-27T22:32:54.4795823Z gpg: WARNING: This key is not certified with a trusted signature!
+2026-03-27T22:32:54.4796724Z gpg:          There is no indication that the signature belongs to the owner.
+2026-03-27T22:32:54.4797618Z Primary key fingerprint: 2703 4E7F DB85 0E0B BC2C  62FF 806B B28A ED77 9869
+2026-03-27T22:32:54.5409124Z codecov: OK
+2026-03-27T22:32:54.5418085Z [0;32m==>[0m CLI integrity verified
+2026-03-27T22:32:54.5418390Z 
+2026-03-27T22:32:54.5490892Z [0;32m ->[0m Token of length 36 detected
+2026-03-27T22:32:54.6033537Z [0;32m==>[0m Running upload-coverage
+2026-03-27T22:32:54.6042984Z       [0;36m./codecov  upload-coverage -t <redacted> --git-service github --branch main --file TestResults/*.junit.xml --gcov-executable gcov --report-type test_results[0m
+2026-03-27T22:32:54.9501120Z info - 2026-03-27 22:32:54,949 -- ci service found: github-actions
+2026-03-27T22:32:54.9915603Z info - 2026-03-27 22:32:54,991 -- Using token to create a commit for protected branch `main`
+2026-03-27T22:32:55.3728570Z info - 2026-03-27 22:32:55,372 -- Commit creating complete
+2026-03-27T22:32:55.4156848Z warning - 2026-03-27 22:32:55,415 -- Some files were not found --- {"not_found_files": ["TestResults/*.junit.xml"]}
+2026-03-27T22:32:55.4536474Z info - 2026-03-27 22:32:55,453 -- Found 3 test_results files to report
+2026-03-27T22:32:55.4538060Z info - 2026-03-27 22:32:55,453 -- > /home/runner/work/hpoll/hpoll/tests/Hpoll.Admin.Tests/TestResults/Hpoll.Admin.Tests.junit.xml
+2026-03-27T22:32:55.4540055Z info - 2026-03-27 22:32:55,453 -- > /home/runner/work/hpoll/hpoll/tests/Hpoll.Core.Tests/TestResults/Hpoll.Core.Tests.junit.xml
+2026-03-27T22:32:55.4541629Z info - 2026-03-27 22:32:55,453 -- > /home/runner/work/hpoll/hpoll/tests/Hpoll.Worker.Tests/TestResults/Hpoll.Worker.Tests.junit.xml
+2026-03-27T22:32:55.8379664Z info - 2026-03-27 22:32:55,837 -- Sending upload (17469 bytes) to storage
+2026-03-27T22:32:55.9997637Z info - 2026-03-27 22:32:55,999 -- Upload queued for processing complete
+2026-03-27T22:32:56.1229999Z ##[group]Run actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+2026-03-27T22:32:56.1230654Z with:
+2026-03-27T22:32:56.1230830Z   name: test-reports
+2026-03-27T22:32:56.1231031Z   path: TestResults/
+
+2026-03-27T22:32:56.1231234Z   if-no-files-found: warn
+2026-03-27T22:32:56.1231438Z   compression-level: 6
+2026-03-27T22:32:56.1231620Z   overwrite: false
+2026-03-27T22:32:56.1231806Z   include-hidden-files: false
+2026-03-27T22:32:56.1232007Z env:
+2026-03-27T22:32:56.1232165Z   DOTNET_ROOT: /usr/share/dotnet
+2026-03-27T22:32:56.1232376Z   CC_FORK: false
+2026-03-27T22:32:56.1232690Z   CC_TOKEN: ***
+2026-03-27T22:32:56.1232868Z   CC_BRANCH: main
+2026-03-27T22:32:56.1233224Z   CC_SHA: 
+2026-03-27T22:32:56.1233372Z   CC_PR: 
+2026-03-27T22:32:56.1233523Z ##[endgroup]
+2026-03-27T22:32:56.3282180Z With the provided path, there will be 3 files uploaded
+2026-03-27T22:32:56.3289098Z Artifact name is valid!
+2026-03-27T22:32:56.3289857Z Root directory input is valid!
+2026-03-27T22:32:56.6045426Z Beginning upload of artifact content to blob storage
+2026-03-27T22:32:57.0699536Z Uploaded bytes 49540
+2026-03-27T22:32:57.1515504Z Finished uploading artifact content to blob storage!
+2026-03-27T22:32:57.1519035Z SHA256 digest of uploaded artifact zip is d4412fd65ab15c4159e543a21e582202fd6a7d5ad8f77b76ba6c3d69588fa49a
+2026-03-27T22:32:57.1520815Z Finalizing artifact upload
+2026-03-27T22:32:57.2850606Z Artifact test-reports.zip successfully finalized. Artifact ID 6153665179
+2026-03-27T22:32:57.2852694Z Artifact test-reports has been successfully uploaded! Final size is 49540 bytes. Artifact ID is 6153665179
+2026-03-27T22:32:57.2859733Z Artifact download URL: https://github.com/pkinerd/hpoll/actions/runs/23670255991/artifacts/6153665179
+2026-03-27T22:32:57.2974414Z Post job cleanup.
+2026-03-27T22:32:57.4485325Z Post job cleanup.
+2026-03-27T22:32:57.5480802Z [command]/usr/bin/git version
+2026-03-27T22:32:57.5516687Z git version 2.53.0
+2026-03-27T22:32:57.5555523Z Copying '/home/runner/.gitconfig' to '/home/runner/work/_temp/a2b7e1fd-67a9-49cd-9b26-fec62a87535e/.gitconfig'
+2026-03-27T22:32:57.5567303Z Temporarily overriding HOME='/home/runner/work/_temp/a2b7e1fd-67a9-49cd-9b26-fec62a87535e' before making global git config changes
+2026-03-27T22:32:57.5568697Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-27T22:32:57.5572347Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hpoll/hpoll
+2026-03-27T22:32:57.5609928Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-27T22:32:57.5641273Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-27T22:32:57.5855918Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-27T22:32:57.5874793Z http.https://github.com/.extraheader
+2026-03-27T22:32:57.5887092Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-03-27T22:32:57.5917914Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-27T22:32:57.6250817Z Cleaning up orphan processes
+2026-03-27T22:32:57.6533110Z Terminate orphan process: pid (2464) (dotnet)
+2026-03-27T22:32:57.6569272Z Terminate orphan process: pid (2465) (dotnet)
+2026-03-27T22:32:57.6589274Z Terminate orphan process: pid (2466) (dotnet)
+2026-03-27T22:32:57.6623220Z Terminate orphan process: pid (2602) (VBCSCompiler)
+2026-03-27T22:32:57.6664495Z ##[warning]Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332, actions/github-script@v7, actions/setup-dotnet@3e891b0cb619bf60e2c25674b222b8940e2c1c25, actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
