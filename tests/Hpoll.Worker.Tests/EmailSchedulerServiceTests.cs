@@ -636,4 +636,137 @@ public class EmailSchedulerServiceTests : IDisposable
         Assert.NotNull(capturedSubject);
         Assert.Contains("15 Jun 2025", capturedSubject);
     }
+
+    [Fact]
+    public async Task SendCustomerEmailAsync_DoesNotFallBack_WhenCancelled()
+    {
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("<table></table></body></html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException());
+
+        var customer = new Customer { Name = "Test", Email = "a@example.com, b@example.com", TimeZoneId = "UTC" };
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => service.SendCustomerEmailAsync(customer, _mockRenderer.Object, _mockSender.Object, CancellationToken.None));
+
+        _mockSender.Verify(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SendCustomerEmailAsync_FallsBackToIndividual_WhenBatchFails_MultipleRecipients()
+    {
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("<table><tr><td>content</td></tr></table></body></html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("batch failed"));
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var customer = new Customer { Name = "Test", Email = "a@example.com, b@example.com", TimeZoneId = "UTC" };
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+
+        await service.SendCustomerEmailAsync(customer, _mockRenderer.Object, _mockSender.Object, CancellationToken.None);
+
+        _mockSender.Verify(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task SendCustomerEmailAsync_DoesNotFallBack_WhenSingleRecipientFails()
+    {
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("<table></table></body></html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("batch failed"));
+
+        var customer = new Customer { Name = "Test", Email = "solo@example.com", TimeZoneId = "UTC" };
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+
+        await Assert.ThrowsAsync<Exception>(() => service.SendCustomerEmailAsync(customer, _mockRenderer.Object, _mockSender.Object, CancellationToken.None));
+
+        _mockSender.Verify(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SendCustomerEmailAsync_FallbackSendsToAllCombinedAddresses_ToCcBcc()
+    {
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("<table></table></body></html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("batch failed"));
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var customer = new Customer
+        {
+            Name = "Test",
+            Email = "to@example.com",
+            CcEmails = "cc@example.com",
+            BccEmails = "bcc@example.com",
+            TimeZoneId = "UTC"
+        };
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+
+        await service.SendCustomerEmailAsync(customer, _mockRenderer.Object, _mockSender.Object, CancellationToken.None);
+
+        _mockSender.Verify(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+    }
+
+    [Fact]
+    public async Task SendCustomerEmailAsync_Rethrows_WhenAllIndividualSendsFail()
+    {
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("<table></table></body></html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("batch failed"));
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("individual failed"));
+
+        var customer = new Customer { Name = "Test", Email = "a@example.com, b@example.com", TimeZoneId = "UTC" };
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+
+        await Assert.ThrowsAsync<Exception>(() => service.SendCustomerEmailAsync(customer, _mockRenderer.Object, _mockSender.Object, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task SendCustomerEmailAsync_Succeeds_WhenSomeIndividualSendsFail()
+    {
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("<table></table></body></html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("batch failed"));
+        _mockSender.SetupSequence(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("first individual failed"))
+            .Returns(Task.CompletedTask)
+            .Returns(Task.CompletedTask);
+
+        var customer = new Customer { Name = "Test", Email = "a@example.com, b@example.com, c@example.com", TimeZoneId = "UTC" };
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+
+        // Should not throw — at least one individual send succeeded
+        await service.SendCustomerEmailAsync(customer, _mockRenderer.Object, _mockSender.Object, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task SendCustomerEmailAsync_FallbackHtml_ContainsFallbackNote()
+    {
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("<table><tr><td>content</td></tr></table></body></html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("batch failed"));
+
+        string? capturedHtml = null;
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback<List<string>, string, string, CancellationToken>((_, _, html, _) => capturedHtml = html)
+            .Returns(Task.CompletedTask);
+
+        var customer = new Customer { Name = "Test", Email = "a@example.com, b@example.com", TimeZoneId = "UTC" };
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+
+        await service.SendCustomerEmailAsync(customer, _mockRenderer.Object, _mockSender.Object, CancellationToken.None);
+
+        Assert.NotNull(capturedHtml);
+        Assert.Contains("sent individually", capturedHtml);
+        Assert.Contains("one or more recipients failed", capturedHtml);
+    }
 }

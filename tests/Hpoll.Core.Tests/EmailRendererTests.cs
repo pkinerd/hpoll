@@ -1333,4 +1333,49 @@ public class EmailRendererTests : IDisposable
         Assert.True(lowIdx < midIdx, "Low Battery should appear before Mid Battery");
         Assert.True(midIdx < highIdx, "Mid Battery should appear before High Battery");
     }
+
+    [Fact]
+    public void AppendFallbackNote_InsertsNoteBeforeClosingTag()
+    {
+        const string html = "<table><tr><td>content</td></tr></table></body></html>";
+        var result = EmailRenderer.AppendFallbackNote(html);
+        Assert.EndsWith("</table></body></html>", result);
+        Assert.True(result.IndexOf("Note:") < result.IndexOf("</table></body></html>"));
+    }
+
+    [Fact]
+    public void AppendFallbackNote_NoteContainsExpectedText()
+    {
+        const string html = "<table></table></body></html>";
+        var result = EmailRenderer.AppendFallbackNote(html);
+        Assert.Contains("sent individually", result);
+        Assert.Contains("one or more recipients failed", result);
+    }
+
+    [Fact]
+    public void AppendFallbackNote_ReturnsUnchanged_WhenClosingTagAbsent()
+    {
+        const string html = "<table><tr><td>no closing tag</td></tr>";
+        var result = EmailRenderer.AppendFallbackNote(html);
+        Assert.Equal(html, result);
+    }
+
+    [Fact]
+    public void AppendFallbackNote_DoesNotDuplicateClosingTag()
+    {
+        const string html = "<table></table></body></html>";
+        var result = EmailRenderer.AppendFallbackNote(html);
+        Assert.Equal(1, CountOccurrences(result, "</table></body></html>"));
+    }
+
+    private static int CountOccurrences(string text, string pattern)
+    {
+        int count = 0, idx = 0;
+        while ((idx = text.IndexOf(pattern, idx, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            idx += pattern.Length;
+        }
+        return count;
+    }
 }
