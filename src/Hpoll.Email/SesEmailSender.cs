@@ -5,6 +5,7 @@ using Amazon.SimpleEmail.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Exceptions;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Utilities;
 
@@ -58,6 +59,11 @@ public class SesEmailSender : IEmailSender
         {
             var response = await _sesClient.SendEmailAsync(sendRequest, ct);
             _logger.LogInformation("Email sent to {To}, MessageId: {MessageId}", toMasked, response.MessageId);
+        }
+        catch (MessageRejectedException ex)
+        {
+            _logger.LogError(ex, "Failed to send email to {To}", toMasked);
+            throw new EmailAddressRejectionException(ex.Message, ex);
         }
         catch (Exception ex)
         {

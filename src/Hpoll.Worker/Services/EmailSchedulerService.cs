@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
+using Hpoll.Core.Exceptions;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Services;
 using Hpoll.Core.Utilities;
@@ -189,11 +190,7 @@ public class EmailSchedulerService : BackgroundService
             _logger.LogInformation("Email sent to {Email} (customer Id={Id})",
                 MaskEmail(customer.Email), customer.Id);
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception batchEx)
+        catch (EmailAddressRejectionException batchEx)
         {
             var allAddresses = toList
                 .Concat(ccList ?? [])

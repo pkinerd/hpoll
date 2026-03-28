@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Exceptions;
 using Hpoll.Email;
 
 namespace Hpoll.Core.Tests;
@@ -44,13 +45,24 @@ public class SesEmailSenderTests
     }
 
     [Fact]
-    public async Task SendEmailAsync_OnSesFailure_Throws()
+    public async Task SendEmailAsync_MessageRejectedException_WrapsAsEmailAddressRejectionException()
     {
         _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new MessageRejectedException("Bad content"));
+            .ThrowsAsync(new MessageRejectedException("Email address is not verified."));
 
-        await Assert.ThrowsAsync<MessageRejectedException>(
+        var ex = await Assert.ThrowsAsync<EmailAddressRejectionException>(
             () => _sender.SendEmailAsync(new List<string> { "user@example.com" }, "Test", "<html>Bad</html>"));
+        Assert.IsType<MessageRejectedException>(ex.InnerException);
+    }
+
+    [Fact]
+    public async Task SendEmailAsync_OtherException_PropagatesDirectly()
+    {
+        _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Network timeout"));
+
+        await Assert.ThrowsAsync<Exception>(
+            () => _sender.SendEmailAsync(new List<string> { "user@example.com" }, "Test", "<html>Body</html>"));
     }
 
     [Fact]
