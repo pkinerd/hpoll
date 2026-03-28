@@ -28,13 +28,15 @@ public class ConfigurationValidationTests : IDisposable
     }
 
     [Fact]
-    public async Task EmailRenderer_ZeroSummaryWindowHours_ThrowsDivideByZero()
+    public async Task EmailRenderer_ZeroSummaryWindowHours_ProducesValidHtmlWithNoWindows()
     {
         var emailSettings = Options.Create(new EmailSettings { SummaryWindowHours = 0 });
         var renderer = new EmailRenderer(_db, NullLogger<EmailRenderer>.Instance, emailSettings);
 
-        await Assert.ThrowsAsync<DivideByZeroException>(
-            () => renderer.RenderDailySummaryAsync(1, "UTC", DateTime.UtcNow));
+        var html = await renderer.RenderDailySummaryAsync(1, "UTC", DateTime.UtcNow);
+
+        Assert.NotNull(html);
+        Assert.Contains("Daily Activity Summary", html);
     }
 
     [Fact]
@@ -80,6 +82,7 @@ public class ConfigurationValidationTests : IDisposable
         Assert.Empty(settings.SendTimesUtc);
         Assert.Equal(4, settings.SummaryWindowHours);
         Assert.Equal(7, settings.SummaryWindowCount);
+        Assert.Equal(1, settings.SummaryWindowOffsetHours);
         Assert.Equal(60, settings.BatteryAlertThreshold);
         Assert.True(settings.BatteryLevelCritical <= settings.BatteryLevelWarning,
             "Critical threshold should be <= warning threshold");

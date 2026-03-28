@@ -54,6 +54,9 @@ public class EmailSettings
     /// <summary>Number of activity summary windows to include in each email.</summary>
     public int SummaryWindowCount { get; set; } = 7;
 
+    /// <summary>Hour offset applied when aligning window boundaries (e.g. 1 shifts windows from 0/4/8/12 to 1/5/9/13).</summary>
+    public int SummaryWindowOffsetHours { get; set; } = 1;
+
     /// <summary>Minutes to wait before retrying after an email sending failure.</summary>
     public int ErrorRetryDelayMinutes { get; set; } = 5;
 }

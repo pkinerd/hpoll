@@ -41,8 +41,10 @@ public class EmailRenderer : IEmailRenderer
         var startUtc = effectiveNowUtc.AddHours(-(totalHours + windowHours));
         var endUtc = effectiveNowUtc;
 
-        // Snap to the end of the current window so it's always included
-        var bucketEndLocal = nowLocal.Date.AddHours(nowLocal.Hour / windowHours * windowHours + windowHours);
+        // Snap to the end of the current window so it's always included, applying the configured offset
+        var offset = _emailSettings.SummaryWindowOffsetHours;
+        var adjHour = nowLocal.Hour - offset;
+        var bucketEndLocal = nowLocal.Date.AddHours((int)Math.Floor((double)adjHour / windowHours) * windowHours + windowHours + offset);
 
         var bucketStartLocal = bucketEndLocal.AddHours(-totalHours);
 
