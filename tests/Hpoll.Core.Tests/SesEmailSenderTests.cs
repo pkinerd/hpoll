@@ -138,6 +138,35 @@ public class SesEmailSenderTests
     }
 
     [Fact]
+    public async Task SendEmailAsync_MessageRejectedException_WithCcBcc_WrapsAsEmailAddressRejectionException()
+    {
+        _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new MessageRejectedException("Email address is not verified."));
+
+        var to = new List<string> { "user@example.com" };
+        var cc = new List<string> { "cc@example.com" };
+        var bcc = new List<string> { "bcc@example.com" };
+
+        var ex = await Assert.ThrowsAsync<EmailAddressRejectionException>(
+            () => _sender.SendEmailAsync(to, "Test", "<html>Bad</html>", cc, bcc));
+        Assert.IsType<MessageRejectedException>(ex.InnerException);
+    }
+
+    [Fact]
+    public async Task SendEmailAsync_OtherException_WithCcBcc_PropagatesDirectly()
+    {
+        _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Network timeout"));
+
+        var to = new List<string> { "user@example.com" };
+        var cc = new List<string> { "cc@example.com" };
+        var bcc = new List<string> { "bcc@example.com" };
+
+        await Assert.ThrowsAsync<Exception>(
+            () => _sender.SendEmailAsync(to, "Test", "<html>Body</html>", cc, bcc));
+    }
+
+    [Fact]
     public async Task SendEmailAsync_WithEmptyCcBcc_DoesNotSetCcBcc()
     {
         _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
