@@ -18,10 +18,11 @@ Generate pull request information for the current branch and present it as copya
    - If no argument was provided, auto-detect the parent branch by finding the nearest ancestor branch:
      1. Run `git log --decorate --simplify-by-decoration --oneline HEAD` to list commits with branch/tag decorations along the current branch's history.
      2. Walk the output top-to-bottom. For each decorated commit **after** the HEAD line:
-        - Skip the commit if it is the same commit hash as HEAD (sibling branches at the same point).
+        - Skip the commit if it is the same commit hash as HEAD (sibling branches at the same point are not ancestors).
         - Extract branch names from the decoration (ignoring tags, `HEAD ->`, and the current branch name).
-        - Prefer `origin/main`, `origin/dev`, `main`, or `dev` if present. Otherwise use the first remote-tracking branch found.
-        - Stop at the first commit that yields a valid branch name — this is the parent branch.
+        - Use the first branch found — the nearest ancestor is the correct parent. Do NOT skip feature branches in favour of `main`/`dev`; proximity matters more than branch naming conventions.
+        - If multiple branch names decorate the same commit, prefer `origin/`-prefixed names (remote-tracking branches are more reliable).
+        - Stop at the first commit that yields a valid branch name.
      3. Strip the `origin/` prefix from the result to get the short branch name (e.g. `origin/dev` → `dev`).
      4. If a parent branch is detected, use it as the default target. Inform the user which target branch was auto-detected (e.g. "Auto-detected target branch: `dev`").
      5. If auto-detection fails (e.g. no decorated ancestor found), fall back to asking the user via `AskUserQuestion`.
