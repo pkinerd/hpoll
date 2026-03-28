@@ -384,6 +384,20 @@ public class EmailRenderer : IEmailRenderer
         return sb.ToString();
     }
 
+    public static string AppendFallbackNote(string html)
+    {
+        const string closingTag = "</table></body></html>";
+        const string note =
+            "<tr><td style=\"padding:12px 24px;border-top:1px solid #eee;\">" +
+            "<p style=\"font-size:11px;color:#999;font-style:italic;margin:0;\">" +
+            "Note: This email was sent individually because one or more recipients failed to receive the original group delivery." +
+            "</p></td></tr>";
+
+        var idx = html.LastIndexOf(closingTag, StringComparison.Ordinal);
+        if (idx < 0) return html;
+        return string.Concat(html.AsSpan(0, idx), note, closingTag);
+    }
+
     private static string FormatLabelHtml(WindowSummary w)
     {
         if ((w.DisplayEndLocal - w.WindowStartLocal).TotalHours < 3)

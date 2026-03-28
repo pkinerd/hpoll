@@ -7,11 +7,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
 using Hpoll.Core.Constants;
+using Hpoll.Core.Exceptions;
 using Hpoll.Core.Interfaces;
 using Hpoll.Core.Services;
 using Hpoll.Core.Utilities;
 using Hpoll.Data;
 using Hpoll.Data.Entities;
+using Hpoll.Email;
 
 /// <summary>
 /// Sends daily summary emails to active customers at their configured send times.
@@ -182,10 +184,51 @@ public class EmailSchedulerService : BackgroundService
         var subject = $"hpoll Daily Summary - {localNow:d MMM yyyy}";
         var ccList = ParseEmailList(customer.CcEmails);
         var bccList = ParseEmailList(customer.BccEmails);
-        await sender.SendEmailAsync(toList, subject, html, ccList, bccList, ct);
+        try
+        {
+            await sender.SendEmailAsync(toList, subject, html, ccList, bccList, ct);
+            _logger.LogInformation("Email sent to {Email} (customer Id={Id})",
+                MaskEmail(customer.Email), customer.Id);
+        }
+        catch (EmailAddressRejectionException batchEx)
+        {
+            var allAddresses = toList
+                .Concat(ccList ?? [])
+                .Concat(bccList ?? [])
+                .ToList();
 
-        _logger.LogInformation("Email sent to {Email} (customer Id={Id})",
-            MaskEmail(customer.Email), customer.Id);
+            if (allAddresses.Count <= 1)
+                throw;
+
+            _logger.LogWarning(batchEx,
+                "Batch email failed for customer Id={Id}, attempting individual fallback for {Count} address(es)",
+                customer.Id, allAddresses.Count);
+
+            var fallbackHtml = EmailRenderer.AppendFallbackNote(html);
+            var successCount = 0;
+
+            foreach (var address in allAddresses)
+            {
+                try
+                {
+                    await sender.SendEmailAsync([address], subject, fallbackHtml, ct);
+                    successCount++;
+                }
+                catch (Exception indEx)
+                {
+                    _logger.LogError(indEx,
+                        "Individual fallback email failed for {Address} (customer Id={Id})",
+                        EmailMasker.Mask(address), customer.Id);
+                }
+            }
+
+            if (successCount == 0)
+                throw;
+
+            _logger.LogInformation(
+                "Fallback emails sent: {Success}/{Total} succeeded for customer Id={Id}",
+                successCount, allAddresses.Count, customer.Id);
+        }
     }
 
     internal async Task<TimeSpan> GetSleepDurationAsync(CancellationToken ct)

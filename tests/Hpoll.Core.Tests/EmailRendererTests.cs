@@ -1333,4 +1333,94 @@ public class EmailRendererTests : IDisposable
         Assert.True(lowIdx < midIdx, "Low Battery should appear before Mid Battery");
         Assert.True(midIdx < highIdx, "Mid Battery should appear before High Battery");
     }
+
+    [Fact]
+    public void AppendFallbackNote_InsertsNoteBeforeClosingTag()
+    {
+        const string html = "<table><tr><td>content</td></tr></table></body></html>";
+        var result = EmailRenderer.AppendFallbackNote(html);
+        Assert.EndsWith("</table></body></html>", result);
+        Assert.True(result.IndexOf("Note:") < result.IndexOf("</table></body></html>"));
+    }
+
+    [Fact]
+    public void AppendFallbackNote_NoteContainsExpectedText()
+    {
+        const string html = "<table></table></body></html>";
+        var result = EmailRenderer.AppendFallbackNote(html);
+        Assert.Contains("sent individually", result);
+        Assert.Contains("one or more recipients failed", result);
+    }
+
+    [Fact]
+    public void AppendFallbackNote_ReturnsUnchanged_WhenClosingTagAbsent()
+    {
+        const string html = "<table><tr><td>no closing tag</td></tr>";
+        var result = EmailRenderer.AppendFallbackNote(html);
+        Assert.Equal(html, result);
+    }
+
+    [Fact]
+    public void AppendFallbackNote_DoesNotDuplicateClosingTag()
+    {
+        const string html = "<table></table></body></html>";
+        var result = EmailRenderer.AppendFallbackNote(html);
+        Assert.Equal(1, CountOccurrences(result, "</table></body></html>"));
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_FivePlusActiveAreas_ShowsFivePlusDiversityLabel()
+    {
+        var (customer, hub, device1) = await SeedBaseDataAsync();
+
+        // Create 5 additional motion sensors (6 total) so diversity label hits "5+"
+        var devices = new List<Device> { device1 };
+        for (int i = 2; i <= 6; i++)
+        {
+            var d = new Device { HubId = hub.Id, HueDeviceId = $"device-{i:D3}", DeviceType = DeviceTypes.MotionSensor, Name = $"Sensor {i}" };
+            _db.Devices.Add(d);
+            devices.Add(d);
+        }
+        await _db.SaveChangesAsync();
+
+        // Add one motion event per device in the same window (08:00–12:00 Feb 27)
+        for (int i = 0; i < devices.Count; i++)
+        {
+            AddMotion(devices[i].Id, new DateTime(2026, 2, 27, 9, 0, 0, DateTimeKind.Utc).AddMinutes(i * 5));
+        }
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // The Location Diversity section should show "5+" for 6 active areas
+        var diversitySection = html.IndexOf("Location Diversity");
+        Assert.True(diversitySection > 0, "Location Diversity section should exist");
+        // Should contain the 5+ label for diversity
+        var diversityContent = html.Substring(diversitySection);
+        Assert.Contains("5+", diversityContent);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_NullNowUtc_UsesCurrentTime()
+    {
+        var (customer, _, _) = await SeedBaseDataAsync();
+
+        // Pass null for nowUtc to exercise the fallback branch
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, null);
+
+        Assert.NotNull(html);
+        Assert.Contains("Daily Activity Summary", html);
+    }
+
+    private static int CountOccurrences(string text, string pattern)
+    {
+        int count = 0, idx = 0;
+        while ((idx = text.IndexOf(pattern, idx, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            idx += pattern.Length;
+        }
+        return count;
+    }
 }
