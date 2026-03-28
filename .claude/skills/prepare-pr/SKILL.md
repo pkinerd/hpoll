@@ -2,7 +2,7 @@
 name: prepare-pr
 description: Generates copyable PR fields (URL, title, description) for creating a pull request from the current branch to a specified target branch. Use when preparing a pull request, drafting PR content, or when the user says /prepare-pr. Accepts an optional target branch argument (e.g. /prepare-pr dev).
 user_invocable: true
-argument: Optional target branch name (e.g. "dev", "main"). If omitted, the user will be prompted.
+argument: Optional target branch name (e.g. "dev", "main"). If omitted, auto-detects the parent branch the current branch was started from.
 ---
 
 # Prepare PR
@@ -15,7 +15,17 @@ Generate pull request information for the current branch and present it as copya
 
 1. Check if the user provided a target branch as an argument (e.g. `/prepare-pr dev`).
    - If an argument was provided, use it as the target branch — do NOT prompt.
-   - If no argument was provided, ask the user which branch the PR should target (e.g. `main`, `dev`, etc.) using `AskUserQuestion`.
+   - If no argument was provided, auto-detect the parent branch by finding the nearest ancestor branch:
+     1. Run `git log --decorate --simplify-by-decoration --oneline HEAD` to list commits with branch/tag decorations along the current branch's history.
+     2. Walk the output top-to-bottom. For each decorated commit **after** the HEAD line:
+        - Skip the commit if it is the same commit hash as HEAD (sibling branches at the same point are not ancestors).
+        - Extract branch names from the decoration (ignoring tags, `HEAD ->`, and the current branch name).
+        - Use the first branch found — the nearest ancestor is the correct parent. Do NOT skip feature branches in favour of `main`/`dev`; proximity matters more than branch naming conventions.
+        - If multiple branch names decorate the same commit, prefer `origin/`-prefixed names (remote-tracking branches are more reliable).
+        - Stop at the first commit that yields a valid branch name.
+     3. Strip the `origin/` prefix from the result to get the short branch name (e.g. `origin/dev` → `dev`).
+     4. If a parent branch is detected, use it as the default target. Inform the user which target branch was auto-detected (e.g. "Auto-detected target branch: `dev`").
+     5. If auto-detection fails (e.g. no decorated ancestor found), fall back to asking the user via `AskUserQuestion`.
 2. Run `git remote get-url origin` to get the repository URL.
 3. Convert the remote URL to a GitHub HTTPS URL:
    - SSH format `git@github.com:org/repo.git` → `https://github.com/org/repo`

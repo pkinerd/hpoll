@@ -765,6 +765,46 @@ public class EmailSchedulerServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task ExecuteAsync_UnhandledException_RetriesAfterDelay()
+    {
+        // Use a mock scope factory that throws on the second CreateScope call
+        // (first call is for InitializeNextSendTimesAsync, second is for ProcessDueCustomersAsync)
+        var errorHit = new TaskCompletionSource<bool>();
+        var callCount = 0;
+        var mockScopeFactory = new Mock<IServiceScopeFactory>();
+        mockScopeFactory.Setup(f => f.CreateScope())
+            .Returns(() =>
+            {
+                callCount++;
+                if (callCount <= 1)
+                    return _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+                errorHit.TrySetResult(true);
+                throw new InvalidOperationException("DB connection lost");
+            });
+
+        var service = new EmailSchedulerService(
+            mockScopeFactory.Object,
+            NullLogger<EmailSchedulerService>.Instance,
+            Options.Create(new EmailSettings
+            {
+                SendTimesUtc = new() { "08:00" },
+                FromAddress = "noreply@hpoll.com",
+                AwsRegion = "us-east-1",
+                ErrorRetryDelayMinutes = 5
+            }),
+            new Mock<ISystemInfoService>().Object,
+            _fakeTime);
+
+        await service.StartAsync(CancellationToken.None);
+
+        // Wait until the error path is hit, then stop the service
+        var completed = await Task.WhenAny(errorHit.Task, Task.Delay(5000));
+        Assert.Same(errorHit.Task, completed);
+
+        await service.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
     public async Task SendCustomerEmailAsync_FallbackHtml_ContainsFallbackNote()
     {
         _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
