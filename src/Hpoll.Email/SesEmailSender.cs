@@ -55,19 +55,31 @@ public class SesEmailSender : IEmailSender
         };
 
         var toMasked = string.Join(", ", toAddresses.Select(EmailMasker.Mask));
+        var ccMasked = ccAddresses?.Count > 0 ? string.Join(", ", ccAddresses.Select(EmailMasker.Mask)) : null;
+        var bccMasked = bccAddresses?.Count > 0 ? string.Join(", ", bccAddresses.Select(EmailMasker.Mask)) : null;
         try
         {
             var response = await _sesClient.SendEmailAsync(sendRequest, ct);
-            _logger.LogInformation("Email sent to {To}, MessageId: {MessageId}", toMasked, response.MessageId);
+            _logger.LogInformation("Email sent to {To}{Cc}{Bcc}, MessageId: {MessageId}",
+                toMasked,
+                ccMasked != null ? $", CC: {ccMasked}" : "",
+                bccMasked != null ? $", BCC: {bccMasked}" : "",
+                response.MessageId);
         }
         catch (MessageRejectedException ex)
         {
-            _logger.LogError(ex, "Failed to send email to {To}", toMasked);
+            _logger.LogError(ex, "Failed to send email to {To}{Cc}{Bcc}",
+                toMasked,
+                ccMasked != null ? $", CC: {ccMasked}" : "",
+                bccMasked != null ? $", BCC: {bccMasked}" : "");
             throw new EmailAddressRejectionException(ex.Message, ex);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send email to {To}", toMasked);
+            _logger.LogError(ex, "Failed to send email to {To}{Cc}{Bcc}",
+                toMasked,
+                ccMasked != null ? $", CC: {ccMasked}" : "",
+                bccMasked != null ? $", BCC: {bccMasked}" : "");
             throw;
         }
     }
