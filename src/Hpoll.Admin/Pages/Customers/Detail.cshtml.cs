@@ -305,7 +305,9 @@ public class DetailModel : PageModel
 
         var startUtc = nowUtc.AddHours(-(totalHours + windowHours));
 
-        var bucketEndLocal = nowLocal.Date.AddHours(nowLocal.Hour / windowHours * windowHours + windowHours);
+        var offset = _emailSettings.SummaryWindowOffsetHours;
+        var adjHour = nowLocal.Hour - offset;
+        var bucketEndLocal = nowLocal.Date.AddHours((int)Math.Floor((double)adjHour / windowHours) * windowHours + windowHours + offset);
         var bucketStartLocal = bucketEndLocal.AddHours(-totalHours);
 
         var hubIds = await _db.Hubs

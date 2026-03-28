@@ -179,9 +179,7 @@ public class EmailSchedulerService : BackgroundService
         var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
         var html = await renderer.RenderDailySummaryAsync(customer.Id, customer.TimeZoneId, nowUtc, ct);
 
-        var tz = TimeZoneInfo.FindSystemTimeZoneById(customer.TimeZoneId);
-        var localNow = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, tz);
-        var subject = $"hpoll Daily Summary - {localNow:d MMM yyyy}";
+        var subject = $"Activity Summary - {customer.Name}";
         var ccList = ParseEmailList(customer.CcEmails);
         var bccList = ParseEmailList(customer.BccEmails);
         try

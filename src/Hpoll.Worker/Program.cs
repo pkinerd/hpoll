@@ -129,6 +129,7 @@ using (var scope = host.Services.CreateScope())
         ["email.battery_alert_threshold"] = email.BatteryAlertThreshold.ToString(),
         ["email.summary_window_hours"] = email.SummaryWindowHours.ToString(),
         ["email.summary_window_count"] = email.SummaryWindowCount.ToString(),
+        ["email.summary_window_offset_hours"] = email.SummaryWindowOffsetHours.ToString(),
         ["email.error_retry_delay_minutes"] = email.ErrorRetryDelayMinutes.ToString(),
     });
 

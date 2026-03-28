@@ -635,7 +635,7 @@ public class EmailSchedulerServiceTests : IDisposable
         Assert.NotNull(capturedNowUtc);
         Assert.Equal(fixedTime.UtcDateTime, capturedNowUtc.Value);
         Assert.NotNull(capturedSubject);
-        Assert.Contains("15 Jun 2025", capturedSubject);
+        Assert.Equal("Activity Summary - Test", capturedSubject);
     }
 
     [Fact]

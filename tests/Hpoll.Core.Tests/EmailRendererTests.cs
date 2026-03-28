@@ -15,8 +15,8 @@ public class EmailRendererTests : IDisposable
     private readonly EmailRenderer _renderer;
 
     // nowUtc = Feb 28 08:00 UTC
-    // With UTC timezone: bucketEnd = 12:00 (end of current window), bucketStart = Feb 27 08:00 (28h back)
-    // 7 windows: 08:00–12:00, 12:00–16:00, 16:00–20:00, 20:00–00:00, 00:00–04:00, 04:00–08:00, 08:00–12:00
+    // With UTC timezone and offset=1: bucketEnd = 09:00 (end of current window), bucketStart = Feb 27 05:00 (28h back)
+    // 7 windows: 05:00–09:00, 09:00–13:00, 13:00–17:00, 17:00–21:00, 21:00–01:00, 01:00–05:00, 05:00–09:00
     private static readonly DateTime NowUtc = new(2026, 2, 28, 8, 0, 0, DateTimeKind.Utc);
     private const string TimeZone = "UTC";
 
@@ -208,14 +208,14 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        // NowUtc at 08:00 exactly: newest window (08:00–08:00) has 0 min of data and is omitted.
-        // Remaining 6 windows still contain all expected boundary times.
-        Assert.Contains("04:00", html);
-        Assert.Contains("08:00", html);
-        Assert.Contains("12:00", html);
-        Assert.Contains("16:00", html);
-        Assert.Contains("20:00", html);
-        Assert.Contains("00:00", html);
+        // NowUtc at 08:00: current window is 05:00–09:00 (displayEnd 08:00, 3h of data — kept).
+        // All 7 windows shown with the offset-1 boundaries.
+        Assert.Contains("05:00", html);
+        Assert.Contains("09:00", html);
+        Assert.Contains("13:00", html);
+        Assert.Contains("17:00", html);
+        Assert.Contains("21:00", html);
+        Assert.Contains("01:00", html);
     }
 
     [Fact]
@@ -328,7 +328,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        // Header shows time range: "27 Feb 2026 08:00 – 28 Feb 2026 12:00"
+        // Header shows time range: "27 Feb 2026 05:00 – 28 Feb 2026 08:00"
         Assert.Contains("27 Feb 2026", html);
         Assert.Contains("28 Feb 2026", html);
     }
@@ -338,7 +338,7 @@ public class EmailRendererTests : IDisposable
     {
         var (customer, _, device) = await SeedBaseDataAsync();
 
-        // Reading inside the window (Feb 27 10:00 — within 08:00–12:00)
+        // Reading inside the window (Feb 27 10:00 — within 09:00–13:00)
         _db.DeviceReadings.Add(new DeviceReading
         {
             DeviceId = device.Id,
@@ -346,13 +346,13 @@ public class EmailRendererTests : IDisposable
             ReadingType = ReadingTypes.Motion,
             Value = "{\"motion\":true,\"changed\":\"2026-02-27T10:00:00Z\"}"
         });
-        // Reading outside the window (Feb 27 07:00 — before the 28h window starts at 08:00)
+        // Reading outside the window (Feb 27 04:00 — before the 28h window starts at 05:00)
         _db.DeviceReadings.Add(new DeviceReading
         {
             DeviceId = device.Id,
-            Timestamp = new DateTime(2026, 2, 27, 7, 0, 0, DateTimeKind.Utc),
+            Timestamp = new DateTime(2026, 2, 27, 4, 0, 0, DateTimeKind.Utc),
             ReadingType = ReadingTypes.Motion,
-            Value = "{\"motion\":true,\"changed\":\"2026-02-27T07:00:00Z\"}"
+            Value = "{\"motion\":true,\"changed\":\"2026-02-27T04:00:00Z\"}"
         });
         await _db.SaveChangesAsync();
 
@@ -394,11 +394,11 @@ public class EmailRendererTests : IDisposable
         await _db.SaveChangesAsync();
 
         // nowUtc = Feb 28 08:00 UTC = Feb 28 19:00 AEDT
-        // bucketEnd = floor(19/4)*4+4 = 20:00 AEDT on Feb 28 = Feb 28 09:00 UTC
-        // bucketStart = 28h back = 16:00 AEDT on Feb 27 = Feb 27 05:00 UTC
-        // 7 windows: 16:00–20:00, 20:00–00:00, 00:00–04:00, 04:00–08:00, 08:00–12:00, 12:00–16:00, 16:00–20:00 AEDT
+        // With offset=1: bucketEnd = floor((19-1)/4)*4+4+1 = floor(18/4)*4+5 = 21:00 AEDT on Feb 28 = Feb 28 10:00 UTC
+        // bucketStart = 28h back = 17:00 AEDT on Feb 27 = Feb 27 06:00 UTC
+        // 7 windows: 17:00–21:00, 21:00–01:00, 01:00–05:00, 05:00–09:00, 09:00–13:00, 13:00–17:00, 17:00–21:00 AEDT
 
-        // Reading at Feb 27 06:00 UTC = Feb 27 17:00 AEDT — falls in 16:00–20:00 AEDT window
+        // Reading at Feb 27 06:00 UTC = Feb 27 17:00 AEDT — falls in 17:00–21:00 AEDT window
         _db.DeviceReadings.Add(new DeviceReading
         {
             DeviceId = device.Id,
@@ -412,12 +412,12 @@ public class EmailRendererTests : IDisposable
 
         Assert.NotNull(html);
         // Windows should be labeled in AEDT local time
-        Assert.Contains("16:00", html);
-        Assert.Contains("20:00", html);
-        Assert.Contains("00:00", html);
-        Assert.Contains("04:00", html);
-        Assert.Contains("08:00", html);
-        Assert.Contains("12:00", html);
+        Assert.Contains("17:00", html);
+        Assert.Contains("21:00", html);
+        Assert.Contains("01:00", html);
+        Assert.Contains("05:00", html);
+        Assert.Contains("09:00", html);
+        Assert.Contains("13:00", html);
     }
 
     [Fact]
@@ -480,10 +480,10 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        // The newest window (08:00–12:00 on Feb 28) should appear before the oldest (08:00–12:00 on Feb 27)
-        // in the Motion Activity section. Both have label "08:00–12:00" but newest is listed first.
+        // The newest window (05:00–08:00 on Feb 28) should appear before all older windows
+        // in the Motion Activity section. Newest is listed first (its label starts with "05:00").
         var motionIdx = html.IndexOf("Motion Activity");
-        var firstWindowLabel = html.IndexOf("08:00", motionIdx + "Motion Activity".Length);
+        var firstWindowLabel = html.IndexOf("05:00", motionIdx + "Motion Activity".Length);
         Assert.True(firstWindowLabel > motionIdx, "First window after Motion Activity header should be the newest");
     }
 
@@ -497,21 +497,21 @@ public class EmailRendererTests : IDisposable
         _db.Devices.AddRange(device2, device3);
         await _db.SaveChangesAsync();
 
-        // Window 08:00–12:00 Feb 27: 3 events, 2 devices — GREEN activity, GREEN diversity
+        // Window 09:00–13:00 Feb 27: 3 events, 2 devices — GREEN activity, GREEN diversity
         AddMotion(device1.Id, new DateTime(2026, 2, 27, 9, 0, 0, DateTimeKind.Utc));
         AddMotion(device1.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
         AddMotion(device2.Id, new DateTime(2026, 2, 27, 11, 0, 0, DateTimeKind.Utc));
         AddTemp(device1.Id, new DateTime(2026, 2, 27, 9, 0, 0, DateTimeKind.Utc), 18.5);
         AddTemp(device1.Id, new DateTime(2026, 2, 27, 11, 0, 0, DateTimeKind.Utc), 21.0);
 
-        // Window 12:00–16:00 Feb 27: 1 event, 1 device — YELLOW activity, YELLOW diversity
+        // Window 13:00–17:00 Feb 27: 1 event, 1 device — YELLOW activity, YELLOW diversity
         AddMotion(device1.Id, new DateTime(2026, 2, 27, 14, 0, 0, DateTimeKind.Utc));
         AddTemp(device1.Id, new DateTime(2026, 2, 27, 14, 0, 0, DateTimeKind.Utc), 22.5);
 
-        // Window 16:00–20:00 Feb 27: 0 events — RED activity, RED diversity
+        // Window 17:00–21:00 Feb 27: 0 events — RED activity, RED diversity
         AddTemp(device1.Id, new DateTime(2026, 2, 27, 18, 0, 0, DateTimeKind.Utc), 20.0);
 
-        // Window 20:00–00:00 Feb 27–28: 6 events, 3 devices — GREEN 5+, GREEN diversity
+        // Window 21:00–01:00 Feb 27–28: 6 events, 3 devices — GREEN 5+, GREEN diversity
         AddMotion(device1.Id, new DateTime(2026, 2, 27, 21, 0, 0, DateTimeKind.Utc));
         AddMotion(device1.Id, new DateTime(2026, 2, 27, 22, 0, 0, DateTimeKind.Utc));
         AddMotion(device2.Id, new DateTime(2026, 2, 27, 21, 30, 0, DateTimeKind.Utc));
@@ -520,14 +520,12 @@ public class EmailRendererTests : IDisposable
         AddMotion(device3.Id, new DateTime(2026, 2, 27, 23, 30, 0, DateTimeKind.Utc));
         AddTemp(device1.Id, new DateTime(2026, 2, 27, 22, 0, 0, DateTimeKind.Utc), 19.0);
 
-        // Window 00:00–04:00 Feb 28: 0 events — RED activity, RED diversity
+        // Window 01:00–05:00 Feb 28: 0 events — RED activity, RED diversity
 
-        // Window 04:00–08:00 Feb 28: 2 events, 1 device — GREEN activity, YELLOW diversity
+        // Window 05:00–09:00 Feb 28 (current, displayEnd 08:00): 3 events, 2 devices
         AddMotion(device1.Id, new DateTime(2026, 2, 28, 5, 0, 0, DateTimeKind.Utc));
         AddMotion(device1.Id, new DateTime(2026, 2, 28, 6, 0, 0, DateTimeKind.Utc));
         AddTemp(device1.Id, new DateTime(2026, 2, 28, 6, 0, 0, DateTimeKind.Utc), 17.5);
-
-        // Window 08:00–12:00 Feb 28 (current): 1 event, 1 device — YELLOW
         AddMotion(device2.Id, new DateTime(2026, 2, 28, 8, 30, 0, DateTimeKind.Utc));
 
         await _db.SaveChangesAsync();
@@ -667,17 +665,17 @@ public class EmailRendererTests : IDisposable
     {
         var (customer, _, device) = await SeedBaseDataAsync();
 
-        // Reading exactly at the boundary of the 12:00 window start (which is also 08:00-12:00 end)
-        // Windows use >= start and < end, so 12:00 exactly falls in the 12:00-16:00 window
-        AddMotion(device.Id, new DateTime(2026, 2, 27, 12, 0, 0, DateTimeKind.Utc));
+        // Reading exactly at the boundary of the 09:00 window start (which is also 05:00–09:00 end)
+        // Windows use >= start and < end, so 09:00 exactly falls in the 09:00–13:00 window
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 9, 0, 0, DateTimeKind.Utc));
         await _db.SaveChangesAsync();
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
         Assert.Contains("Motion Activity", html);
-        // The reading at 12:00 should be counted in the 12:00-16:00 window
-        Assert.Contains("12:00", html);
+        // The reading at 09:00 should be counted in the 09:00–13:00 window
+        Assert.Contains("09:00", html);
     }
 
     [Fact]
@@ -922,17 +920,17 @@ public class EmailRendererTests : IDisposable
     {
         var (customer, _, device) = await SeedBaseDataAsync();
 
-        // nowUtc at 00:30 → current window is 00:00–04:00, displayEnd = 00:30, duration = 30 min < 60 min → omitted
-        var nowUtc = new DateTime(2026, 2, 28, 0, 30, 0, DateTimeKind.Utc);
+        // nowUtc at 01:30 → current window is 01:00–05:00, displayEnd = 01:30, duration = 30 min < 60 min → omitted
+        var nowUtc = new DateTime(2026, 2, 28, 1, 30, 0, DateTimeKind.Utc);
 
-        AddMotion(device.Id, new DateTime(2026, 2, 28, 0, 10, 0, DateTimeKind.Utc));
+        AddMotion(device.Id, new DateTime(2026, 2, 28, 1, 10, 0, DateTimeKind.Utc));
         await _db.SaveChangesAsync();
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, nowUtc);
 
         Assert.NotNull(html);
-        // The newest window label "00:00–00:30" should NOT appear (omitted)
-        Assert.DoesNotContain("00:00\u201300:30", html);
+        // The newest window label "01:00–01:30" should NOT appear (omitted)
+        Assert.DoesNotContain("01:00\u201301:30", html);
     }
 
     [Fact]
@@ -940,10 +938,10 @@ public class EmailRendererTests : IDisposable
     {
         var (customer, _, device) = await SeedBaseDataAsync();
 
-        // nowUtc at 01:00 → current window is 00:00–04:00, displayEnd = 01:00, duration = 60 min → kept
-        var nowUtc = new DateTime(2026, 2, 28, 1, 0, 0, DateTimeKind.Utc);
+        // nowUtc at 02:00 → current window is 01:00–05:00, displayEnd = 02:00, duration = 60 min → kept
+        var nowUtc = new DateTime(2026, 2, 28, 2, 0, 0, DateTimeKind.Utc);
 
-        AddMotion(device.Id, new DateTime(2026, 2, 28, 0, 10, 0, DateTimeKind.Utc));
+        AddMotion(device.Id, new DateTime(2026, 2, 28, 1, 10, 0, DateTimeKind.Utc));
         await _db.SaveChangesAsync();
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, nowUtc);
@@ -951,7 +949,7 @@ public class EmailRendererTests : IDisposable
         Assert.NotNull(html);
         // The newest window should appear (exactly 60 min, not omitted).
         // Duration is 1h < 3h, so end time is wrapped in dark red span.
-        Assert.Contains("00:00\u2013<span style=\"color:#8B0000;\">01:00</span>", html);
+        Assert.Contains("01:00\u2013<span style=\"color:#8B0000;\">02:00</span>", html);
     }
 
     [Fact]
@@ -959,11 +957,11 @@ public class EmailRendererTests : IDisposable
     {
         var (customer, _, device) = await SeedBaseDataAsync();
 
-        // nowUtc at 02:00 → current window is 00:00–04:00, displayEnd = 02:00, duration = 2h < 3h → dark red
-        var nowUtc = new DateTime(2026, 2, 28, 2, 0, 0, DateTimeKind.Utc);
+        // nowUtc at 03:00 → current window is 01:00–05:00, displayEnd = 03:00, duration = 2h < 3h → dark red
+        var nowUtc = new DateTime(2026, 2, 28, 3, 0, 0, DateTimeKind.Utc);
 
-        AddMotion(device.Id, new DateTime(2026, 2, 28, 0, 30, 0, DateTimeKind.Utc));
-        AddTemp(device.Id, new DateTime(2026, 2, 28, 0, 30, 0, DateTimeKind.Utc), 20.0);
+        AddMotion(device.Id, new DateTime(2026, 2, 28, 1, 30, 0, DateTimeKind.Utc));
+        AddTemp(device.Id, new DateTime(2026, 2, 28, 1, 30, 0, DateTimeKind.Utc), 20.0);
         await _db.SaveChangesAsync();
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, nowUtc);
@@ -978,9 +976,8 @@ public class EmailRendererTests : IDisposable
     {
         var (customer, _, device) = await SeedBaseDataAsync();
 
-        // All windows are full 4-hour windows when nowUtc is exactly on a boundary
-        // nowUtc = 04:00 → current window 04:00–04:00 is omitted (0 min),
-        // remaining windows are all full 4-hour spans → no dark red
+        // nowUtc = 04:00 → current window is 01:00–05:00 (displayEnd 04:00, exactly 3h — not dark red).
+        // Remaining windows are all full 4-hour spans → no dark red anywhere.
         var nowUtc = new DateTime(2026, 2, 28, 4, 0, 0, DateTimeKind.Utc);
 
         AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
@@ -998,10 +995,10 @@ public class EmailRendererTests : IDisposable
     {
         var (customer, _, device) = await SeedBaseDataAsync();
 
-        // nowUtc at 03:00 → current window is 00:00–04:00, displayEnd = 03:00, duration = 3h → NOT dark red
-        var nowUtc = new DateTime(2026, 2, 28, 3, 0, 0, DateTimeKind.Utc);
+        // nowUtc at 04:00 → current window is 01:00–05:00, displayEnd = 04:00, duration = 3h → NOT dark red
+        var nowUtc = new DateTime(2026, 2, 28, 4, 0, 0, DateTimeKind.Utc);
 
-        AddMotion(device.Id, new DateTime(2026, 2, 28, 0, 30, 0, DateTimeKind.Utc));
+        AddMotion(device.Id, new DateTime(2026, 2, 28, 1, 30, 0, DateTimeKind.Utc));
         await _db.SaveChangesAsync();
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, nowUtc);
