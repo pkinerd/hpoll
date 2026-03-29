@@ -768,7 +768,7 @@ public class EmailRendererTests : IDisposable
     }
 
     [Fact]
-    public async Task RenderDailySummaryAsync_WithAllBatteriesAbove30_NoBatterySection()
+    public async Task RenderDailySummaryAsync_WithAllBatteriesAboveThreshold_StillShowsDeviceStatus()
     {
         var (customer, hub, device) = await SeedBaseDataAsync();
 
@@ -782,14 +782,16 @@ public class EmailRendererTests : IDisposable
         _db.Devices.Add(batteryDevice);
         await _db.SaveChangesAsync();
 
-        // Add a battery reading above 30%
+        // Add a battery reading above threshold — section should still show
         AddBattery(batteryDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 85);
         await _db.SaveChangesAsync();
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.DoesNotContain("Device Status", html);
+        Assert.Contains("Device Status", html);
+        Assert.Contains("Living Room Sensor", html);
+        Assert.Contains("85%", html);
     }
 
     [Fact]
@@ -1085,8 +1087,10 @@ public class EmailRendererTests : IDisposable
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        // Latest reading is 90% (above 30% threshold) so no battery section shown
-        Assert.DoesNotContain("Device Status", html);
+        // Latest reading is 90% — section still shows since battery data exists
+        Assert.Contains("Device Status", html);
+        Assert.Contains("Recovered Sensor", html);
+        Assert.Contains("90%", html);
     }
 
     [Fact]
@@ -1656,7 +1660,7 @@ public class EmailRendererTests : IDisposable
     }
 
     [Fact]
-    public async Task RenderDailySummaryAsync_LowBatteryAndUnreachable_ShowsBoth()
+    public async Task RenderDailySummaryAsync_LowBatteryAndUnreachable_ShowsBothWithConnectivityFirst()
     {
         var (customer, hub, device) = await SeedBaseDataAsync();
 
@@ -1688,6 +1692,11 @@ public class EmailRendererTests : IDisposable
         Assert.Contains("15%", html);
         Assert.Contains("Unreachable Device", html);
         Assert.Contains("Disconnected", html);
+
+        // Connectivity issues should appear before battery statuses
+        var disconnectedPos = html.IndexOf("Disconnected", StringComparison.Ordinal);
+        var batteryPos = html.IndexOf("15%", StringComparison.Ordinal);
+        Assert.True(disconnectedPos < batteryPos, "Connectivity issues should render before battery statuses");
     }
 
     [Fact]

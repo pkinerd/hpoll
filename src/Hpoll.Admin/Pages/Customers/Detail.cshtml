@@ -243,6 +243,23 @@ else
 <h2>Device Status</h2>
 @if (Model.BatteryStatuses.Any() || Model.UnreachableDevices.Any())
 {
+    @if (Model.UnreachableDevices.Any())
+    {
+        <h3>Unreachable Devices</h3>
+        <table>
+            <thead><tr><th>Device</th><th>Status</th><th>Last Updated</th></tr></thead>
+            <tbody>
+            @foreach (var d in Model.UnreachableDevices)
+            {
+                <tr>
+                    <td>@d.DeviceName</td>
+                    <td><span style="color: #e74c3c; font-weight: 600;">@d.Status</span></td>
+                    <td>@d.LastUpdated.ToString("yyyy-MM-dd HH:mm") UTC</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
     @if (Model.BatteryStatuses.Any())
     {
         <h3>Battery</h3>
@@ -257,23 +274,6 @@ else
                     <td><span style="color: @color; font-weight: 600;">@b.BatteryLevel%</span></td>
                     <td>@b.BatteryState</td>
                     <td>@b.LastUpdated.ToString("yyyy-MM-dd HH:mm") UTC</td>
-                </tr>
-            }
-            </tbody>
-        </table>
-    }
-    @if (Model.UnreachableDevices.Any())
-    {
-        <h3>Unreachable Devices</h3>
-        <table>
-            <thead><tr><th>Device</th><th>Status</th><th>Last Updated</th></tr></thead>
-            <tbody>
-            @foreach (var d in Model.UnreachableDevices)
-            {
-                <tr>
-                    <td>@d.DeviceName</td>
-                    <td><span style="color: #e74c3c; font-weight: 600;">@d.Status</span></td>
-                    <td>@d.LastUpdated.ToString("yyyy-MM-dd HH:mm") UTC</td>
                 </tr>
             }
             </tbody>

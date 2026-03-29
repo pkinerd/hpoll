@@ -217,7 +217,7 @@ public class EmailRenderer : IEmailRenderer
             }
         }
 
-        batteryStatuses = batteryStatuses.OrderBy(b => b.BatteryLevel).ToList();
+        batteryStatuses = batteryStatuses.OrderBy(b => b.BatteryLevel).ThenBy(b => b.DeviceName).ToList();
 
         // Query latest connectivity reading per device to find unreachable devices
         var connectivityReadings = (await _db.DeviceReadings
@@ -257,7 +257,7 @@ public class EmailRenderer : IEmailRenderer
             }
         }
 
-        unreachableDevices = unreachableDevices.OrderBy(d => d.DeviceName).ToList();
+        unreachableDevices = unreachableDevices.OrderBy(d => d.DeviceName, StringComparer.OrdinalIgnoreCase).ToList();
 
         windows.Reverse(); // newest window first for readability
 
@@ -271,10 +271,10 @@ public class EmailRenderer : IEmailRenderer
         }
 
         var displayEndLocal = bucketEndLocal > nowLocal ? nowLocal : bucketEndLocal;
-        return BuildHtml(customerName, bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, unreachableDevices, _emailSettings.BatteryAlertThreshold, _emailSettings.BatteryLevelCritical, _emailSettings.BatteryLevelWarning, includeLatestLocations);
+        return BuildHtml(customerName, bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, unreachableDevices, _emailSettings.BatteryLevelCritical, _emailSettings.BatteryLevelWarning, includeLatestLocations);
     }
 
-    private static string BuildHtml(string? customerName, DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses, List<UnreachableDevice> unreachableDevices, int batteryAlertThreshold, int batteryLevelCritical, int batteryLevelWarning, bool includeLatestLocations)
+    private static string BuildHtml(string? customerName, DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses, List<UnreachableDevice> unreachableDevices, int batteryLevelCritical, int batteryLevelWarning, bool includeLatestLocations)
     {
         var sb = new StringBuilder();
         sb.AppendLine("<!DOCTYPE html>");
@@ -404,32 +404,13 @@ public class EmailRenderer : IEmailRenderer
         }
         sb.AppendLine("</table>");
 
-        // Battery & connectivity section — shown if any battery is below threshold OR any device is unreachable
-        var hasLowBattery = batteryStatuses.Count > 0 && batteryStatuses.Any(b => b.BatteryLevel <= batteryAlertThreshold);
+        // Device status section — shown whenever there is any battery or connectivity data
+        var hasBattery = batteryStatuses.Count > 0;
         var hasUnreachable = unreachableDevices.Count > 0;
-        if (hasLowBattery || hasUnreachable)
+        if (hasBattery || hasUnreachable)
         {
             sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-top:20px;\">");
             sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Device Status</td></tr>");
-
-            if (hasLowBattery)
-            {
-                foreach (var b in batteryStatuses)
-                {
-                    var color = b.BatteryLevel <= batteryLevelCritical ? "#e74c3c"
-                              : b.BatteryLevel <= batteryLevelWarning ? "#f39c12"
-                              : "#27ae60";
-                    var barWidth = Math.Max(b.BatteryLevel, 5);
-
-                    sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:140px;white-space:nowrap;\">{Encode(b.DeviceName)}</td>");
-                    sb.AppendLine($"<td><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"><tr>");
-                    sb.AppendLine($"<td style=\"background-color:{color};width:{barWidth}%;height:16px;border-radius:3px;\"></td>");
-                    sb.AppendLine($"<td style=\"width:{100 - barWidth}%;\"></td>");
-                    sb.AppendLine("</tr></table></td>");
-                    sb.AppendLine($"<td style=\"font-size:11px;color:#777;width:36px;text-align:right;\">{b.BatteryLevel}%</td>");
-                    sb.AppendLine("</tr>");
-                }
-            }
 
             if (hasUnreachable)
             {
@@ -447,6 +428,22 @@ public class EmailRenderer : IEmailRenderer
                     sb.AppendLine($"<td colspan=\"2\" style=\"font-size:12px;color:#e74c3c;\">\u26a0 {Encode(statusLabel)}</td>");
                     sb.AppendLine("</tr>");
                 }
+            }
+
+            foreach (var b in batteryStatuses)
+            {
+                var color = b.BatteryLevel <= batteryLevelCritical ? "#e74c3c"
+                          : b.BatteryLevel <= batteryLevelWarning ? "#f39c12"
+                          : "#27ae60";
+                var barWidth = Math.Max(b.BatteryLevel, 5);
+
+                sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:140px;white-space:nowrap;\">{Encode(b.DeviceName)}</td>");
+                sb.AppendLine($"<td><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"><tr>");
+                sb.AppendLine($"<td style=\"background-color:{color};width:{barWidth}%;height:16px;border-radius:3px;\"></td>");
+                sb.AppendLine($"<td style=\"width:{100 - barWidth}%;\"></td>");
+                sb.AppendLine("</tr></table></td>");
+                sb.AppendLine($"<td style=\"font-size:11px;color:#777;width:36px;text-align:right;\">{b.BatteryLevel}%</td>");
+                sb.AppendLine("</tr>");
             }
 
             sb.AppendLine("</table>");

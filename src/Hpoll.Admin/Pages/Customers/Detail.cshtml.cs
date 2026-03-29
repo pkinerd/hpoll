@@ -447,7 +447,7 @@ public class DetailModel : PageModel
             }
         }
 
-        BatteryStatuses = BatteryStatuses.OrderBy(b => b.BatteryLevel).ToList();
+        BatteryStatuses = BatteryStatuses.OrderBy(b => b.BatteryLevel).ThenBy(b => b.DeviceName).ToList();
 
         // Query latest connectivity reading per device to find unreachable devices
         var connectivityReadings = await _db.DeviceReadings
@@ -480,7 +480,7 @@ public class DetailModel : PageModel
             }
         }
 
-        UnreachableDevices = UnreachableDevices.OrderBy(d => d.DeviceName).ToList();
+        UnreachableDevices = UnreachableDevices.OrderBy(d => d.DeviceName, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     public class ActivityWindow
