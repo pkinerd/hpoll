@@ -196,24 +196,32 @@ jobs:
           cache-to: type=gha,mode=max,scope=admin
 
   # ──────────────────────────────────────────────────────────────────────────
-  # Update Gist
+  # Update Latest Commit
   #
-  # Writes the commit hash to the "hpoll-latest" gist after successful
+  # Writes the commit hash to the hpoll-latest orphan branch after successful
   # Docker pushes so external systems can discover the latest deployed commit.
   # ──────────────────────────────────────────────────────────────────────────
-  update-gist:
-    name: Update Latest Commit Gist
+  update-latest:
+    name: Update Latest Commit
     needs: [docker, docker-admin]
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: write
 
     steps:
-      - name: Write commit hash to gist
-        env:
-          GH_TOKEN: ${{ secrets.GIST_TOKEN }}
+      - name: Push commit hash to orphan branch
         run: |
-          echo "${{ github.sha }}" > hpoll-latest
-          gh gist edit "${{ secrets.GIST_ID }}" hpoll-latest
+          git init -b tmp
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan hpoll-latest
+          echo "${{ github.sha }}" > commit.txt
+          git add commit.txt
+          git commit -m "Latest commit: ${{ github.sha }}"
+          git push --force \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+            hpoll-latest
 
   # ──────────────────────────────────────────────────────────────────────────
   # Push Build Logs
