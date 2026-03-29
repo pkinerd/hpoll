@@ -9,7 +9,11 @@ description: Finds or polls for CI build results on the `build-logs` orphan bran
 
 After pushing code changes, use this process to monitor for CI build results and analyze them when available.
 
-Build logs are stored as folders on a single `build-logs` orphan branch. Each folder is named `<run_number>-<run_id>-<timestamp>-<status>` and contains `build-summary.md`, `jobs.json`, job `.log` files, and test artifacts.
+Build logs are stored as folders on a single `build-logs` orphan branch. Each folder is named `<run_number>-<run_id>-<timestamp>-<status>` and contains:
+- `build-summary.md` — build metadata (run number, commit, branch, PR, result)
+- `jobs.json` — full GitHub Actions jobs API response (includes `head_sha`)
+- `*.log` — individual job logs (e.g. `build-&-test.log`, `docker-build-&-push.log`)
+- `test-reports/` — code coverage reports (Cobertura XML) from the test run
 
 **IMPORTANT — Do not wait for a build that won't come:** Before entering the polling loop, check whether there are recent unpushed or just-pushed changes on the session branch that would have triggered a new CI run. If there are NO recent changes (e.g., the branch hasn't been pushed to since the last known build), skip the polling loop entirely — just find the most recent matching build (Step 2) and report its result. Only enter the polling loop (Step 3) when you have evidence that a new build should be in progress (e.g., you just pushed, or the user just pushed, and no matching build exists yet for the current HEAD commit).
 
@@ -155,9 +159,11 @@ Report to the user that the build passed.
        show origin/build-logs:<folder>/build-and-test.log | grep '✖︎\|error:'
    ```
 
-2. Analyze the failures and determine if they are related to the session's changes.
+2. If test failures are involved, coverage reports are available at `<folder>/test-reports/*/coverage.cobertura.xml` and can be fetched the same way to check which lines/branches are covered.
 
-3. If failures are related, fix them, commit, push, and restart polling from Step 1.
+3. Analyze the failures and determine if they are related to the session's changes.
+
+4. If failures are related, fix them, commit, push, and restart polling from Step 1.
 
 ### Step 5: Report to User
 
