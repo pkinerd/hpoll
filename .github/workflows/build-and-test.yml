@@ -210,17 +210,15 @@ jobs:
       contents: write
 
     steps:
+      - name: Check out repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.2.2
+
       - name: Push commit hash to orphan branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git init -b tmp
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git remote add origin "https://github.com/${{ github.repository }}.git"
-          git config "http.https://github.com/.extraheader" \
-            "Authorization: basic $(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)"
           git checkout --orphan latest-ci
+          git rm -rf .
           echo "${{ github.sha }}" > commit.txt
           git add commit.txt
           git commit -m "Latest commit: ${{ github.sha }}"
