@@ -33,8 +33,11 @@ public class EmailRenderer : IEmailRenderer
         var effectiveNowUtc = nowUtc ?? DateTime.UtcNow;
         var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(effectiveNowUtc, tz);
 
-        var windowHours = _emailSettings.SummaryWindowHours;
-        var windowCount = _emailSettings.SummaryWindowCount;
+        // Per-customer overrides with global fallback
+        var customer = await _db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == customerId, ct);
+        var windowHours = customer?.SummaryWindowHours ?? _emailSettings.SummaryWindowHours;
+        var windowCount = customer?.SummaryWindowCount ?? _emailSettings.SummaryWindowCount;
+        var includeLatestLocations = customer?.IncludeLatestLocations ?? true;
         var totalHours = windowCount * windowHours;
 
         // Query window covers the full span plus one extra bucket for overlap
@@ -42,7 +45,7 @@ public class EmailRenderer : IEmailRenderer
         var endUtc = effectiveNowUtc;
 
         // Snap to the end of the current window so it's always included, applying the configured offset
-        var offset = _emailSettings.SummaryWindowOffsetHours;
+        var offset = customer?.SummaryWindowOffsetHours ?? _emailSettings.SummaryWindowOffsetHours;
         var adjHour = nowLocal.Hour - offset;
         var bucketEndLocal = nowLocal.Date.AddHours((int)Math.Floor((double)adjHour / windowHours) * windowHours + windowHours + offset);
 
@@ -228,10 +231,10 @@ public class EmailRenderer : IEmailRenderer
         }
 
         var displayEndLocal = bucketEndLocal > nowLocal ? nowLocal : bucketEndLocal;
-        return BuildHtml(customerName, bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, _emailSettings.BatteryAlertThreshold, _emailSettings.BatteryLevelCritical, _emailSettings.BatteryLevelWarning);
+        return BuildHtml(customerName, bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, _emailSettings.BatteryAlertThreshold, _emailSettings.BatteryLevelCritical, _emailSettings.BatteryLevelWarning, includeLatestLocations);
     }
 
-    private static string BuildHtml(string? customerName, DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses, int batteryAlertThreshold, int batteryLevelCritical, int batteryLevelWarning)
+    private static string BuildHtml(string? customerName, DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses, int batteryAlertThreshold, int batteryLevelCritical, int batteryLevelWarning, bool includeLatestLocations)
     {
         var sb = new StringBuilder();
         sb.AppendLine("<!DOCTYPE html>");
@@ -322,20 +325,23 @@ public class EmailRenderer : IEmailRenderer
         sb.AppendLine("</table>");
 
         // Latest Location — name of most recently active motion sensor per window
-        sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-bottom:20px;\">");
-        sb.AppendLine("<tr><td colspan=\"2\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Latest Locations</td></tr>");
-        foreach (var w in windows)
+        if (includeLatestLocations)
         {
-            string location;
-            if (w.LatestLocations.Count > 0)
-                location = string.Join("<br>", w.LatestLocations.Select(l => $"{Encode(l.SensorName)} ({l.LocalTime:HH:mm})"));
-            else
-                location = "<span style=\"color:#999;\">\u2014</span>";
-            sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;white-space:nowrap;vertical-align:top;\">{FormatLabelHtml(w)}</td>");
-            sb.AppendLine($"<td style=\"font-size:13px;color:#2c3e50;\">{location}</td>");
-            sb.AppendLine("</tr>");
+            sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-bottom:20px;\">");
+            sb.AppendLine("<tr><td colspan=\"2\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Latest Locations</td></tr>");
+            foreach (var w in windows)
+            {
+                string location;
+                if (w.LatestLocations.Count > 0)
+                    location = string.Join("<br>", w.LatestLocations.Select(l => $"{Encode(l.SensorName)} ({l.LocalTime:HH:mm})"));
+                else
+                    location = "<span style=\"color:#999;\">\u2014</span>";
+                sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;white-space:nowrap;vertical-align:top;\">{FormatLabelHtml(w)}</td>");
+                sb.AppendLine($"<td style=\"font-size:13px;color:#2c3e50;\">{location}</td>");
+                sb.AppendLine("</tr>");
+            }
+            sb.AppendLine("</table>");
         }
-        sb.AppendLine("</table>");
 
         // Temperature range
         sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\">");
