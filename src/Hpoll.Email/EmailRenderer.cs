@@ -271,10 +271,10 @@ public class EmailRenderer : IEmailRenderer
         }
 
         var displayEndLocal = bucketEndLocal > nowLocal ? nowLocal : bucketEndLocal;
-        return BuildHtml(customerName, bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, unreachableDevices, _emailSettings.BatteryLevelCritical, _emailSettings.BatteryLevelWarning, includeLatestLocations);
+        return BuildHtml(customerName, bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, unreachableDevices, _emailSettings.BatteryAlertThreshold, _emailSettings.BatteryLevelCritical, _emailSettings.BatteryLevelWarning, includeLatestLocations);
     }
 
-    private static string BuildHtml(string? customerName, DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses, List<UnreachableDevice> unreachableDevices, int batteryLevelCritical, int batteryLevelWarning, bool includeLatestLocations)
+    private static string BuildHtml(string? customerName, DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses, List<UnreachableDevice> unreachableDevices, int batteryAlertThreshold, int batteryLevelCritical, int batteryLevelWarning, bool includeLatestLocations)
     {
         var sb = new StringBuilder();
         sb.AppendLine("<!DOCTYPE html>");
@@ -404,31 +404,35 @@ public class EmailRenderer : IEmailRenderer
         }
         sb.AppendLine("</table>");
 
-        // Device status section — shown whenever there is any battery or connectivity data
-        var hasBattery = batteryStatuses.Count > 0;
-        var hasUnreachable = unreachableDevices.Count > 0;
-        if (hasBattery || hasUnreachable)
+        // Device Issues section — shown when any device is unreachable
+        if (unreachableDevices.Count > 0)
         {
             sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-top:20px;\">");
-            sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Device Status</td></tr>");
+            sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Device Issues</td></tr>");
 
-            if (hasUnreachable)
+            foreach (var d in unreachableDevices)
             {
-                foreach (var d in unreachableDevices)
+                var statusLabel = d.Status switch
                 {
-                    var statusLabel = d.Status switch
-                    {
-                        "disconnected" => "Disconnected",
-                        "connectivity_issue" => "Connectivity Issue",
-                        "unidirectional_incoming" => "Limited Connectivity",
-                        "configuration_error" => "Configuration Error",
-                        _ => d.Status
-                    };
-                    sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:140px;white-space:nowrap;\">{Encode(d.DeviceName)}</td>");
-                    sb.AppendLine($"<td colspan=\"2\" style=\"font-size:12px;color:#e74c3c;\">\u26a0 {Encode(statusLabel)}</td>");
-                    sb.AppendLine("</tr>");
-                }
+                    "disconnected" => "Disconnected",
+                    "connectivity_issue" => "Connectivity Issue",
+                    "unidirectional_incoming" => "Limited Connectivity",
+                    "configuration_error" => "Configuration Error",
+                    _ => d.Status
+                };
+                sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:140px;white-space:nowrap;\">{Encode(d.DeviceName)}</td>");
+                sb.AppendLine($"<td colspan=\"2\" style=\"font-size:12px;color:#e74c3c;\">\u26a0 {Encode(statusLabel)}</td>");
+                sb.AppendLine("</tr>");
             }
+
+            sb.AppendLine("</table>");
+        }
+
+        // Battery Levels section — shown when any device is below the alert threshold
+        if (batteryStatuses.Count > 0 && batteryStatuses.Any(b => b.BatteryLevel <= batteryAlertThreshold))
+        {
+            sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-top:20px;\">");
+            sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Battery Levels</td></tr>");
 
             foreach (var b in batteryStatuses)
             {

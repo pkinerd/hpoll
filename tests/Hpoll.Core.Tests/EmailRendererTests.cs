@@ -613,7 +613,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Device Status", html);
+        Assert.Contains("Battery Levels", html);
         Assert.DoesNotContain("<script>", html);
         Assert.Contains("&lt;script&gt;", html);
     }
@@ -707,7 +707,7 @@ public class EmailRendererTests : IDisposable
 
         Assert.NotNull(html);
         // Should not crash; malformed battery data is silently skipped
-        Assert.DoesNotContain("Device Status", html);
+        Assert.DoesNotContain("Battery Levels", html);
     }
 
     [Fact]
@@ -760,7 +760,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Device Status", html);
+        Assert.Contains("Battery Levels", html);
         Assert.Contains("Hallway Sensor", html);
         Assert.Contains("15%", html);
         // Red color for <30%
@@ -768,7 +768,7 @@ public class EmailRendererTests : IDisposable
     }
 
     [Fact]
-    public async Task RenderDailySummaryAsync_WithAllBatteriesAboveThreshold_StillShowsDeviceStatus()
+    public async Task RenderDailySummaryAsync_WithAllBatteriesAboveThreshold_NoBatterySection()
     {
         var (customer, hub, device) = await SeedBaseDataAsync();
 
@@ -782,16 +782,14 @@ public class EmailRendererTests : IDisposable
         _db.Devices.Add(batteryDevice);
         await _db.SaveChangesAsync();
 
-        // Add a battery reading above threshold — section should still show
+        // Add a battery reading above threshold — Battery Levels section should not show
         AddBattery(batteryDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 85);
         await _db.SaveChangesAsync();
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Device Status", html);
-        Assert.Contains("Living Room Sensor", html);
-        Assert.Contains("85%", html);
+        Assert.DoesNotContain("Battery Levels", html);
     }
 
     [Fact]
@@ -813,7 +811,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Device Status", html);
+        Assert.Contains("Battery Levels", html);
         Assert.Contains("Garage Sensor", html);
         Assert.Contains("Kitchen Sensor", html);
         Assert.Contains("Bedroom Sensor", html);
@@ -837,7 +835,8 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.DoesNotContain("Device Status", html);
+        Assert.DoesNotContain("Battery Levels", html);
+        Assert.DoesNotContain("Device Issues", html);
     }
 
     [Fact]
@@ -864,7 +863,7 @@ public class EmailRendererTests : IDisposable
 
         Assert.NotNull(html);
         // Should show battery section since latest reading is 20% (<30%)
-        Assert.Contains("Device Status", html);
+        Assert.Contains("Battery Levels", html);
         Assert.Contains("20%", html);
     }
 
@@ -890,7 +889,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Device Status", html);
+        Assert.Contains("Battery Levels", html);
         Assert.Contains("Hallway Sensor", html);
         Assert.Contains("30%", html);
         // At exactly the critical threshold (30), should show red
@@ -1034,7 +1033,7 @@ public class EmailRendererTests : IDisposable
 
         Assert.NotNull(html);
         // Old battery reading should be excluded — no battery section shown
-        Assert.DoesNotContain("Device Status", html);
+        Assert.DoesNotContain("Battery Levels", html);
         Assert.DoesNotContain("Old Battery Sensor", html);
     }
 
@@ -1060,7 +1059,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Device Status", html);
+        Assert.Contains("Battery Levels", html);
         Assert.Contains("Recent Battery Sensor", html);
         Assert.Contains("15%", html);
     }
@@ -1087,10 +1086,8 @@ public class EmailRendererTests : IDisposable
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        // Latest reading is 90% — section still shows since battery data exists
-        Assert.Contains("Device Status", html);
-        Assert.Contains("Recovered Sensor", html);
-        Assert.Contains("90%", html);
+        // Latest reading is 90% (above threshold) — no Battery Levels section
+        Assert.DoesNotContain("Battery Levels", html);
     }
 
     [Fact]
@@ -1326,7 +1323,7 @@ public class EmailRendererTests : IDisposable
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        Assert.Contains("Device Status", html);
+        Assert.Contains("Battery Levels", html);
         // Low Battery (5%) should appear before Mid Battery (40%) before High Battery (80%)
         var lowIdx = html.IndexOf("Low Battery");
         var midIdx = html.IndexOf("Mid Battery");
@@ -1604,7 +1601,7 @@ public class EmailRendererTests : IDisposable
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        Assert.Contains("Device Status", html);
+        Assert.Contains("Device Issues", html);
         Assert.Contains("Hallway Sensor", html);
         Assert.Contains("Disconnected", html);
         Assert.Contains("\u26a0", html); // warning icon
@@ -1630,7 +1627,7 @@ public class EmailRendererTests : IDisposable
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        Assert.DoesNotContain("Device Status", html);
+        Assert.DoesNotContain("Device Issues", html);
     }
 
     [Fact]
@@ -1654,7 +1651,7 @@ public class EmailRendererTests : IDisposable
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        Assert.Contains("Device Status", html);
+        Assert.Contains("Device Issues", html);
         Assert.Contains("Garage Sensor", html);
         Assert.Contains("Connectivity Issue", html);
     }
@@ -1687,16 +1684,17 @@ public class EmailRendererTests : IDisposable
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        Assert.Contains("Device Status", html);
+        Assert.Contains("Device Issues", html);
+        Assert.Contains("Battery Levels", html);
         Assert.Contains("Low Battery Device", html);
         Assert.Contains("15%", html);
         Assert.Contains("Unreachable Device", html);
         Assert.Contains("Disconnected", html);
 
-        // Connectivity issues should appear before battery statuses
-        var disconnectedPos = html.IndexOf("Disconnected", StringComparison.Ordinal);
-        var batteryPos = html.IndexOf("15%", StringComparison.Ordinal);
-        Assert.True(disconnectedPos < batteryPos, "Connectivity issues should render before battery statuses");
+        // Device Issues section should appear before Battery Levels section
+        var issuesPos = html.IndexOf("Device Issues", StringComparison.Ordinal);
+        var batteryPos = html.IndexOf("Battery Levels", StringComparison.Ordinal);
+        Assert.True(issuesPos < batteryPos, "Device Issues should render before Battery Levels");
     }
 
     [Fact]
@@ -1780,7 +1778,7 @@ public class EmailRendererTests : IDisposable
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        Assert.Contains("Device Status", html);
+        Assert.Contains("Device Issues", html);
         Assert.Contains("some_new_status", html);
     }
 
