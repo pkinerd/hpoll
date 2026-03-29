@@ -1495,4 +1495,113 @@ public class PollingServiceTests : IDisposable
         // UpdatedAt should NOT be the FakeTimeProvider's time (it wasn't renamed)
         Assert.NotEqual(_fakeTime.GetUtcNow().UtcDateTime, device.UpdatedAt);
     }
+
+    [Fact]
+    public async Task PollHub_TemperatureOnlyDevice_GetsTemperatureSensorType()
+    {
+        await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource> { Data = new List<HueMotionResource>() });
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource>
+            {
+                Data = new List<HueTemperatureResource>
+                {
+                    new()
+                    {
+                        Id = "temp-001", Type = "temperature",
+                        Owner = new HueResourceRef { Rid = "device-temp-only", Rtype = "device" },
+                        Enabled = true,
+                        Temperature = new HueTemperatureData
+                        {
+                            TemperatureReport = new HueTemperatureReport { Temperature = 22.0, Changed = _fakeTime.GetUtcNow().UtcDateTime }
+                        }
+                    }
+                }
+            });
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource>
+            {
+                Data = new List<HueDeviceResource>
+                {
+                    new()
+                    {
+                        Id = "device-temp-only", Type = "device",
+                        Metadata = new HueDeviceMetadata { Name = "Temp Only Sensor", Archetype = "unknown_archetype" },
+                        ProductData = new HueProductData { ModelId = "SOT001", ProductName = "Temp sensor", SoftwareVersion = "1.0" },
+                        Services = new List<HueResourceRef> { new() { Rid = "temp-001", Rtype = "temperature" } }
+                    }
+                }
+            });
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var device = await db.Devices.FirstAsync(d => d.HueDeviceId == "device-temp-only");
+        Assert.Equal(DeviceTypes.TemperatureSensor, device.DeviceType);
+    }
+
+    [Fact]
+    public async Task PollHub_StaleDevicesNotRemoved_WhenBatteryNotPolled()
+    {
+        // Set LastBatteryPollUtc to recent time so shouldPollBattery is false
+        var hub = await SeedHubAsync(lastBatteryPollUtc: _fakeTime.GetUtcNow().UtcDateTime.AddMinutes(-10));
+
+        // Pre-seed a device that won't appear in motion/temperature responses
+        using (var seedDb = CreateDb())
+        {
+            var staleDevice = new Device
+            {
+                HubId = hub.Id,
+                HueDeviceId = "battery-only-device",
+                DeviceType = DeviceTypes.Unknown,
+                Name = "Light Bulb"
+            };
+            seedDb.Devices.Add(staleDevice);
+            await seedDb.SaveChangesAsync();
+        }
+
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService();
+        // Non-battery cycle: stale removal should NOT run
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var devices = await db.Devices.Where(d => d.HueDeviceId == "battery-only-device").ToListAsync();
+        Assert.NotEmpty(devices); // Device should still exist
+    }
+
+    [Fact]
+    public async Task PollHub_DeviceTypeChanged_UpdatesDeviceType()
+    {
+        var hub = await SeedHubAsync();
+
+        // Pre-create a device with wrong type (e.g. migrating from old data)
+        using (var db = CreateDb())
+        {
+            db.Devices.Add(new Device
+            {
+                HubId = hub.Id,
+                HueDeviceId = "device-001",
+                DeviceType = DeviceTypes.Unknown,
+                Name = "Kitchen Sensor"
+            });
+            await db.SaveChangesAsync();
+        }
+
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db2 = CreateDb();
+        var device = await db2.Devices.FirstAsync(d => d.HueDeviceId == "device-001" && d.HubId == hub.Id);
+        Assert.Equal(DeviceTypes.MotionSensor, device.DeviceType);
+        Assert.Equal(_fakeTime.GetUtcNow().UtcDateTime, device.UpdatedAt);
+    }
 }

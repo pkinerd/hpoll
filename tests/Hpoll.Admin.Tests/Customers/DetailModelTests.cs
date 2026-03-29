@@ -985,6 +985,141 @@ public class DetailModelTests : IDisposable
         Assert.Contains("for Alice Smith", model.EmailPreviewHtml);
     }
 
+    [Fact]
+    public async Task OnGetAsync_LoadsUnreachableDevices()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+
+        var device = new Device
+        {
+            HubId = hub.Id, HueDeviceId = "conn-001", DeviceType = DeviceTypes.MotionSensor, Name = "Front Door"
+        };
+        _db.Devices.Add(device);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddMinutes(-30),
+            ReadingType = ReadingTypes.ZigbeeConnectivity, Value = "{\"status\":\"connectivity_issue\"}"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Single(model.UnreachableDevices);
+        Assert.Equal("Front Door", model.UnreachableDevices[0].DeviceName);
+        Assert.Equal("connectivity_issue", model.UnreachableDevices[0].Status);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_ConnectedDevices_NotInUnreachableList()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+
+        var device = new Device
+        {
+            HubId = hub.Id, HueDeviceId = "conn-002", DeviceType = DeviceTypes.MotionSensor, Name = "Kitchen"
+        };
+        _db.Devices.Add(device);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddMinutes(-30),
+            ReadingType = ReadingTypes.ZigbeeConnectivity, Value = "{\"status\":\"connected\"}"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Empty(model.UnreachableDevices);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_MalformedConnectivityJson_SkipsGracefully()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+
+        var device = new Device
+        {
+            HubId = hub.Id, HueDeviceId = "conn-bad", DeviceType = DeviceTypes.MotionSensor, Name = "Bad Sensor"
+        };
+        _db.Devices.Add(device);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddMinutes(-30),
+            ReadingType = ReadingTypes.ZigbeeConnectivity, Value = "not-valid-json"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Empty(model.UnreachableDevices);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_UnreachableDevices_SortedByName()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+
+        var dev1 = new Device { HubId = hub.Id, HueDeviceId = "conn-z", DeviceType = DeviceTypes.MotionSensor, Name = "Zebra" };
+        var dev2 = new Device { HubId = hub.Id, HueDeviceId = "conn-a", DeviceType = DeviceTypes.MotionSensor, Name = "Alpha" };
+        _db.Devices.AddRange(dev1, dev2);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = dev1.Id, Timestamp = DateTime.UtcNow.AddMinutes(-30),
+            ReadingType = ReadingTypes.ZigbeeConnectivity, Value = "{\"status\":\"connectivity_issue\"}"
+        });
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = dev2.Id, Timestamp = DateTime.UtcNow.AddMinutes(-30),
+            ReadingType = ReadingTypes.ZigbeeConnectivity, Value = "{\"status\":\"unidirectional_incoming\"}"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Equal(2, model.UnreachableDevices.Count);
+        Assert.Equal("Alpha", model.UnreachableDevices[0].DeviceName);
+        Assert.Equal("Zebra", model.UnreachableDevices[1].DeviceName);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_NullWindowOffset_FallsBackToDefault()
+    {
+        var customer = await SeedCustomerAsync();
+        customer.SummaryWindowOffsetHours = null;
+        customer.SummaryWindowHours = null;
+        customer.SummaryWindowCount = null;
+        await _db.SaveChangesAsync();
+
+        var emailSettings = new EmailSettings
+        {
+            SummaryWindowHours = 4,
+            SummaryWindowCount = 3,
+            SummaryWindowOffsetHours = 2
+        };
+
+        var model = CreatePageModel(emailSettingsOverride: emailSettings);
+        await model.OnGetAsync(customer.Id);
+
+        // Should use defaults from EmailSettings: 3 windows
+        Assert.Equal(3, model.ActivityWindows.Count);
+        Assert.Equal(2, model.DefaultWindowOffset);
+    }
+
     private class TestSession : ISession
     {
         private readonly Dictionary<string, byte[]> _store = new();
