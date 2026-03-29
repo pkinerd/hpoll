@@ -350,8 +350,23 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote add origin "${REMOTE_URL}"
 
+          # Delete any old-format build-logs/* branches that conflict with the
+          # build-logs branch namespace (git refs can't be both a leaf and a
+          # directory, e.g. build-logs and build-logs/296-... can't coexist).
+          gh api "repos/${{ github.repository }}/git/matching-refs/heads/build-logs/" \
+            --jq '.[].ref' 2>/dev/null \
+            | while read -r ref; do
+                short="${ref#refs/}"
+                echo "Deleting old-format branch: $short"
+                gh api -X DELETE "repos/${{ github.repository }}/git/refs/${short}" || true
+              done
+
           MAX_RETRIES=3
           for attempt in $(seq 1 $MAX_RETRIES); do
+            # Reset to orphan state so each attempt starts clean
+            git checkout --orphan build-logs
+            git rm -r --cached . 2>/dev/null || true
+
             # Fetch existing branch using blobless filter (only tree/commit objects)
             if git fetch origin build-logs --depth=1 --filter=blob:none 2>/dev/null; then
               git reset FETCH_HEAD
@@ -387,6 +402,4 @@ jobs:
 
             echo "Push failed (attempt $attempt/$MAX_RETRIES), retrying..."
             sleep $((attempt * 2))
-            # Clear index for clean retry
-            git rm -r --cached . 2>/dev/null || true
           done
