@@ -196,6 +196,41 @@ jobs:
           cache-to: type=gha,mode=max,scope=admin
 
   # ──────────────────────────────────────────────────────────────────────────
+  # Update Latest Commit
+  #
+  # Writes the commit hash to the latest-ci orphan branch after successful
+  # Docker pushes so external systems can discover the latest deployed commit.
+  # ──────────────────────────────────────────────────────────────────────────
+  update-latest:
+    name: Update Latest Commit
+    needs: [docker, docker-admin]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.2.2
+
+      - name: Push commit hash to orphan branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git fetch origin latest-ci 2>/dev/null; then
+            git checkout latest-ci
+          else
+            git checkout --orphan latest-ci
+            git reset
+          fi
+
+          echo "${{ github.sha }}" > commit.txt
+          git add commit.txt
+          git commit -m "Latest commit: ${{ github.sha }}"
+          git push origin latest-ci
+
+  # ──────────────────────────────────────────────────────────────────────────
   # Push Build Logs
   #
   # Captures build/test results on an orphan branch (build-logs/<run>-<status>)
