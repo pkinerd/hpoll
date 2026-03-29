@@ -55,17 +55,32 @@ public class DetailModel : PageModel
     [BindProperty]
     public string? EditTimeZoneId { get; set; }
 
+    [BindProperty]
+    public int? EditSummaryWindowOffsetHours { get; set; }
+
+    [BindProperty]
+    public int? EditSummaryWindowHours { get; set; }
+
+    [BindProperty]
+    public int? EditSummaryWindowCount { get; set; }
+
+    [BindProperty]
+    public bool EditIncludeLatestLocations { get; set; }
+
     public string? SuccessMessage { get; set; }
     public string? ErrorMessage { get; set; }
     public string DefaultSendTimesDisplay { get; set; } = string.Empty;
+    public int DefaultWindowHours { get; set; }
+    public int DefaultWindowCount { get; set; }
+    public int DefaultWindowOffset { get; set; }
     public string? OAuthUrl { get; set; }
-    public bool EditingTimeZone { get; set; }
     public List<ActivityWindow> ActivityWindows { get; set; } = new();
     public int MotionSensorCount { get; set; }
     public List<BatteryStatus> BatteryStatuses { get; set; } = new();
+    public List<UnreachableDevice> UnreachableDevices { get; set; } = new();
     public string EmailPreviewHtml { get; set; } = string.Empty;
 
-    public async Task<IActionResult> OnGetAsync(int id, bool editTz = false)
+    public async Task<IActionResult> OnGetAsync(int id)
     {
         var customer = await _db.Customers
             .Include(c => c.Hubs)
@@ -79,8 +94,14 @@ public class DetailModel : PageModel
         EditBccEmails = customer.BccEmails;
         EditSendTimesLocal = customer.SendTimesLocal;
         EditTimeZoneId = customer.TimeZoneId;
-        EditingTimeZone = editTz;
+        EditSummaryWindowOffsetHours = customer.SummaryWindowOffsetHours;
+        EditSummaryWindowHours = customer.SummaryWindowHours;
+        EditSummaryWindowCount = customer.SummaryWindowCount;
+        EditIncludeLatestLocations = customer.IncludeLatestLocations;
         DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
+        DefaultWindowHours = _emailSettings.SummaryWindowHours;
+        DefaultWindowCount = _emailSettings.SummaryWindowCount;
+        DefaultWindowOffset = _emailSettings.SummaryWindowOffsetHours;
         await LoadActivitySummaryAsync(customer);
         await LoadBatteryStatusAsync(customer);
         await LoadEmailPreviewAsync(customer);
@@ -88,31 +109,16 @@ public class DetailModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostUpdateNameAsync(int id)
+    public async Task<IActionResult> OnPostUpdateSettingsAsync(int id)
     {
         var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return NotFound();
 
+        // Validate name
         if (string.IsNullOrWhiteSpace(EditName))
-        {
             ModelState.AddModelError(nameof(EditName), "Name is required.");
-            await PreparePageDataAsync(customer);
-            return Page();
-        }
 
-        customer.Name = EditName!.Trim();
-        customer.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-        SuccessMessage = "Name updated.";
-        await PreparePageDataAsync(customer);
-        return Page();
-    }
-
-    public async Task<IActionResult> OnPostUpdateEmailsAsync(int id)
-    {
-        var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
-        if (customer == null) return NotFound();
-
+        // Validate emails
         if (string.IsNullOrWhiteSpace(EditEmail))
             ModelState.AddModelError(nameof(EditEmail), "At least one email address is required.");
         else
@@ -121,90 +127,70 @@ public class DetailModel : PageModel
         ValidateEmailField(EditCcEmails, nameof(EditCcEmails));
         ValidateEmailField(EditBccEmails, nameof(EditBccEmails));
 
-        if (!ModelState.IsValid)
+        // Validate timezone
+        var newTzId = (EditTimeZoneId ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(newTzId))
         {
-            await PreparePageDataAsync(customer);
-            return Page();
+            ModelState.AddModelError(nameof(EditTimeZoneId), "Timezone is required.");
+        }
+        else
+        {
+            try { TimeZoneInfo.FindSystemTimeZoneById(newTzId); }
+            catch (TimeZoneNotFoundException)
+            {
+                ModelState.AddModelError(nameof(EditTimeZoneId), "Invalid timezone.");
+            }
         }
 
-        customer.Email = EditEmail!;
-        customer.CcEmails = (EditCcEmails ?? string.Empty).Trim();
-        customer.BccEmails = (EditBccEmails ?? string.Empty).Trim();
-        customer.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-        SuccessMessage = "Email addresses updated.";
-        await PreparePageDataAsync(customer);
-        return Page();
-    }
-
-    public async Task<IActionResult> OnPostUpdateSendTimesAsync(int id)
-    {
-        var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
-        if (customer == null) return NotFound();
-
+        // Validate send times
         var newSendTimes = (EditSendTimesLocal ?? string.Empty).Trim();
-
-        // Validate send times if provided
         if (!string.IsNullOrWhiteSpace(newSendTimes))
         {
             var parsed = SendTimeHelper.ParseTimeSpans(newSendTimes);
             if (parsed.Count == 0)
             {
                 ModelState.AddModelError(nameof(EditSendTimesLocal), "Invalid time format. Use HH:mm (e.g., 19:30, 08:00).");
-                await PreparePageDataAsync(customer);
-                return Page();
             }
-            // Normalize to sorted HH:mm format
-            parsed.Sort();
-            newSendTimes = string.Join(", ", parsed.Select(t => $"{t:hh\\:mm}"));
+            else
+            {
+                parsed.Sort();
+                newSendTimes = string.Join(", ", parsed.Select(t => $"{t:hh\\:mm}"));
+            }
         }
 
-        customer.SendTimesLocal = newSendTimes;
-        var effectiveDefaults = await _sendTimeService.GetEffectiveDefaultSendTimesUtcAsync();
-        customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
-            customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, effectiveDefaults);
-        customer.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        // Validate window settings
+        if (EditSummaryWindowHours.HasValue && EditSummaryWindowHours.Value < 1)
+            ModelState.AddModelError(nameof(EditSummaryWindowHours), "Window size must be at least 1 hour.");
+        if (EditSummaryWindowCount.HasValue && EditSummaryWindowCount.Value < 1)
+            ModelState.AddModelError(nameof(EditSummaryWindowCount), "Window count must be at least 1.");
+        if (EditSummaryWindowOffsetHours.HasValue && EditSummaryWindowOffsetHours.Value < 0)
+            ModelState.AddModelError(nameof(EditSummaryWindowOffsetHours), "Offset cannot be negative.");
 
-        SuccessMessage = $"Send times updated. Next email: {customer.NextSendTimeUtc:yyyy-MM-dd HH:mm} UTC.";
-        await PreparePageDataAsync(customer);
-        return Page();
-    }
-
-    public async Task<IActionResult> OnPostUpdateTimeZoneAsync(int id)
-    {
-        var customer = await _db.Customers.Include(c => c.Hubs).FirstOrDefaultAsync(c => c.Id == id);
-        if (customer == null) return NotFound();
-
-        var newTzId = (EditTimeZoneId ?? string.Empty).Trim();
-        if (string.IsNullOrEmpty(newTzId))
+        if (!ModelState.IsValid)
         {
-            EditingTimeZone = true;
-            ModelState.AddModelError(nameof(EditTimeZoneId), "Timezone is required.");
             await PreparePageDataAsync(customer);
             return Page();
         }
 
-        try
-        {
-            TimeZoneInfo.FindSystemTimeZoneById(newTzId);
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            EditingTimeZone = true;
-            ModelState.AddModelError(nameof(EditTimeZoneId), "Invalid timezone.");
-            await PreparePageDataAsync(customer);
-            return Page();
-        }
-
+        // Apply all changes
+        customer.Name = EditName!.Trim();
+        customer.Email = EditEmail!;
+        customer.CcEmails = (EditCcEmails ?? string.Empty).Trim();
+        customer.BccEmails = (EditBccEmails ?? string.Empty).Trim();
         customer.TimeZoneId = newTzId;
+        customer.SendTimesLocal = newSendTimes;
+        customer.SummaryWindowOffsetHours = EditSummaryWindowOffsetHours;
+        customer.SummaryWindowHours = EditSummaryWindowHours;
+        customer.SummaryWindowCount = EditSummaryWindowCount;
+        customer.IncludeLatestLocations = EditIncludeLatestLocations;
+
         var effectiveDefaults = await _sendTimeService.GetEffectiveDefaultSendTimesUtcAsync();
         customer.NextSendTimeUtc = SendTimeHelper.ComputeNextSendTimeUtc(
             customer.SendTimesLocal, customer.TimeZoneId, DateTime.UtcNow, effectiveDefaults);
         customer.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
-        SuccessMessage = "Timezone updated.";
+        SuccessMessage = "Customer settings updated.";
         await PreparePageDataAsync(customer);
         return Page();
     }
@@ -258,12 +244,19 @@ public class DetailModel : PageModel
         EditBccEmails = customer.BccEmails;
         EditSendTimesLocal = customer.SendTimesLocal;
         EditTimeZoneId = customer.TimeZoneId;
+        EditSummaryWindowOffsetHours = customer.SummaryWindowOffsetHours;
+        EditSummaryWindowHours = customer.SummaryWindowHours;
+        EditSummaryWindowCount = customer.SummaryWindowCount;
+        EditIncludeLatestLocations = customer.IncludeLatestLocations;
     }
 
     private async Task PreparePageDataAsync(Customer customer)
     {
         PopulateEditFields(customer);
         DefaultSendTimesDisplay = await _sendTimeService.GetDefaultSendTimesDisplayAsync();
+        DefaultWindowHours = _emailSettings.SummaryWindowHours;
+        DefaultWindowCount = _emailSettings.SummaryWindowCount;
+        DefaultWindowOffset = _emailSettings.SummaryWindowOffsetHours;
         await LoadActivitySummaryAsync(customer);
         await LoadBatteryStatusAsync(customer);
         await LoadEmailPreviewAsync(customer);
@@ -299,13 +292,13 @@ public class DetailModel : PageModel
         var nowUtc = DateTime.UtcNow;
         var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, tz);
 
-        var windowHours = _emailSettings.SummaryWindowHours;
-        var windowCount = _emailSettings.SummaryWindowCount;
+        var windowHours = customer.SummaryWindowHours ?? _emailSettings.SummaryWindowHours;
+        var windowCount = customer.SummaryWindowCount ?? _emailSettings.SummaryWindowCount;
         var totalHours = windowCount * windowHours;
 
         var startUtc = nowUtc.AddHours(-(totalHours + windowHours));
 
-        var offset = _emailSettings.SummaryWindowOffsetHours;
+        var offset = customer.SummaryWindowOffsetHours ?? _emailSettings.SummaryWindowOffsetHours;
         var adjHour = nowLocal.Hour - offset;
         var bucketEndLocal = nowLocal.Date.AddHours((int)Math.Floor((double)adjHour / windowHours) * windowHours + windowHours + offset);
         var bucketStartLocal = bucketEndLocal.AddHours(-totalHours);
@@ -417,28 +410,23 @@ public class DetailModel : PageModel
             .Select(h => h.Id)
             .ToListAsync();
 
-        var batteryDevices = await _db.Devices
-            .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == DeviceTypes.Battery)
+        var allDeviceIds = await _db.Devices
+            .Where(d => hubIds.Contains(d.HubId))
+            .Select(d => d.Id)
             .ToListAsync();
 
-        if (batteryDevices.Count == 0) return;
-
-        var batteryDeviceIds = batteryDevices.Select(d => d.Id).ToList();
-
-        // Get the most recent battery reading for each device
-        var latestReadings = await _db.DeviceReadings
-            .Where(r => batteryDeviceIds.Contains(r.DeviceId) && r.ReadingType == ReadingTypes.Battery)
+        // Get the most recent battery reading per device (query by reading type, not device type,
+        // because a single device record may hold readings of multiple types)
+        var batteryReadings = await _db.DeviceReadings
+            .Include(r => r.Device)
+            .Where(r => allDeviceIds.Contains(r.DeviceId) && r.ReadingType == ReadingTypes.Battery)
             .GroupBy(r => r.DeviceId)
             .Select(g => g.OrderByDescending(r => r.Timestamp).First())
             .AsNoTracking()
             .ToListAsync();
 
-        var deviceMap = batteryDevices.ToDictionary(d => d.Id);
-
-        foreach (var reading in latestReadings)
+        foreach (var reading in batteryReadings)
         {
-            if (!deviceMap.TryGetValue(reading.DeviceId, out var device)) continue;
-
             try
             {
                 using var doc = JsonDocument.Parse(reading.Value);
@@ -447,7 +435,7 @@ public class DetailModel : PageModel
 
                 BatteryStatuses.Add(new BatteryStatus
                 {
-                    DeviceName = device.Name,
+                    DeviceName = reading.Device.Name,
                     BatteryLevel = level,
                     BatteryState = state,
                     LastUpdated = reading.Timestamp,
@@ -459,7 +447,40 @@ public class DetailModel : PageModel
             }
         }
 
-        BatteryStatuses = BatteryStatuses.OrderBy(b => b.BatteryLevel).ToList();
+        BatteryStatuses = BatteryStatuses.OrderBy(b => b.BatteryLevel).ThenBy(b => b.DeviceName).ToList();
+
+        // Query latest connectivity reading per device to find unreachable devices
+        var connectivityReadings = await _db.DeviceReadings
+            .Include(r => r.Device)
+            .Where(r => allDeviceIds.Contains(r.DeviceId) && r.ReadingType == ReadingTypes.ZigbeeConnectivity)
+            .GroupBy(r => r.DeviceId)
+            .Select(g => g.OrderByDescending(r => r.Timestamp).First())
+            .AsNoTracking()
+            .ToListAsync();
+
+        foreach (var reading in connectivityReadings)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(reading.Value);
+                var status = doc.RootElement.GetProperty("status").GetString() ?? "unknown";
+                if (status != "connected")
+                {
+                    UnreachableDevices.Add(new UnreachableDevice
+                    {
+                        DeviceName = reading.Device.Name,
+                        Status = status,
+                        LastUpdated = reading.Timestamp,
+                    });
+                }
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse connectivity reading for DeviceId {DeviceId}", reading.DeviceId);
+            }
+        }
+
+        UnreachableDevices = UnreachableDevices.OrderBy(d => d.DeviceName, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     public class ActivityWindow
@@ -479,6 +500,13 @@ public class DetailModel : PageModel
         public string DeviceName { get; set; } = string.Empty;
         public int BatteryLevel { get; set; }
         public string BatteryState { get; set; } = string.Empty;
+        public DateTime LastUpdated { get; set; }
+    }
+
+    public class UnreachableDevice
+    {
+        public string DeviceName { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
         public DateTime LastUpdated { get; set; }
     }
 }

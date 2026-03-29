@@ -199,3 +199,27 @@ public class HueBridgeResource
     [JsonPropertyName("bridge_id")]
     public string BridgeId { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// Zigbee connectivity resource. Reports the connection status of a device on the Zigbee network.
+/// The <c>owner</c> reference points to the parent device resource.
+/// </summary>
+public class HueZigbeeConnectivityResource
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>Reference to the parent device resource that owns this connectivity service.</summary>
+    [JsonPropertyName("owner")]
+    public HueResourceRef Owner { get; set; } = new();
+
+    /// <summary>Connection status: "connected", "disconnected", "connectivity_issue", "unidirectional_incoming", or "configuration_error".</summary>
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
+
+    [JsonPropertyName("mac_address")]
+    public string MacAddress { get; set; } = string.Empty;
+}

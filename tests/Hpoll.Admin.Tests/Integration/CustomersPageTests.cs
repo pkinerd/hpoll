@@ -196,10 +196,9 @@ public class CustomersPageTests : IClassFixture<HpollWebApplicationFactory>, IAs
         var response = await _client.GetAsync($"/Customers/Detail/{customer.Id}");
         var html = await response.Content.ReadAsStringAsync();
 
-        Assert.Contains("Update Name", html);
-        Assert.Contains("Change Timezone", html);
-        Assert.Contains("Update Emails", html);
-        Assert.Contains("Update Send Times", html);
+        Assert.Contains("Customer Settings", html);
+        Assert.Contains("Update Settings", html);
+        Assert.Contains("<select", html); // timezone dropdown always visible
     }
 
     [Fact]
@@ -345,13 +344,13 @@ public class CustomersPageTests : IClassFixture<HpollWebApplicationFactory>, IAs
     }
 
     [Fact]
-    public async Task CustomersDetail_TimezoneReadOnly_ByDefault()
+    public async Task CustomersDetail_ShowsTimezoneDropdown()
     {
         using var db = _factory.CreateDbContext();
         var customer = new Customer
         {
-            Name = "TZ Readonly Customer",
-            Email = "tzreadonly@test.com",
+            Name = "TZ Customer",
+            Email = "tz@test.com",
             TimeZoneId = "UTC",
             Status = CustomerStatus.Active
         };
@@ -361,35 +360,32 @@ public class CustomersPageTests : IClassFixture<HpollWebApplicationFactory>, IAs
         var response = await _client.GetAsync($"/Customers/Detail/{customer.Id}");
         var html = await response.Content.ReadAsStringAsync();
 
-        // Should show read-only input and "Change Timezone" link, not a <select> dropdown
-        Assert.Contains("Change Timezone", html);
-        Assert.Contains("readonly", html);
-        Assert.DoesNotContain("Update Timezone", html);
+        // Timezone dropdown is always shown in the combined settings form
+        Assert.Contains("<select", html);
+        Assert.Contains("UTC", html);
     }
 
     [Fact]
-    public async Task CustomersDetail_TimezoneDropdown_ShownWhenEditTzTrue()
+    public async Task CustomersDetail_ShowsEmailWindowSettings()
     {
         using var db = _factory.CreateDbContext();
         var customer = new Customer
         {
-            Name = "TZ Edit Customer",
-            Email = "tzedit@test.com",
+            Name = "Window Settings Customer",
+            Email = "windows@test.com",
             TimeZoneId = "UTC",
             Status = CustomerStatus.Active
         };
         db.Customers.Add(customer);
         await db.SaveChangesAsync();
 
-        var response = await _client.GetAsync($"/Customers/Detail/{customer.Id}?editTz=true");
+        var response = await _client.GetAsync($"/Customers/Detail/{customer.Id}");
         var html = await response.Content.ReadAsStringAsync();
 
-        // Should show the <select> dropdown and Update/Cancel buttons
-        Assert.Contains("<select", html);
-        Assert.Contains("Update Timezone", html);
-        Assert.Contains("Cancel", html);
-        // Should NOT show the read-only "Change Timezone" link
-        Assert.DoesNotContain("Change Timezone", html);
+        Assert.Contains("Time Window Size", html);
+        Assert.Contains("Number of Time Windows", html);
+        Assert.Contains("Window Offset", html);
+        Assert.Contains("Latest Locations", html);
     }
 
     public void Dispose() => _client.Dispose();

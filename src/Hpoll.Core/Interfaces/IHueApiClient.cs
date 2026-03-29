@@ -21,6 +21,9 @@ public interface IHueApiClient
     /// <summary>Retrieves battery/power state for all devices that report it.</summary>
     Task<HueResponse<HueDevicePowerResource>> GetDevicePowerAsync(string accessToken, string applicationKey, CancellationToken ct = default);
 
+    /// <summary>Retrieves Zigbee connectivity status for all devices on the network.</summary>
+    Task<HueResponse<HueZigbeeConnectivityResource>> GetZigbeeConnectivityAsync(string accessToken, string applicationKey, CancellationToken ct = default);
+
     /// <summary>Exchanges a refresh token for a new access/refresh token pair.</summary>
     Task<HueTokenResponse> RefreshTokenAsync(string refreshToken, CancellationToken ct = default);
 

@@ -174,6 +174,22 @@ public class PollingServiceTests : IDisposable
                     }
                 }
             });
+
+        _mockHueClient.Setup(c => c.GetZigbeeConnectivityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueZigbeeConnectivityResource>
+            {
+                Data = new List<HueZigbeeConnectivityResource>
+                {
+                    new()
+                    {
+                        Id = "zigbee-001",
+                        Type = "zigbee_connectivity",
+                        Owner = new HueResourceRef { Rid = deviceId, Rtype = "device" },
+                        Status = "connected",
+                        MacAddress = "00:11:22:33:44:55"
+                    }
+                }
+            });
     }
 
     [Fact]
@@ -481,7 +497,7 @@ public class PollingServiceTests : IDisposable
             {
                 Data = new List<HueDeviceResource>
                 {
-                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "a" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } }
+                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } }
                 }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -521,7 +537,7 @@ public class PollingServiceTests : IDisposable
             {
                 Data = new List<HueDeviceResource>
                 {
-                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "a" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "temp-001", Rtype = "temperature" } } }
+                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "temp-001", Rtype = "temperature" } } }
                 }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -619,7 +635,7 @@ public class PollingServiceTests : IDisposable
             {
                 Data = new List<HueDeviceResource>
                 {
-                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "a" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } }
+                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } }
                 }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -659,7 +675,7 @@ public class PollingServiceTests : IDisposable
         _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueDeviceResource>
             {
-                Data = new List<HueDeviceResource> { new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "a" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } } }
+                Data = new List<HueDeviceResource> { new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } } }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
@@ -700,7 +716,7 @@ public class PollingServiceTests : IDisposable
         _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueDeviceResource>
             {
-                Data = new List<HueDeviceResource> { new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "a" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } } }
+                Data = new List<HueDeviceResource> { new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } } }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
@@ -743,7 +759,7 @@ public class PollingServiceTests : IDisposable
         _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueDeviceResource>
             {
-                Data = new List<HueDeviceResource> { new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "a" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } } }
+                Data = new List<HueDeviceResource> { new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } } }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
@@ -930,7 +946,7 @@ public class PollingServiceTests : IDisposable
             {
                 HubId = hub.Id,
                 HueDeviceId = "retired-device",
-                DeviceType = DeviceTypes.Battery,
+                DeviceType = DeviceTypes.Unknown,
                 Name = "Old Sensor"
             };
             seedDb.Devices.Add(staleDevice);
@@ -1189,7 +1205,7 @@ public class PollingServiceTests : IDisposable
 
         using var db = CreateDb();
         var log = await db.PollingLogs.FirstAsync();
-        Assert.Equal(4, log.ApiCallsMade); // motion + temp + devices + battery
+        Assert.Equal(5, log.ApiCallsMade); // motion + temp + devices + battery + zigbee connectivity
     }
 
     [Fact]
@@ -1204,6 +1220,42 @@ public class PollingServiceTests : IDisposable
         using var db = CreateDb();
         var log = await db.PollingLogs.FirstAsync();
         Assert.Equal(3, log.ApiCallsMade);
+    }
+
+    [Fact]
+    public async Task PollHub_WithBatteryPoll_StoresZigbeeConnectivityReading()
+    {
+        var hub = await SeedHubAsync();
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db = CreateDb();
+        var connectivityReadings = await db.DeviceReadings
+            .Where(r => r.ReadingType == ReadingTypes.ZigbeeConnectivity)
+            .ToListAsync();
+        Assert.NotEmpty(connectivityReadings);
+
+        var reading = connectivityReadings.First();
+        Assert.Contains("connected", reading.Value);
+        Assert.Contains("mac_address", reading.Value);
+    }
+
+    [Fact]
+    public async Task PollHub_WithoutBatteryPoll_DoesNotStoreConnectivityReading()
+    {
+        await SeedHubAsync(lastBatteryPollUtc: _fakeTime.GetUtcNow().UtcDateTime.AddHours(-1));
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService(new PollingSettings { IntervalMinutes = 60, BatteryPollIntervalHours = 84 });
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var connectivityReadings = await db.DeviceReadings
+            .Where(r => r.ReadingType == ReadingTypes.ZigbeeConnectivity)
+            .ToListAsync();
+        Assert.Empty(connectivityReadings);
     }
 
     [Fact]
@@ -1275,7 +1327,7 @@ public class PollingServiceTests : IDisposable
         using var db = CreateDb();
         var device = await db.Devices.FirstAsync(d => d.HueDeviceId == "nonexistent-device");
         Assert.Equal("Unknown", device.Name);
-        Assert.Equal(DeviceTypes.TemperatureSensor, device.DeviceType);
+        Assert.Equal(DeviceTypes.Unknown, device.DeviceType);
     }
 
     [Fact]
@@ -1309,7 +1361,7 @@ public class PollingServiceTests : IDisposable
         using var db = CreateDb();
         var device = await db.Devices.FirstAsync(d => d.HueDeviceId == "unknown-battery-device");
         Assert.Equal("Unknown", device.Name);
-        Assert.Equal(DeviceTypes.Battery, device.DeviceType);
+        Assert.Equal(DeviceTypes.Unknown, device.DeviceType);
     }
 
     [Fact]
@@ -1338,7 +1390,7 @@ public class PollingServiceTests : IDisposable
             {
                 Data = new List<HueDeviceResource>
                 {
-                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "a" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef>() }
+                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef>() }
                 }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -1442,5 +1494,179 @@ public class PollingServiceTests : IDisposable
         Assert.Equal("Kitchen Sensor", device.Name);
         // UpdatedAt should NOT be the FakeTimeProvider's time (it wasn't renamed)
         Assert.NotEqual(_fakeTime.GetUtcNow().UtcDateTime, device.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task PollHub_TemperatureOnlyDevice_GetsTemperatureSensorType()
+    {
+        await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource> { Data = new List<HueMotionResource>() });
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource>
+            {
+                Data = new List<HueTemperatureResource>
+                {
+                    new()
+                    {
+                        Id = "temp-001", Type = "temperature",
+                        Owner = new HueResourceRef { Rid = "device-temp-only", Rtype = "device" },
+                        Enabled = true,
+                        Temperature = new HueTemperatureData
+                        {
+                            TemperatureReport = new HueTemperatureReport { Temperature = 22.0, Changed = _fakeTime.GetUtcNow().UtcDateTime }
+                        }
+                    }
+                }
+            });
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource>
+            {
+                Data = new List<HueDeviceResource>
+                {
+                    new()
+                    {
+                        Id = "device-temp-only", Type = "device",
+                        Metadata = new HueDeviceMetadata { Name = "Temp Only Sensor", Archetype = "unknown_archetype" },
+                        ProductData = new HueProductData { ModelId = "SOT001", ProductName = "Temp sensor", SoftwareVersion = "1.0" },
+                        Services = new List<HueResourceRef> { new() { Rid = "temp-001", Rtype = "temperature" } }
+                    }
+                }
+            });
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var device = await db.Devices.FirstAsync(d => d.HueDeviceId == "device-temp-only");
+        Assert.Equal(DeviceTypes.TemperatureSensor, device.DeviceType);
+    }
+
+    [Fact]
+    public async Task PollHub_StaleDevicesNotRemoved_WhenBatteryNotPolled()
+    {
+        // Set LastBatteryPollUtc to recent time so shouldPollBattery is false
+        var hub = await SeedHubAsync(lastBatteryPollUtc: _fakeTime.GetUtcNow().UtcDateTime.AddMinutes(-10));
+
+        // Pre-seed a device that won't appear in motion/temperature responses
+        using (var seedDb = CreateDb())
+        {
+            var staleDevice = new Device
+            {
+                HubId = hub.Id,
+                HueDeviceId = "battery-only-device",
+                DeviceType = DeviceTypes.Unknown,
+                Name = "Light Bulb"
+            };
+            seedDb.Devices.Add(staleDevice);
+            await seedDb.SaveChangesAsync();
+        }
+
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService();
+        // Non-battery cycle: stale removal should NOT run
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var devices = await db.Devices.Where(d => d.HueDeviceId == "battery-only-device").ToListAsync();
+        Assert.NotEmpty(devices); // Device should still exist
+    }
+
+    [Fact]
+    public async Task PollHub_DeviceTypeChanged_UpdatesDeviceType()
+    {
+        var hub = await SeedHubAsync();
+
+        // Pre-create a device with wrong type (e.g. migrating from old data)
+        using (var db = CreateDb())
+        {
+            db.Devices.Add(new Device
+            {
+                HubId = hub.Id,
+                HueDeviceId = "device-001",
+                DeviceType = DeviceTypes.Unknown,
+                Name = "Kitchen Sensor"
+            });
+            await db.SaveChangesAsync();
+        }
+
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db2 = CreateDb();
+        var device = await db2.Devices.FirstAsync(d => d.HueDeviceId == "device-001" && d.HubId == hub.Id);
+        Assert.Equal(DeviceTypes.MotionSensor, device.DeviceType);
+        Assert.Equal(_fakeTime.GetUtcNow().UtcDateTime, device.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task PollHub_DeviceWithNoMotionOrTemp_GetsUnknownType()
+    {
+        await SeedHubAsync();
+
+        // Device has only a light service — no motion or temperature
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource> { Data = new List<HueMotionResource>() });
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource> { Data = new List<HueTemperatureResource>() });
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource>
+            {
+                Data = new List<HueDeviceResource>
+                {
+                    new()
+                    {
+                        Id = "device-light", Type = "device",
+                        Metadata = new HueDeviceMetadata { Name = "Smart Bulb", Archetype = "classic_bulb" },
+                        ProductData = new HueProductData { ModelId = "LCA001", ProductName = "Hue bulb", SoftwareVersion = "1.0" },
+                        Services = new List<HueResourceRef> { new() { Rid = "light-001", Rtype = "light" } }
+                    }
+                }
+            });
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>
+            {
+                Data = new List<HueDevicePowerResource>
+                {
+                    new()
+                    {
+                        Id = "power-light", Type = "device_power",
+                        Owner = new HueResourceRef { Rid = "device-light", Rtype = "device" },
+                        PowerState = new HuePowerState { BatteryLevel = null, BatteryState = null }
+                    }
+                }
+            });
+        _mockHueClient.Setup(c => c.GetZigbeeConnectivityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueZigbeeConnectivityResource>
+            {
+                Data = new List<HueZigbeeConnectivityResource>
+                {
+                    new()
+                    {
+                        Id = "zigbee-light", Type = "zigbee_connectivity",
+                        Owner = new HueResourceRef { Rid = "device-light", Rtype = "device" },
+                        Status = "connected", MacAddress = "AA:BB:CC:DD:EE:FF"
+                    }
+                }
+            });
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db = CreateDb();
+        var device = await db.Devices.FirstOrDefaultAsync(d => d.HueDeviceId == "device-light");
+        Assert.NotNull(device);
+        Assert.Equal(DeviceTypes.Unknown, device.DeviceType);
+
+        // Connectivity reading should still be stored
+        var connReading = await db.DeviceReadings
+            .FirstOrDefaultAsync(r => r.DeviceId == device.Id && r.ReadingType == ReadingTypes.ZigbeeConnectivity);
+        Assert.NotNull(connReading);
     }
 }

@@ -33,8 +33,11 @@ public class EmailRenderer : IEmailRenderer
         var effectiveNowUtc = nowUtc ?? DateTime.UtcNow;
         var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(effectiveNowUtc, tz);
 
-        var windowHours = _emailSettings.SummaryWindowHours;
-        var windowCount = _emailSettings.SummaryWindowCount;
+        // Per-customer overrides with global fallback
+        var customer = await _db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == customerId, ct);
+        var windowHours = customer?.SummaryWindowHours ?? _emailSettings.SummaryWindowHours;
+        var windowCount = customer?.SummaryWindowCount ?? _emailSettings.SummaryWindowCount;
+        var includeLatestLocations = customer?.IncludeLatestLocations ?? true;
         var totalHours = windowCount * windowHours;
 
         // Query window covers the full span plus one extra bucket for overlap
@@ -42,7 +45,7 @@ public class EmailRenderer : IEmailRenderer
         var endUtc = effectiveNowUtc;
 
         // Snap to the end of the current window so it's always included, applying the configured offset
-        var offset = _emailSettings.SummaryWindowOffsetHours;
+        var offset = customer?.SummaryWindowOffsetHours ?? _emailSettings.SummaryWindowOffsetHours;
         var adjHour = nowLocal.Hour - offset;
         var bucketEndLocal = nowLocal.Date.AddHours((int)Math.Floor((double)adjHour / windowHours) * windowHours + windowHours + offset);
 
@@ -214,7 +217,47 @@ public class EmailRenderer : IEmailRenderer
             }
         }
 
-        batteryStatuses = batteryStatuses.OrderBy(b => b.BatteryLevel).ToList();
+        batteryStatuses = batteryStatuses.OrderBy(b => b.BatteryLevel).ThenBy(b => b.DeviceName).ToList();
+
+        // Query latest connectivity reading per device to find unreachable devices
+        var connectivityReadings = (await _db.DeviceReadings
+            .Include(r => r.Device)
+            .Where(r => deviceIds.Contains(r.DeviceId) && r.ReadingType == ReadingTypes.ZigbeeConnectivity
+                && r.Timestamp >= batteryCutoff
+                && r.Timestamp == _db.DeviceReadings
+                    .Where(r2 => r2.DeviceId == r.DeviceId
+                        && r2.ReadingType == ReadingTypes.ZigbeeConnectivity
+                        && r2.Timestamp >= batteryCutoff)
+                    .Max(r2 => r2.Timestamp))
+            .AsNoTracking()
+            .ToListAsync(ct))
+            .GroupBy(r => r.DeviceId)
+            .Select(g => g.First())
+            .ToList();
+
+        var unreachableDevices = new List<UnreachableDevice>();
+        foreach (var reading in connectivityReadings)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(reading.Value);
+                var status = doc.RootElement.GetProperty("status").GetString() ?? "unknown";
+                if (status != "connected")
+                {
+                    unreachableDevices.Add(new UnreachableDevice
+                    {
+                        DeviceName = reading.Device.Name,
+                        Status = status
+                    });
+                }
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse connectivity reading value for DeviceId {DeviceId}", reading.DeviceId);
+            }
+        }
+
+        unreachableDevices = unreachableDevices.OrderBy(d => d.DeviceName, StringComparer.OrdinalIgnoreCase).ToList();
 
         windows.Reverse(); // newest window first for readability
 
@@ -228,10 +271,10 @@ public class EmailRenderer : IEmailRenderer
         }
 
         var displayEndLocal = bucketEndLocal > nowLocal ? nowLocal : bucketEndLocal;
-        return BuildHtml(customerName, bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, _emailSettings.BatteryAlertThreshold, _emailSettings.BatteryLevelCritical, _emailSettings.BatteryLevelWarning);
+        return BuildHtml(customerName, bucketStartLocal, displayEndLocal, tzAbbrev, windows, batteryStatuses, unreachableDevices, _emailSettings.BatteryAlertThreshold, _emailSettings.BatteryLevelCritical, _emailSettings.BatteryLevelWarning, includeLatestLocations);
     }
 
-    private static string BuildHtml(string? customerName, DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses, int batteryAlertThreshold, int batteryLevelCritical, int batteryLevelWarning)
+    private static string BuildHtml(string? customerName, DateTime startLocal, DateTime endLocal, string tzName, List<WindowSummary> windows, List<BatteryStatus> batteryStatuses, List<UnreachableDevice> unreachableDevices, int batteryAlertThreshold, int batteryLevelCritical, int batteryLevelWarning, bool includeLatestLocations)
     {
         var sb = new StringBuilder();
         sb.AppendLine("<!DOCTYPE html>");
@@ -250,7 +293,7 @@ public class EmailRenderer : IEmailRenderer
         // Visual section
         sb.AppendLine("<tr><td style=\"padding:20px;\">");
         sb.AppendLine("<h2 style=\"margin:0 0 15px;font-size:16px;color:#2c3e50;\">Activity Overview</h2>");
-        sb.AppendLine("<p style=\"margin:0 0 10px;font-size:11px;color:#999;\">* Most recent (newest) first</p>");
+        sb.AppendLine("<p style=\"margin:0 0 10px;font-size:11px;color:#999;\">* Most recent / newest first</p>");
 
         // Motion activity bars — capped at 5 events
         sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-bottom:20px;\">");
@@ -322,20 +365,23 @@ public class EmailRenderer : IEmailRenderer
         sb.AppendLine("</table>");
 
         // Latest Location — name of most recently active motion sensor per window
-        sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-bottom:20px;\">");
-        sb.AppendLine("<tr><td colspan=\"2\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Latest Locations</td></tr>");
-        foreach (var w in windows)
+        if (includeLatestLocations)
         {
-            string location;
-            if (w.LatestLocations.Count > 0)
-                location = string.Join("<br>", w.LatestLocations.Select(l => $"{Encode(l.SensorName)} ({l.LocalTime:HH:mm})"));
-            else
-                location = "<span style=\"color:#999;\">\u2014</span>";
-            sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;white-space:nowrap;vertical-align:top;\">{FormatLabelHtml(w)}</td>");
-            sb.AppendLine($"<td style=\"font-size:13px;color:#2c3e50;\">{location}</td>");
-            sb.AppendLine("</tr>");
+            sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-bottom:20px;\">");
+            sb.AppendLine("<tr><td colspan=\"2\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Latest Locations</td></tr>");
+            foreach (var w in windows)
+            {
+                string location;
+                if (w.LatestLocations.Count > 0)
+                    location = string.Join("<br>", w.LatestLocations.Select(l => $"{Encode(l.SensorName)} ({l.LocalTime:HH:mm})"));
+                else
+                    location = "<span style=\"color:#999;\">\u2014</span>";
+                sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;white-space:nowrap;vertical-align:top;\">{FormatLabelHtml(w)}</td>");
+                sb.AppendLine($"<td style=\"font-size:13px;color:#2c3e50;\">{location}</td>");
+                sb.AppendLine("</tr>");
+            }
+            sb.AppendLine("</table>");
         }
-        sb.AppendLine("</table>");
 
         // Temperature range
         sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\">");
@@ -358,11 +404,36 @@ public class EmailRenderer : IEmailRenderer
         }
         sb.AppendLine("</table>");
 
-        // Battery status section — only shown if any device is below the alert threshold
+        // Device Issues section — shown when any device is unreachable
+        if (unreachableDevices.Count > 0)
+        {
+            sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-top:20px;\">");
+            sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Device Issues</td></tr>");
+
+            foreach (var d in unreachableDevices)
+            {
+                var statusLabel = d.Status switch
+                {
+                    "disconnected" => "Disconnected",
+                    "connectivity_issue" => "Connectivity Issue",
+                    "unidirectional_incoming" => "Limited Connectivity",
+                    "configuration_error" => "Configuration Error",
+                    _ => d.Status
+                };
+                sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:140px;white-space:nowrap;\">{Encode(d.DeviceName)}</td>");
+                sb.AppendLine($"<td colspan=\"2\" style=\"font-size:12px;color:#e74c3c;\">\u26a0 {Encode(statusLabel)}</td>");
+                sb.AppendLine("</tr>");
+            }
+
+            sb.AppendLine("</table>");
+        }
+
+        // Battery Levels section — shown when any device is below the alert threshold
         if (batteryStatuses.Count > 0 && batteryStatuses.Any(b => b.BatteryLevel <= batteryAlertThreshold))
         {
             sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-top:20px;\">");
-            sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Battery Status</td></tr>");
+            sb.AppendLine("<tr><td colspan=\"3\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Battery Levels</td></tr>");
+
             foreach (var b in batteryStatuses)
             {
                 var color = b.BatteryLevel <= batteryLevelCritical ? "#e74c3c"
@@ -378,6 +449,7 @@ public class EmailRenderer : IEmailRenderer
                 sb.AppendLine($"<td style=\"font-size:11px;color:#777;width:36px;text-align:right;\">{b.BatteryLevel}%</td>");
                 sb.AppendLine("</tr>");
             }
+
             sb.AppendLine("</table>");
         }
 
@@ -436,5 +508,11 @@ public class EmailRenderer : IEmailRenderer
     {
         public string DeviceName { get; set; } = string.Empty;
         public int BatteryLevel { get; set; }
+    }
+
+    private class UnreachableDevice
+    {
+        public string DeviceName { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
     }
 }

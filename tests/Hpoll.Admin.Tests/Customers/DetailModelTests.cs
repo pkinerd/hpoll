@@ -98,31 +98,36 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostUpdateNameAsync_ValidData_UpdatesCustomer()
+    public async Task OnPostUpdateSettingsAsync_ValidData_UpdatesCustomer()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
         model.EditName = "Updated Name";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditIncludeLatestLocations = true;
 
-        var result = await model.OnPostUpdateNameAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
-        Assert.Equal("Name updated.", model.SuccessMessage);
+        Assert.Equal("Customer settings updated.", model.SuccessMessage);
 
         var updated = await _db.Customers.FindAsync(customer.Id);
         Assert.Equal("Updated Name", updated!.Name);
     }
 
     [Fact]
-    public async Task OnPostUpdateNameAsync_EmptyName_ReturnsError()
+    public async Task OnPostUpdateSettingsAsync_EmptyName_ReturnsError()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
         model.EditName = "";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
 
-        var result = await model.OnPostUpdateNameAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
         Assert.True(model.ModelState.ContainsKey("EditName"));
@@ -159,19 +164,22 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostUpdateEmailsAsync_ValidData_UpdatesAllEmailFields()
+    public async Task OnPostUpdateSettingsAsync_ValidData_UpdatesAllEmailFields()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
         model.EditEmail = "updated@example.com";
         model.EditCcEmails = "cc@example.com";
         model.EditBccEmails = "bcc@example.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditIncludeLatestLocations = true;
 
-        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
-        Assert.Equal("Email addresses updated.", model.SuccessMessage);
+        Assert.Equal("Customer settings updated.", model.SuccessMessage);
 
         var updated = await _db.Customers.FindAsync(customer.Id);
         Assert.Equal("updated@example.com", updated!.Email);
@@ -180,12 +188,14 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostUpdateNameAsync_InvalidCustomer_ReturnsNotFound()
+    public async Task OnPostUpdateSettingsAsync_InvalidCustomer_ReturnsNotFound()
     {
         var model = CreatePageModel();
         model.EditName = "Name";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
 
-        var result = await model.OnPostUpdateNameAsync(999);
+        var result = await model.OnPostUpdateSettingsAsync(999);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -216,17 +226,21 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostUpdateSendTimesAsync_ValidTimes_UpdatesCustomer()
+    public async Task OnPostUpdateSettingsAsync_ValidTimes_UpdatesCustomer()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
         model.EditSendTimesLocal = "07:00, 19:30";
+        model.EditIncludeLatestLocations = true;
 
-        var result = await model.OnPostUpdateSendTimesAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
-        Assert.Contains("Send times updated", model.SuccessMessage);
+        Assert.Equal("Customer settings updated.", model.SuccessMessage);
 
         var updated = await _db.Customers.FindAsync(customer.Id);
         Assert.Equal("07:00, 19:30", updated!.SendTimesLocal);
@@ -234,16 +248,20 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostUpdateSendTimesAsync_EmptyTimes_ClearsToDefault()
+    public async Task OnPostUpdateSettingsAsync_EmptyTimes_ClearsToDefault()
     {
         var customer = await SeedCustomerAsync();
         customer.SendTimesLocal = "19:30";
         await _db.SaveChangesAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
         model.EditSendTimesLocal = "";
+        model.EditIncludeLatestLocations = true;
 
-        var result = await model.OnPostUpdateSendTimesAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
         var updated = await _db.Customers.FindAsync(customer.Id);
@@ -252,74 +270,60 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostUpdateSendTimesAsync_InvalidTimes_ReturnsError()
+    public async Task OnPostUpdateSettingsAsync_InvalidTimes_ReturnsError()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
         model.EditSendTimesLocal = "invalid";
 
-        var result = await model.OnPostUpdateSendTimesAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
         Assert.True(model.ModelState.ContainsKey("EditSendTimesLocal"));
     }
 
     [Fact]
-    public async Task OnPostUpdateSendTimesAsync_InvalidCustomer_ReturnsNotFound()
-    {
-        var model = CreatePageModel();
-        model.EditSendTimesLocal = "19:30";
-
-        var result = await model.OnPostUpdateSendTimesAsync(999);
-
-        Assert.IsType<NotFoundResult>(result);
-    }
-
-    [Fact]
-    public async Task OnPostUpdateTimeZoneAsync_ValidTimezone_UpdatesCustomer()
+    public async Task OnPostUpdateSettingsAsync_ValidTimezone_UpdatesCustomer()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
         model.EditTimeZoneId = "America/New_York";
+        model.EditIncludeLatestLocations = true;
 
-        var result = await model.OnPostUpdateTimeZoneAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
-        Assert.Equal("Timezone updated.", model.SuccessMessage);
+        Assert.Equal("Customer settings updated.", model.SuccessMessage);
 
         var updated = await _db.Customers.FindAsync(customer.Id);
         Assert.Equal("America/New_York", updated!.TimeZoneId);
     }
 
     [Fact]
-    public async Task OnPostUpdateTimeZoneAsync_InvalidTimezone_ReturnsError()
+    public async Task OnPostUpdateSettingsAsync_InvalidTimezone_ReturnsError()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
         model.EditTimeZoneId = "Invalid/Timezone";
 
-        var result = await model.OnPostUpdateTimeZoneAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
         Assert.True(model.ModelState.ContainsKey("EditTimeZoneId"));
     }
 
     [Fact]
-    public async Task OnPostUpdateTimeZoneAsync_InvalidCustomer_ReturnsNotFound()
-    {
-        var model = CreatePageModel();
-        model.EditTimeZoneId = "UTC";
-
-        var result = await model.OnPostUpdateTimeZoneAsync(999);
-
-        Assert.IsType<NotFoundResult>(result);
-    }
-
-    [Fact]
-    public async Task OnPostUpdateTimeZoneAsync_RecomputesNextSendTime()
+    public async Task OnPostUpdateSettingsAsync_RecomputesNextSendTime()
     {
         var customer = await SeedCustomerAsync();
         customer.SendTimesLocal = "19:30";
@@ -327,12 +331,214 @@ public class DetailModelTests : IDisposable
         await _db.SaveChangesAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
         model.EditTimeZoneId = "America/New_York";
+        model.EditSendTimesLocal = "19:30";
+        model.EditIncludeLatestLocations = true;
 
-        await model.OnPostUpdateTimeZoneAsync(customer.Id);
+        await model.OnPostUpdateSettingsAsync(customer.Id);
 
         var updated = await _db.Customers.FindAsync(customer.Id);
         Assert.NotNull(updated!.NextSendTimeUtc);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSettingsAsync_WindowSettings_SavedToCustomer()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditSummaryWindowHours = 6;
+        model.EditSummaryWindowCount = 4;
+        model.EditSummaryWindowOffsetHours = 2;
+        model.EditIncludeLatestLocations = false;
+
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        var updated = await _db.Customers.FindAsync(customer.Id);
+        Assert.Equal(6, updated!.SummaryWindowHours);
+        Assert.Equal(4, updated.SummaryWindowCount);
+        Assert.Equal(2, updated.SummaryWindowOffsetHours);
+        Assert.False(updated.IncludeLatestLocations);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSettingsAsync_NullWindowSettings_ClearsOverrides()
+    {
+        var customer = await SeedCustomerAsync();
+        customer.SummaryWindowHours = 6;
+        customer.SummaryWindowCount = 4;
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditSummaryWindowHours = null;
+        model.EditSummaryWindowCount = null;
+        model.EditSummaryWindowOffsetHours = null;
+        model.EditIncludeLatestLocations = true;
+
+        await model.OnPostUpdateSettingsAsync(customer.Id);
+
+        var updated = await _db.Customers.FindAsync(customer.Id);
+        Assert.Null(updated!.SummaryWindowHours);
+        Assert.Null(updated.SummaryWindowCount);
+        Assert.Null(updated.SummaryWindowOffsetHours);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSettingsAsync_InvalidWindowHours_ReturnsError()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditSummaryWindowHours = 0;
+
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("EditSummaryWindowHours"));
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSettingsAsync_InvalidWindowCount_ReturnsError()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditSummaryWindowCount = 0;
+
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("EditSummaryWindowCount"));
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSettingsAsync_NegativeWindowOffset_ReturnsError()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditSummaryWindowOffsetHours = -1;
+
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("EditSummaryWindowOffsetHours"));
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSettingsAsync_ValidWindowOffset_Saves()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditSummaryWindowOffsetHours = 0;
+        model.EditIncludeLatestLocations = true;
+
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal("Customer settings updated.", model.SuccessMessage);
+
+        var updated = await _db.Customers.FindAsync(customer.Id);
+        Assert.Equal(0, updated!.SummaryWindowOffsetHours);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSettingsAsync_IncludeLatestLocationsFalse_Saves()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditIncludeLatestLocations = false;
+
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        var updated = await _db.Customers.FindAsync(customer.Id);
+        Assert.False(updated!.IncludeLatestLocations);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_PopulatesEmailSettingFields()
+    {
+        var customer = await SeedCustomerAsync();
+        customer.SummaryWindowHours = 6;
+        customer.SummaryWindowCount = 3;
+        customer.SummaryWindowOffsetHours = 2;
+        customer.IncludeLatestLocations = false;
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Equal(6, model.EditSummaryWindowHours);
+        Assert.Equal(3, model.EditSummaryWindowCount);
+        Assert.Equal(2, model.EditSummaryWindowOffsetHours);
+        Assert.False(model.EditIncludeLatestLocations);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_PopulatesDefaultWindowSettings()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Equal(4, model.DefaultWindowHours);
+        Assert.Equal(7, model.DefaultWindowCount);
+        Assert.Equal(1, model.DefaultWindowOffset);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_ActivitySummary_UsesPerCustomerWindowSettings()
+    {
+        var customer = await SeedCustomerAsync();
+        customer.SummaryWindowHours = 6;
+        customer.SummaryWindowCount = 2;
+        customer.SummaryWindowOffsetHours = 0;
+        await _db.SaveChangesAsync();
+
+        var hub = await SeedHubAsync(customer.Id);
+        var device = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "dev-001",
+            DeviceType = DeviceTypes.MotionSensor,
+            Name = "Sensor"
+        };
+        _db.Devices.Add(device);
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        // With windowCount=2, the activity summary should have exactly 2 windows
+        Assert.Equal(2, model.ActivityWindows.Count);
     }
 
     [Fact]
@@ -366,7 +572,7 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostUpdateSendTimesAsync_EmptyTimes_UsesSystemInfoDefaults()
+    public async Task OnPostUpdateSettingsAsync_EmptyTimes_UsesSystemInfoDefaults()
     {
         var customer = await SeedCustomerAsync();
         customer.SendTimesLocal = "19:30";
@@ -382,113 +588,19 @@ public class DetailModelTests : IDisposable
         await _db.SaveChangesAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
         model.EditSendTimesLocal = "";
+        model.EditIncludeLatestLocations = true;
 
-        await model.OnPostUpdateSendTimesAsync(customer.Id);
+        await model.OnPostUpdateSettingsAsync(customer.Id);
 
         var updated = await _db.Customers.FindAsync(customer.Id);
         Assert.Equal("", updated!.SendTimesLocal);
         Assert.NotNull(updated.NextSendTimeUtc);
         // Should use 08:45 from SystemInfo, not 08:00 hardcoded fallback
         Assert.Equal(45, updated.NextSendTimeUtc!.Value.Minute);
-    }
-
-    [Fact]
-    public async Task OnPostUpdateTimeZoneAsync_EmptyTimes_UsesSystemInfoDefaults()
-    {
-        var customer = await SeedCustomerAsync();
-        customer.SendTimesLocal = "";
-        await _db.SaveChangesAsync();
-
-        _db.SystemInfo.Add(new SystemInfo
-        {
-            Key = "email.send_times_utc",
-            Value = "08:45",
-            Category = "Email"
-        });
-        await _db.SaveChangesAsync();
-
-        var model = CreatePageModel();
-        model.EditTimeZoneId = "UTC";
-
-        await model.OnPostUpdateTimeZoneAsync(customer.Id);
-
-        var updated = await _db.Customers.FindAsync(customer.Id);
-        Assert.NotNull(updated!.NextSendTimeUtc);
-        Assert.Equal(45, updated.NextSendTimeUtc!.Value.Minute);
-    }
-
-    [Fact]
-    public async Task OnGetAsync_DefaultEditTz_SetsEditingTimeZoneFalse()
-    {
-        var customer = await SeedCustomerAsync();
-
-        var model = CreatePageModel();
-        await model.OnGetAsync(customer.Id);
-
-        Assert.False(model.EditingTimeZone);
-    }
-
-    [Fact]
-    public async Task OnGetAsync_EditTzTrue_SetsEditingTimeZoneTrue()
-    {
-        var customer = await SeedCustomerAsync();
-
-        var model = CreatePageModel();
-        await model.OnGetAsync(customer.Id, editTz: true);
-
-        Assert.True(model.EditingTimeZone);
-    }
-
-    [Fact]
-    public async Task OnGetAsync_EditTzFalse_SetsEditingTimeZoneFalse()
-    {
-        var customer = await SeedCustomerAsync();
-
-        var model = CreatePageModel();
-        await model.OnGetAsync(customer.Id, editTz: false);
-
-        Assert.False(model.EditingTimeZone);
-    }
-
-    [Fact]
-    public async Task OnPostUpdateTimeZoneAsync_EmptyTimezone_SetsEditingTimeZoneTrue()
-    {
-        var customer = await SeedCustomerAsync();
-
-        var model = CreatePageModel();
-        model.EditTimeZoneId = "";
-
-        await model.OnPostUpdateTimeZoneAsync(customer.Id);
-
-        Assert.True(model.EditingTimeZone);
-        Assert.True(model.ModelState.ContainsKey("EditTimeZoneId"));
-    }
-
-    [Fact]
-    public async Task OnPostUpdateTimeZoneAsync_InvalidTimezone_SetsEditingTimeZoneTrue()
-    {
-        var customer = await SeedCustomerAsync();
-
-        var model = CreatePageModel();
-        model.EditTimeZoneId = "Invalid/Timezone";
-
-        await model.OnPostUpdateTimeZoneAsync(customer.Id);
-
-        Assert.True(model.EditingTimeZone);
-    }
-
-    [Fact]
-    public async Task OnPostUpdateTimeZoneAsync_ValidTimezone_DoesNotSetEditingTimeZone()
-    {
-        var customer = await SeedCustomerAsync();
-
-        var model = CreatePageModel();
-        model.EditTimeZoneId = "UTC";
-
-        await model.OnPostUpdateTimeZoneAsync(customer.Id);
-
-        Assert.False(model.EditingTimeZone);
     }
 
     [Fact]
@@ -539,48 +651,54 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostUpdateEmailsAsync_InvalidToEmail_ReturnsValidationError()
+    public async Task OnPostUpdateSettingsAsync_InvalidToEmail_ReturnsValidationError()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
         model.EditEmail = "not-an-email";
         model.EditCcEmails = "";
         model.EditBccEmails = "";
+        model.EditTimeZoneId = "UTC";
 
-        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
         Assert.True(model.ModelState.ContainsKey("EditEmail"));
     }
 
     [Fact]
-    public async Task OnPostUpdateEmailsAsync_EmptyToEmail_ReturnsValidationError()
+    public async Task OnPostUpdateSettingsAsync_EmptyToEmail_ReturnsValidationError()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
         model.EditEmail = "";
         model.EditCcEmails = "";
         model.EditBccEmails = "";
+        model.EditTimeZoneId = "UTC";
 
-        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
         Assert.True(model.ModelState.ContainsKey("EditEmail"));
     }
 
     [Fact]
-    public async Task OnPostUpdateEmailsAsync_InvalidCcEmail_ReturnsValidationError()
+    public async Task OnPostUpdateSettingsAsync_InvalidCcEmail_ReturnsValidationError()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
         model.EditEmail = "valid@example.com";
         model.EditCcEmails = "valid@test.com, not-valid";
         model.EditBccEmails = "";
+        model.EditTimeZoneId = "UTC";
 
-        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
         Assert.True(model.ModelState.ContainsKey("EditCcEmails"));
@@ -588,16 +706,18 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostUpdateEmailsAsync_InvalidBccEmail_ReturnsValidationError()
+    public async Task OnPostUpdateSettingsAsync_InvalidBccEmail_ReturnsValidationError()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
         model.EditEmail = "valid@example.com";
         model.EditCcEmails = "";
         model.EditBccEmails = "bad-email";
+        model.EditTimeZoneId = "UTC";
 
-        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
         Assert.True(model.ModelState.ContainsKey("EditBccEmails"));
@@ -605,35 +725,41 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostUpdateEmailsAsync_ValidMultipleEmails_Succeeds()
+    public async Task OnPostUpdateSettingsAsync_ValidMultipleEmails_Succeeds()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
         model.EditEmail = "a@example.com, b@example.com";
         model.EditCcEmails = "cc1@test.com, cc2@test.com";
         model.EditBccEmails = "bcc@test.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditIncludeLatestLocations = true;
 
-        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
-        Assert.Equal("Email addresses updated.", model.SuccessMessage);
+        Assert.Equal("Customer settings updated.", model.SuccessMessage);
     }
 
     [Fact]
-    public async Task OnPostUpdateEmailsAsync_EmptyCcBcc_Succeeds()
+    public async Task OnPostUpdateSettingsAsync_EmptyCcBcc_Succeeds()
     {
         var customer = await SeedCustomerAsync();
 
         var model = CreatePageModel();
+        model.EditName = "Test User";
         model.EditEmail = "valid@example.com";
         model.EditCcEmails = "";
         model.EditBccEmails = null;
+        model.EditTimeZoneId = "UTC";
+        model.EditIncludeLatestLocations = true;
 
-        var result = await model.OnPostUpdateEmailsAsync(customer.Id);
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
 
         Assert.IsType<PageResult>(result);
-        Assert.Equal("Email addresses updated.", model.SuccessMessage);
+        Assert.Equal("Customer settings updated.", model.SuccessMessage);
     }
 
     [Fact]
@@ -659,12 +785,14 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OnPostUpdateEmailsAsync_InvalidCustomer_ReturnsNotFound()
+    public async Task OnPostUpdateSettingsAsync_InvalidCustomer_Emails_ReturnsNotFound()
     {
         var model = CreatePageModel();
+        model.EditName = "Test";
         model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
 
-        var result = await model.OnPostUpdateEmailsAsync(999);
+        var result = await model.OnPostUpdateSettingsAsync(999);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -689,7 +817,7 @@ public class DetailModelTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "bat-001",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Hallway Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -719,8 +847,8 @@ public class DetailModelTests : IDisposable
         var customer = await SeedCustomerAsync();
         var hub = await SeedHubAsync(customer.Id);
 
-        var bat1 = new Device { HubId = hub.Id, HueDeviceId = "bat-high", DeviceType = DeviceTypes.Battery, Name = "High" };
-        var bat2 = new Device { HubId = hub.Id, HueDeviceId = "bat-low", DeviceType = DeviceTypes.Battery, Name = "Low" };
+        var bat1 = new Device { HubId = hub.Id, HueDeviceId = "bat-high", DeviceType = DeviceTypes.MotionSensor, Name = "High" };
+        var bat2 = new Device { HubId = hub.Id, HueDeviceId = "bat-low", DeviceType = DeviceTypes.MotionSensor, Name = "Low" };
         _db.Devices.AddRange(bat1, bat2);
         await _db.SaveChangesAsync();
 
@@ -752,7 +880,7 @@ public class DetailModelTests : IDisposable
 
         var batteryDevice = new Device
         {
-            HubId = hub.Id, HueDeviceId = "bat-multi", DeviceType = DeviceTypes.Battery, Name = "Study"
+            HubId = hub.Id, HueDeviceId = "bat-multi", DeviceType = DeviceTypes.MotionSensor, Name = "Study"
         };
         _db.Devices.Add(batteryDevice);
         await _db.SaveChangesAsync();
@@ -798,7 +926,7 @@ public class DetailModelTests : IDisposable
 
         var batteryDevice = new Device
         {
-            HubId = hub.Id, HueDeviceId = "bat-bad", DeviceType = DeviceTypes.Battery, Name = "Bad Sensor"
+            HubId = hub.Id, HueDeviceId = "bat-bad", DeviceType = DeviceTypes.MotionSensor, Name = "Bad Sensor"
         };
         _db.Devices.Add(batteryDevice);
         await _db.SaveChangesAsync();
@@ -855,6 +983,141 @@ public class DetailModelTests : IDisposable
         await model.OnGetAsync(customer.Id);
 
         Assert.Contains("for Alice Smith", model.EmailPreviewHtml);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_LoadsUnreachableDevices()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+
+        var device = new Device
+        {
+            HubId = hub.Id, HueDeviceId = "conn-001", DeviceType = DeviceTypes.MotionSensor, Name = "Front Door"
+        };
+        _db.Devices.Add(device);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddMinutes(-30),
+            ReadingType = ReadingTypes.ZigbeeConnectivity, Value = "{\"status\":\"connectivity_issue\"}"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Single(model.UnreachableDevices);
+        Assert.Equal("Front Door", model.UnreachableDevices[0].DeviceName);
+        Assert.Equal("connectivity_issue", model.UnreachableDevices[0].Status);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_ConnectedDevices_NotInUnreachableList()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+
+        var device = new Device
+        {
+            HubId = hub.Id, HueDeviceId = "conn-002", DeviceType = DeviceTypes.MotionSensor, Name = "Kitchen"
+        };
+        _db.Devices.Add(device);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddMinutes(-30),
+            ReadingType = ReadingTypes.ZigbeeConnectivity, Value = "{\"status\":\"connected\"}"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Empty(model.UnreachableDevices);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_MalformedConnectivityJson_SkipsGracefully()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+
+        var device = new Device
+        {
+            HubId = hub.Id, HueDeviceId = "conn-bad", DeviceType = DeviceTypes.MotionSensor, Name = "Bad Sensor"
+        };
+        _db.Devices.Add(device);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = device.Id, Timestamp = DateTime.UtcNow.AddMinutes(-30),
+            ReadingType = ReadingTypes.ZigbeeConnectivity, Value = "not-valid-json"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Empty(model.UnreachableDevices);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_UnreachableDevices_SortedByName()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+
+        var dev1 = new Device { HubId = hub.Id, HueDeviceId = "conn-z", DeviceType = DeviceTypes.MotionSensor, Name = "Zebra" };
+        var dev2 = new Device { HubId = hub.Id, HueDeviceId = "conn-a", DeviceType = DeviceTypes.MotionSensor, Name = "Alpha" };
+        _db.Devices.AddRange(dev1, dev2);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = dev1.Id, Timestamp = DateTime.UtcNow.AddMinutes(-30),
+            ReadingType = ReadingTypes.ZigbeeConnectivity, Value = "{\"status\":\"connectivity_issue\"}"
+        });
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = dev2.Id, Timestamp = DateTime.UtcNow.AddMinutes(-30),
+            ReadingType = ReadingTypes.ZigbeeConnectivity, Value = "{\"status\":\"unidirectional_incoming\"}"
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Equal(2, model.UnreachableDevices.Count);
+        Assert.Equal("Alpha", model.UnreachableDevices[0].DeviceName);
+        Assert.Equal("Zebra", model.UnreachableDevices[1].DeviceName);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_NullWindowOffset_FallsBackToDefault()
+    {
+        var customer = await SeedCustomerAsync();
+        customer.SummaryWindowOffsetHours = null;
+        customer.SummaryWindowHours = null;
+        customer.SummaryWindowCount = null;
+        await _db.SaveChangesAsync();
+
+        var emailSettings = new EmailSettings
+        {
+            SummaryWindowHours = 4,
+            SummaryWindowCount = 3,
+            SummaryWindowOffsetHours = 2
+        };
+
+        var model = CreatePageModel(emailSettingsOverride: emailSettings);
+        await model.OnGetAsync(customer.Id);
+
+        // Should use defaults from EmailSettings: 3 windows
+        Assert.Equal(3, model.ActivityWindows.Count);
+        Assert.Equal(2, model.DefaultWindowOffset);
     }
 
     private class TestSession : ISession

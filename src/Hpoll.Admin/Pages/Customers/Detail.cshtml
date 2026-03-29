@@ -30,6 +30,21 @@
                 <span style="color: #999;">Using default: @Model.DefaultSendTimesDisplay</span>
             }
         </dd>
+        <dt>Activity Windows</dt>
+        <dd>
+            @{
+                var wh = Model.Customer.SummaryWindowHours ?? Model.DefaultWindowHours;
+                var wc = Model.Customer.SummaryWindowCount ?? Model.DefaultWindowCount;
+                var wo = Model.Customer.SummaryWindowOffsetHours ?? Model.DefaultWindowOffset;
+            }
+            @wc &times; @(wh)h windows, offset @(wo)h
+            @if (!Model.Customer.SummaryWindowHours.HasValue && !Model.Customer.SummaryWindowCount.HasValue && !Model.Customer.SummaryWindowOffsetHours.HasValue)
+            {
+                <span style="color: #999;">(defaults)</span>
+            }
+        </dd>
+        <dt>Latest Locations</dt>
+        <dd>@(Model.Customer.IncludeLatestLocations ? "Included" : "Excluded")</dd>
         <dt>Next Email</dt>
         <dd>
             @if (Model.Customer.NextSendTimeUtc.HasValue)
@@ -46,48 +61,26 @@
 </div>
 
 <div class="card" style="max-width: 500px;">
-    <form method="post" asp-page-handler="UpdateName" asp-route-id="@Model.Customer.Id">
+    <form method="post" asp-page-handler="UpdateSettings" asp-route-id="@Model.Customer.Id">
+        <h3 style="margin-top: 0;">Customer Settings</h3>
+
         <div class="form-group">
             <label asp-for="EditName">Name</label>
             <input asp-for="EditName" />
             <span asp-validation-for="EditName" style="color: #dc2626; font-size: 0.85rem;"></span>
         </div>
-        <button type="submit" class="btn">Update Name</button>
-    </form>
-</div>
 
-@if (Model.EditingTimeZone)
-{
-    <div class="card" style="max-width: 500px;">
-        <form method="post" asp-page-handler="UpdateTimeZone" asp-route-id="@Model.Customer.Id">
-            <div class="form-group">
-                <label asp-for="EditTimeZoneId">Timezone</label>
-                <select asp-for="EditTimeZoneId">
-                    @foreach (var tz in TimeZoneInfo.GetSystemTimeZones().OrderBy(t => t.BaseUtcOffset))
-                    {
-                        <option value="@tz.Id">@tz.DisplayName</option>
-                    }
-                </select>
-                <span asp-validation-for="EditTimeZoneId" style="color: #dc2626; font-size: 0.85rem;"></span>
-            </div>
-            <button type="submit" class="btn">Update Timezone</button>
-            <a asp-page="/Customers/Detail" asp-route-id="@Model.Customer.Id" class="btn" style="margin-left: 0.5rem;">Cancel</a>
-        </form>
-    </div>
-}
-else
-{
-    <div class="card" style="max-width: 500px;">
         <div class="form-group">
-            <label>Timezone</label>
-            <input type="text" value="@TimeZoneInfo.FindSystemTimeZoneById(Model.Customer.TimeZoneId).DisplayName" readonly />
+            <label asp-for="EditTimeZoneId">Timezone</label>
+            <select asp-for="EditTimeZoneId">
+                @foreach (var tz in TimeZoneInfo.GetSystemTimeZones().OrderBy(t => t.BaseUtcOffset))
+                {
+                    <option value="@tz.Id">@tz.DisplayName</option>
+                }
+            </select>
+            <span asp-validation-for="EditTimeZoneId" style="color: #dc2626; font-size: 0.85rem;"></span>
         </div>
-        <a asp-page="/Customers/Detail" asp-route-id="@Model.Customer.Id" asp-route-editTz="true" class="btn">Change Timezone</a>
-    </div>
-}
 
-<div class="card" style="max-width: 500px;">
-    <form method="post" asp-page-handler="UpdateEmails" asp-route-id="@Model.Customer.Id">
         <div class="form-group">
             <label asp-for="EditEmail">To</label>
             <input asp-for="EditEmail" placeholder="email1@example.com, email2@example.com" />
@@ -106,19 +99,43 @@ else
             <span style="font-size: 0.8rem; color: #666;">Comma-separated list of BCC recipients</span>
             <span asp-validation-for="EditBccEmails" style="color: #dc2626; font-size: 0.85rem;"></span>
         </div>
-        <button type="submit" class="btn">Update Emails</button>
-    </form>
-</div>
 
-<div class="card" style="max-width: 500px;">
-    <form method="post" asp-page-handler="UpdateSendTimes" asp-route-id="@Model.Customer.Id">
         <div class="form-group">
             <label asp-for="EditSendTimesLocal">Email Send Times (local time)</label>
             <input asp-for="EditSendTimesLocal" placeholder="19:30" />
             <span style="font-size: 0.8rem; color: #666;">Comma-separated times in HH:mm format (e.g., 07:00, 19:30). Leave empty to use default (@Model.DefaultSendTimesDisplay).</span>
             <span asp-validation-for="EditSendTimesLocal" style="color: #dc2626; font-size: 0.85rem;"></span>
         </div>
-        <button type="submit" class="btn">Update Send Times</button>
+
+        <div class="form-group">
+            <label asp-for="EditSummaryWindowHours">Time Window Size (hours)</label>
+            <input asp-for="EditSummaryWindowHours" type="number" min="1" placeholder="@Model.DefaultWindowHours (default)" />
+            <span style="font-size: 0.8rem; color: #666;">Hours per activity window. Leave empty to use default (@Model.DefaultWindowHours).</span>
+            <span asp-validation-for="EditSummaryWindowHours" style="color: #dc2626; font-size: 0.85rem;"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="EditSummaryWindowCount">Number of Time Windows</label>
+            <input asp-for="EditSummaryWindowCount" type="number" min="1" placeholder="@Model.DefaultWindowCount (default)" />
+            <span style="font-size: 0.8rem; color: #666;">Number of time windows in each email. Leave empty to use default (@Model.DefaultWindowCount).</span>
+            <span asp-validation-for="EditSummaryWindowCount" style="color: #dc2626; font-size: 0.85rem;"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="EditSummaryWindowOffsetHours">Window Offset (hours)</label>
+            <input asp-for="EditSummaryWindowOffsetHours" type="number" min="0" placeholder="@Model.DefaultWindowOffset (default)" />
+            <span style="font-size: 0.8rem; color: #666;">Hour offset for window alignment (e.g., 1 shifts windows from 0/4/8 to 1/5/9). Leave empty to use default (@Model.DefaultWindowOffset).</span>
+            <span asp-validation-for="EditSummaryWindowOffsetHours" style="color: #dc2626; font-size: 0.85rem;"></span>
+        </div>
+
+        <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input asp-for="EditIncludeLatestLocations" type="checkbox" style="width: auto;" />
+                Include "Latest Locations" section in email
+            </label>
+        </div>
+
+        <button type="submit" class="btn">Update Settings</button>
     </form>
 </div>
 
@@ -223,28 +240,49 @@ else
     <p>No activity data available for the current summary window.</p>
 }
 
-<h2>Battery Status</h2>
-@if (Model.BatteryStatuses.Any())
+<h2>Device Status</h2>
+@if (Model.BatteryStatuses.Any() || Model.UnreachableDevices.Any())
 {
-    <table>
-        <thead><tr><th>Device</th><th>Level</th><th>State</th><th>Last Updated</th></tr></thead>
-        <tbody>
-        @foreach (var b in Model.BatteryStatuses)
-        {
-            var color = b.BatteryLevel <= 30 ? "#e74c3c" : b.BatteryLevel <= 50 ? "#f39c12" : "#27ae60";
-            <tr>
-                <td>@b.DeviceName</td>
-                <td><span style="color: @color; font-weight: 600;">@b.BatteryLevel%</span></td>
-                <td>@b.BatteryState</td>
-                <td>@b.LastUpdated.ToString("yyyy-MM-dd HH:mm") UTC</td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    @if (Model.UnreachableDevices.Any())
+    {
+        <h3>Device Issues</h3>
+        <table>
+            <thead><tr><th>Device</th><th>Status</th><th>Last Updated</th></tr></thead>
+            <tbody>
+            @foreach (var d in Model.UnreachableDevices)
+            {
+                <tr>
+                    <td>@d.DeviceName</td>
+                    <td><span style="color: #e74c3c; font-weight: 600;">@d.Status</span></td>
+                    <td>@d.LastUpdated.ToString("yyyy-MM-dd HH:mm") UTC</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    @if (Model.BatteryStatuses.Any())
+    {
+        <h3>Battery Levels</h3>
+        <table>
+            <thead><tr><th>Device</th><th>Level</th><th>State</th><th>Last Updated</th></tr></thead>
+            <tbody>
+            @foreach (var b in Model.BatteryStatuses)
+            {
+                var color = b.BatteryLevel <= 30 ? "#e74c3c" : b.BatteryLevel <= 50 ? "#f39c12" : "#27ae60";
+                <tr>
+                    <td>@b.DeviceName</td>
+                    <td><span style="color: @color; font-weight: 600;">@b.BatteryLevel%</span></td>
+                    <td>@b.BatteryState</td>
+                    <td>@b.LastUpdated.ToString("yyyy-MM-dd HH:mm") UTC</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
 }
 else
 {
-    <p>No battery data available.</p>
+    <p>No battery or connectivity issues.</p>
 }
 
 @if (!string.IsNullOrEmpty(Model.EmailPreviewHtml))

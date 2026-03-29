@@ -328,6 +328,46 @@ public class HueApiClientTests
     }
 
     [Fact]
+    public async Task GetZigbeeConnectivityAsync_UsesCorrectEndpoint()
+    {
+        var responseBody = new HueResponse<HueZigbeeConnectivityResource> { Data = new List<HueZigbeeConnectivityResource>() };
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, JsonSerializer.Serialize(responseBody, JsonOptions));
+
+        await _client.GetZigbeeConnectivityAsync(TestAccessToken, TestApplicationKey);
+
+        Assert.Contains("api.meethue.com/route/clip/v2/resource/zigbee_connectivity", _mockHandler.CapturedRequest!.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task GetZigbeeConnectivityAsync_ReturnsDeserializedData()
+    {
+        var json = """
+        {
+            "errors": [],
+            "data": [
+                {
+                    "id": "zigbee-001",
+                    "type": "zigbee_connectivity",
+                    "owner": { "rid": "device-001", "rtype": "device" },
+                    "status": "connected",
+                    "mac_address": "00:11:22:33:44:55"
+                }
+            ]
+        }
+        """;
+        _mockHandler.ConfigureResponse(HttpStatusCode.OK, json);
+
+        var result = await _client.GetZigbeeConnectivityAsync(TestAccessToken, TestApplicationKey);
+
+        Assert.NotNull(result);
+        Assert.Single(result.Data);
+        Assert.Equal("zigbee-001", result.Data[0].Id);
+        Assert.Equal("connected", result.Data[0].Status);
+        Assert.Equal("00:11:22:33:44:55", result.Data[0].MacAddress);
+        Assert.Equal("device-001", result.Data[0].Owner.Rid);
+    }
+
+    [Fact]
     public async Task RefreshTokenAsync_UsesCorrectTokenEndpoint()
     {
         var tokenResponse = new HueTokenResponse

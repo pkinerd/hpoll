@@ -600,7 +600,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-xss",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "<script>alert('xss')</script>"
         };
         _db.Devices.Add(xssDevice);
@@ -613,7 +613,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Battery Levels", html);
         Assert.DoesNotContain("<script>", html);
         Assert.Contains("&lt;script&gt;", html);
     }
@@ -687,7 +687,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-bad",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Bad Battery Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -707,7 +707,7 @@ public class EmailRendererTests : IDisposable
 
         Assert.NotNull(html);
         // Should not crash; malformed battery data is silently skipped
-        Assert.DoesNotContain("Battery Status", html);
+        Assert.DoesNotContain("Battery Levels", html);
     }
 
     [Fact]
@@ -747,7 +747,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-001",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Hallway Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -760,7 +760,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Battery Levels", html);
         Assert.Contains("Hallway Sensor", html);
         Assert.Contains("15%", html);
         // Red color for <30%
@@ -768,7 +768,7 @@ public class EmailRendererTests : IDisposable
     }
 
     [Fact]
-    public async Task RenderDailySummaryAsync_WithAllBatteriesAbove30_NoBatterySection()
+    public async Task RenderDailySummaryAsync_WithAllBatteriesAboveThreshold_NoBatterySection()
     {
         var (customer, hub, device) = await SeedBaseDataAsync();
 
@@ -776,20 +776,20 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-002",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Living Room Sensor"
         };
         _db.Devices.Add(batteryDevice);
         await _db.SaveChangesAsync();
 
-        // Add a battery reading above 30%
+        // Add a battery reading above threshold — Battery Levels section should not show
         AddBattery(batteryDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 85);
         await _db.SaveChangesAsync();
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.DoesNotContain("Battery Status", html);
+        Assert.DoesNotContain("Battery Levels", html);
     }
 
     [Fact]
@@ -797,9 +797,9 @@ public class EmailRendererTests : IDisposable
     {
         var (customer, hub, device) = await SeedBaseDataAsync();
 
-        var lowDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-low", DeviceType = DeviceTypes.Battery, Name = "Garage Sensor" };
-        var midDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-mid", DeviceType = DeviceTypes.Battery, Name = "Kitchen Sensor" };
-        var highDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-high", DeviceType = DeviceTypes.Battery, Name = "Bedroom Sensor" };
+        var lowDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-low", DeviceType = DeviceTypes.MotionSensor, Name = "Garage Sensor" };
+        var midDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-mid", DeviceType = DeviceTypes.MotionSensor, Name = "Kitchen Sensor" };
+        var highDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-high", DeviceType = DeviceTypes.MotionSensor, Name = "Bedroom Sensor" };
         _db.Devices.AddRange(lowDevice, midDevice, highDevice);
         await _db.SaveChangesAsync();
 
@@ -811,7 +811,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Battery Levels", html);
         Assert.Contains("Garage Sensor", html);
         Assert.Contains("Kitchen Sensor", html);
         Assert.Contains("Bedroom Sensor", html);
@@ -835,7 +835,8 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.DoesNotContain("Battery Status", html);
+        Assert.DoesNotContain("Battery Levels", html);
+        Assert.DoesNotContain("Device Issues", html);
     }
 
     [Fact]
@@ -847,7 +848,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-003",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Study Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -862,7 +863,7 @@ public class EmailRendererTests : IDisposable
 
         Assert.NotNull(html);
         // Should show battery section since latest reading is 20% (<30%)
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Battery Levels", html);
         Assert.Contains("20%", html);
     }
 
@@ -875,7 +876,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-boundary",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Hallway Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -888,7 +889,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Battery Levels", html);
         Assert.Contains("Hallway Sensor", html);
         Assert.Contains("30%", html);
         // At exactly the critical threshold (30), should show red
@@ -1017,7 +1018,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-old",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Old Battery Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -1032,7 +1033,7 @@ public class EmailRendererTests : IDisposable
 
         Assert.NotNull(html);
         // Old battery reading should be excluded — no battery section shown
-        Assert.DoesNotContain("Battery Status", html);
+        Assert.DoesNotContain("Battery Levels", html);
         Assert.DoesNotContain("Old Battery Sensor", html);
     }
 
@@ -1045,7 +1046,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-recent",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Recent Battery Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -1058,7 +1059,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Battery Levels", html);
         Assert.Contains("Recent Battery Sensor", html);
         Assert.Contains("15%", html);
     }
@@ -1072,7 +1073,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-latest-high",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Recovered Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -1085,8 +1086,8 @@ public class EmailRendererTests : IDisposable
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        // Latest reading is 90% (above 30% threshold) so no battery section shown
-        Assert.DoesNotContain("Battery Status", html);
+        // Latest reading is 90% (above threshold) — no Battery Levels section
+        Assert.DoesNotContain("Battery Levels", html);
     }
 
     [Fact]
@@ -1309,9 +1310,9 @@ public class EmailRendererTests : IDisposable
     {
         var (customer, hub, _) = await SeedBaseDataAsync();
 
-        var bat1 = new Device { HubId = hub.Id, HueDeviceId = "bat-high", DeviceType = DeviceTypes.Battery, Name = "High Battery" };
-        var bat2 = new Device { HubId = hub.Id, HueDeviceId = "bat-low", DeviceType = DeviceTypes.Battery, Name = "Low Battery" };
-        var bat3 = new Device { HubId = hub.Id, HueDeviceId = "bat-mid", DeviceType = DeviceTypes.Battery, Name = "Mid Battery" };
+        var bat1 = new Device { HubId = hub.Id, HueDeviceId = "bat-high", DeviceType = DeviceTypes.MotionSensor, Name = "High Battery" };
+        var bat2 = new Device { HubId = hub.Id, HueDeviceId = "bat-low", DeviceType = DeviceTypes.MotionSensor, Name = "Low Battery" };
+        var bat3 = new Device { HubId = hub.Id, HueDeviceId = "bat-mid", DeviceType = DeviceTypes.MotionSensor, Name = "Mid Battery" };
         _db.Devices.AddRange(bat1, bat2, bat3);
         await _db.SaveChangesAsync();
 
@@ -1322,7 +1323,7 @@ public class EmailRendererTests : IDisposable
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Battery Levels", html);
         // Low Battery (5%) should appear before Mid Battery (40%) before High Battery (80%)
         var lowIdx = html.IndexOf("Low Battery");
         var midIdx = html.IndexOf("Mid Battery");
@@ -1408,6 +1409,377 @@ public class EmailRendererTests : IDisposable
 
         Assert.NotNull(html);
         Assert.Contains("Daily Activity Summary", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_CustomerWithCustomWindowHours_UsesOverride()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        customer.SummaryWindowHours = 6; // Override default 4h to 6h
+        await _db.SaveChangesAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("Daily Activity Summary", html);
+        // 6h windows with offset 1: boundaries at 01:00, 07:00, 13:00, 19:00
+        // Should see 6h-wide window labels (not the default 4h)
+        Assert.Contains("01:00", html);
+        Assert.Contains("07:00", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_CustomerWithCustomWindowCount_UsesOverride()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        customer.SummaryWindowCount = 3; // Override default 7 to 3
+        await _db.SaveChangesAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        // Default: 7 windows. Custom: 3 windows. The renderer uses 3.
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // Count "Motion Activity" rows — 3 windows means fewer time labels
+        var motionSection = html.Substring(html.IndexOf("Motion Activity"));
+        var locationSection = motionSection.Substring(0, motionSection.IndexOf("Location Diversity"));
+        // Each window produces one <tr> with a time label; with 3 windows we expect fewer rows
+        // than the default 7. Count the window label patterns.
+        var windowLabels = CountOccurrences(locationSection, "\u2013");
+        Assert.True(windowLabels <= 3, $"Expected at most 3 window labels but found {windowLabels}");
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_CustomerWithCustomOffset_UsesOverride()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        customer.SummaryWindowOffsetHours = 0; // Override default 1 to 0
+        await _db.SaveChangesAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // With offset 0 and 4h windows: boundaries at 00:00, 04:00, 08:00, 12:00, 16:00, 20:00
+        Assert.Contains("04:00", html);
+        Assert.Contains("08:00", html);
+        Assert.Contains("12:00", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_CustomerNullSettings_FallsBackToGlobal()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        // Ensure customer has null overrides (the defaults)
+        Assert.Null(customer.SummaryWindowHours);
+        Assert.Null(customer.SummaryWindowCount);
+        Assert.Null(customer.SummaryWindowOffsetHours);
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // With default offset=1 and 4h windows: boundaries at 01:00, 05:00, 09:00, 13:00, 17:00, 21:00
+        Assert.Contains("05:00", html);
+        Assert.Contains("09:00", html);
+        Assert.Contains("13:00", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_IncludeLatestLocationsTrue_ShowsSection()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        customer.IncludeLatestLocations = true;
+        await _db.SaveChangesAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("Latest Locations", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_IncludeLatestLocationsFalse_OmitsSection()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        customer.IncludeLatestLocations = false;
+        await _db.SaveChangesAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.DoesNotContain("Latest Locations", html);
+        // Other sections should still be present
+        Assert.Contains("Motion Activity", html);
+        Assert.Contains("Location Diversity", html);
+        Assert.Contains("Temperature Range", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_IncludeLatestLocationsDefault_ShowsSection()
+    {
+        // When customer doesn't exist in DB (e.g. invalid ID), IncludeLatestLocations falls back to true
+        var options = new DbContextOptionsBuilder<HpollDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        using var db = new HpollDbContext(options);
+        var emailSettings = Options.Create(new EmailSettings());
+        var renderer = new EmailRenderer(db, NullLogger<EmailRenderer>.Instance, emailSettings);
+
+        var html = await renderer.RenderDailySummaryAsync(9999, TimeZone, NowUtc);
+
+        // Should include Latest Locations by default (fallback to true when customer not found)
+        Assert.Contains("Latest Locations", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_AllCustomerOverrides_Applied()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        customer.SummaryWindowHours = 6;
+        customer.SummaryWindowCount = 2;
+        customer.SummaryWindowOffsetHours = 3;
+        customer.IncludeLatestLocations = false;
+        await _db.SaveChangesAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.DoesNotContain("Latest Locations", html);
+        // With 6h windows, offset 3, count 2: only 2 window rows in Motion Activity
+        var motionSection = html.Substring(html.IndexOf("Motion Activity"));
+        var diversityIdx = motionSection.IndexOf("Location Diversity");
+        var motionContent = motionSection.Substring(0, diversityIdx);
+        var windowLabels = CountOccurrences(motionContent, "\u2013");
+        Assert.True(windowLabels <= 2, $"Expected at most 2 window labels but found {windowLabels}");
+    }
+
+    private void AddConnectivity(int deviceId, DateTime timestamp, string status, string macAddress = "00:11:22:33:44:55")
+    {
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = deviceId,
+            Timestamp = timestamp,
+            ReadingType = ReadingTypes.ZigbeeConnectivity,
+            Value = $"{{\"status\":\"{status}\",\"mac_address\":\"{macAddress}\"}}"
+        });
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_WithUnreachableDevice_ShowsDeviceStatusSection()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var zigbeeDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-zigbee-001",
+            DeviceType = DeviceTypes.MotionSensor,
+            Name = "Hallway Sensor"
+        };
+        _db.Devices.Add(zigbeeDevice);
+        await _db.SaveChangesAsync();
+
+        AddConnectivity(zigbeeDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), "disconnected");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("Device Issues", html);
+        Assert.Contains("Hallway Sensor", html);
+        Assert.Contains("Disconnected", html);
+        Assert.Contains("\u26a0", html); // warning icon
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_WithConnectedDevice_NoDeviceStatusSection()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var zigbeeDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-zigbee-002",
+            DeviceType = DeviceTypes.MotionSensor,
+            Name = "Kitchen Sensor"
+        };
+        _db.Devices.Add(zigbeeDevice);
+        await _db.SaveChangesAsync();
+
+        AddConnectivity(zigbeeDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), "connected");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.DoesNotContain("Device Issues", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_UnreachableDeviceOnly_ShowsSectionWithoutBattery()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        // No battery devices, just an unreachable zigbee device
+        var zigbeeDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-zigbee-003",
+            DeviceType = DeviceTypes.MotionSensor,
+            Name = "Garage Sensor"
+        };
+        _db.Devices.Add(zigbeeDevice);
+        await _db.SaveChangesAsync();
+
+        AddConnectivity(zigbeeDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), "connectivity_issue");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("Device Issues", html);
+        Assert.Contains("Garage Sensor", html);
+        Assert.Contains("Connectivity Issue", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_LowBatteryAndUnreachable_ShowsBothWithConnectivityFirst()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-bat-both",
+            DeviceType = DeviceTypes.MotionSensor,
+            Name = "Low Battery Device"
+        };
+        var zigbeeDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-zigbee-both",
+            DeviceType = DeviceTypes.MotionSensor,
+            Name = "Unreachable Device"
+        };
+        _db.Devices.AddRange(batteryDevice, zigbeeDevice);
+        await _db.SaveChangesAsync();
+
+        AddBattery(batteryDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 15, "low");
+        AddConnectivity(zigbeeDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), "disconnected");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("Device Issues", html);
+        Assert.Contains("Battery Levels", html);
+        Assert.Contains("Low Battery Device", html);
+        Assert.Contains("15%", html);
+        Assert.Contains("Unreachable Device", html);
+        Assert.Contains("Disconnected", html);
+
+        // Device Issues section should appear before Battery Levels section
+        var issuesPos = html.IndexOf("Device Issues", StringComparison.Ordinal);
+        var batteryPos = html.IndexOf("Battery Levels", StringComparison.Ordinal);
+        Assert.True(issuesPos < batteryPos, "Device Issues should render before Battery Levels");
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_ConnectivityStatusLabels_MappedCorrectly()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var devices = new[]
+        {
+            ("device-z-1", "Sensor A", "disconnected", "Disconnected"),
+            ("device-z-2", "Sensor B", "connectivity_issue", "Connectivity Issue"),
+            ("device-z-3", "Sensor C", "unidirectional_incoming", "Limited Connectivity"),
+            ("device-z-4", "Sensor D", "configuration_error", "Configuration Error"),
+        };
+
+        foreach (var (hueId, name, status, _) in devices)
+        {
+            var d = new Device { HubId = hub.Id, HueDeviceId = hueId, DeviceType = DeviceTypes.MotionSensor, Name = name };
+            _db.Devices.Add(d);
+            await _db.SaveChangesAsync();
+            AddConnectivity(d.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), status);
+        }
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        foreach (var (_, name, _, label) in devices)
+        {
+            Assert.Contains(name, html);
+            Assert.Contains(label, html);
+        }
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_MalformedConnectivityJson_SkipsGracefully()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var zigbeeDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-zigbee-bad",
+            DeviceType = DeviceTypes.MotionSensor,
+            Name = "Bad Zigbee Sensor"
+        };
+        _db.Devices.Add(zigbeeDevice);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = zigbeeDevice.Id,
+            Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
+            ReadingType = ReadingTypes.ZigbeeConnectivity,
+            Value = "not-valid-json"
+        });
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        // Should not crash; malformed connectivity data is silently skipped
+        Assert.DoesNotContain("Bad Zigbee Sensor", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_UnknownConnectivityStatus_UsesRawValue()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var zigbeeDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-zigbee-unknown",
+            DeviceType = DeviceTypes.MotionSensor,
+            Name = "Custom Status Sensor"
+        };
+        _db.Devices.Add(zigbeeDevice);
+        await _db.SaveChangesAsync();
+
+        AddConnectivity(zigbeeDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), "some_new_status");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("Device Issues", html);
+        Assert.Contains("some_new_status", html);
     }
 
     private static int CountOccurrences(string text, string pattern)
