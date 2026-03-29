@@ -149,7 +149,7 @@ public class PollingServiceTests : IDisposable
                     {
                         Id = deviceId,
                         Type = "device",
-                        Metadata = new HueDeviceMetadata { Name = "Kitchen Sensor", Archetype = "motion_sensor" },
+                        Metadata = new HueDeviceMetadata { Name = "Kitchen Sensor", Archetype = "unknown_archetype" },
                         ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue motion sensor", SoftwareVersion = "1.0.0" },
                         Services = new List<HueResourceRef>
                         {
@@ -453,7 +453,7 @@ public class PollingServiceTests : IDisposable
                     {
                         Id = "device-001",
                         Type = "device",
-                        Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "motion_sensor" },
+                        Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" },
                         ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue motion sensor", SoftwareVersion = "1.0" },
                         Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } }
                     }
@@ -497,7 +497,7 @@ public class PollingServiceTests : IDisposable
             {
                 Data = new List<HueDeviceResource>
                 {
-                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "motion_sensor" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } }
+                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } }
                 }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -537,7 +537,7 @@ public class PollingServiceTests : IDisposable
             {
                 Data = new List<HueDeviceResource>
                 {
-                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "motion_sensor" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "temp-001", Rtype = "temperature" } } }
+                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "temp-001", Rtype = "temperature" } } }
                 }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -635,7 +635,7 @@ public class PollingServiceTests : IDisposable
             {
                 Data = new List<HueDeviceResource>
                 {
-                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "motion_sensor" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } }
+                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } }
                 }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -675,7 +675,7 @@ public class PollingServiceTests : IDisposable
         _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueDeviceResource>
             {
-                Data = new List<HueDeviceResource> { new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "motion_sensor" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } } }
+                Data = new List<HueDeviceResource> { new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } } }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
@@ -716,7 +716,7 @@ public class PollingServiceTests : IDisposable
         _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueDeviceResource>
             {
-                Data = new List<HueDeviceResource> { new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "motion_sensor" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } } }
+                Data = new List<HueDeviceResource> { new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } } }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
@@ -759,7 +759,7 @@ public class PollingServiceTests : IDisposable
         _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueDeviceResource>
             {
-                Data = new List<HueDeviceResource> { new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "motion_sensor" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } } }
+                Data = new List<HueDeviceResource> { new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef> { new() { Rid = "motion-001", Rtype = "motion" } } } }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
@@ -1390,7 +1390,7 @@ public class PollingServiceTests : IDisposable
             {
                 Data = new List<HueDeviceResource>
                 {
-                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "motion_sensor" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef>() }
+                    new() { Id = "device-001", Type = "device", Metadata = new HueDeviceMetadata { Name = "Sensor", Archetype = "unknown_archetype" }, ProductData = new HueProductData { ModelId = "SML001", ProductName = "Hue", SoftwareVersion = "1.0" }, Services = new List<HueResourceRef>() }
                 }
             });
         _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))

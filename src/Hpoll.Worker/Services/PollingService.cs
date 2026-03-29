@@ -144,11 +144,24 @@ public class PollingService : BackgroundService
             // Build device lookup: device ID -> device (for owner.rid lookups)
             var deviceById = deviceResponse.Data.ToDictionary(d => d.Id, d => d);
 
+            // Derive device type from the services[] array on each device resource.
+            // The Hue metadata.archetype field only covers lighting form factors
+            // (e.g. "classic_bulb") and returns "unknown_archetype" for sensors.
+            // Instead, we inspect which service rtypes the device provides:
+            //   has "motion"       → motion_sensor
+            //   has "temperature"  → temperature_sensor
+            //   else               → unknown
+            var deviceTypeById = deviceResponse.Data.ToDictionary(
+                d => d.Id,
+                d => d.Services.Any(s => s.Rtype == "motion") ? DeviceTypes.MotionSensor
+                   : d.Services.Any(s => s.Rtype == "temperature") ? DeviceTypes.TemperatureSensor
+                   : DeviceTypes.Unknown);
+
             // Track all device IDs seen across all service types so we can remove
             // stale devices in a single pass at the end. A physical Hue device
             // (identified by owner.rid) may appear across motion, temperature,
             // battery, and connectivity endpoints — we store one Device row per
-            // physical device and use the Hue archetype as the DeviceType.
+            // physical device.
             var allCurrentDeviceIds = new HashSet<string>();
 
             // Compute the cutoff for motion detection: the lower of last poll time
@@ -172,7 +185,7 @@ public class PollingService : BackgroundService
                 var deviceName = deviceById.TryGetValue(motion.Owner.Rid, out var ownerDevice)
                     ? ownerDevice.Metadata.Name
                     : "Unknown";
-                var deviceType = ownerDevice?.Metadata.Archetype ?? DeviceTypes.Unknown;
+                var deviceType = deviceTypeById.GetValueOrDefault(motion.Owner.Rid, DeviceTypes.Unknown);
 
                 var dbDevice = await GetOrCreateDeviceAsync(db, hub, motion.Owner.Rid, deviceType, deviceName, ct);
 
@@ -202,7 +215,7 @@ public class PollingService : BackgroundService
                 var deviceName = deviceById.TryGetValue(temp.Owner.Rid, out var ownerDevice)
                     ? ownerDevice.Metadata.Name
                     : "Unknown";
-                var deviceType = ownerDevice?.Metadata.Archetype ?? DeviceTypes.Unknown;
+                var deviceType = deviceTypeById.GetValueOrDefault(temp.Owner.Rid, DeviceTypes.Unknown);
 
                 var dbDevice = await GetOrCreateDeviceAsync(db, hub, temp.Owner.Rid, deviceType, deviceName, ct);
 
@@ -231,7 +244,7 @@ public class PollingService : BackgroundService
                     var deviceName = deviceById.TryGetValue(power.Owner.Rid, out var ownerDevice)
                         ? ownerDevice.Metadata.Name
                         : "Unknown";
-                    var deviceType = ownerDevice?.Metadata.Archetype ?? DeviceTypes.Unknown;
+                    var deviceType = deviceTypeById.GetValueOrDefault(power.Owner.Rid, DeviceTypes.Unknown);
 
                     var dbDevice = await GetOrCreateDeviceAsync(db, hub, power.Owner.Rid, deviceType, deviceName, ct);
 
@@ -265,7 +278,7 @@ public class PollingService : BackgroundService
                     var deviceName = deviceById.TryGetValue(conn.Owner.Rid, out var ownerDevice)
                         ? ownerDevice.Metadata.Name
                         : "Unknown";
-                    var deviceType = ownerDevice?.Metadata.Archetype ?? DeviceTypes.Unknown;
+                    var deviceType = deviceTypeById.GetValueOrDefault(conn.Owner.Rid, DeviceTypes.Unknown);
 
                     var dbDevice = await GetOrCreateDeviceAsync(db, hub, conn.Owner.Rid, deviceType, deviceName, ct);
 
