@@ -1,3 +1,9 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -224,4 +230,184 @@ public class AboutModelTests : IDisposable
         // No Hue section at all since config is empty and Worker hasn't written anything
         Assert.Empty(model.Sections);
     }
+}
+
+/// <summary>
+/// Tests for OnPostExportSanitizedDbAsync using a file-based SQLite database
+/// (VACUUM INTO does not work with in-memory databases).
+/// </summary>
+public class AboutModelExportTests : IDisposable
+{
+    private readonly string _dbPath;
+    private readonly SqliteConnection _connection;
+    private readonly HpollDbContext _db;
+
+    public AboutModelExportTests()
+    {
+        _dbPath = Path.Combine(Path.GetTempPath(), $"hpoll-test-{Guid.NewGuid()}.db");
+        _connection = new SqliteConnection($"Data Source={_dbPath}");
+        _connection.Open();
+        var options = new DbContextOptionsBuilder<HpollDbContext>()
+            .UseSqlite(_connection)
+            .Options;
+        _db = new HpollDbContext(options);
+        _db.Database.EnsureCreated();
+    }
+
+    public void Dispose()
+    {
+        _db.Dispose();
+        _connection.Dispose();
+        try { File.Delete(_dbPath); } catch { }
+    }
+
+    private AboutModel CreateModel()
+    {
+        var hueOptions = Options.Create(new HueAppSettings());
+        var model = new AboutModel(_db, hueOptions, NullLogger<AboutModel>.Instance);
+        var httpContext = new DefaultHttpContext();
+        model.PageContext = new PageContext
+        {
+            ActionDescriptor = new CompiledPageActionDescriptor(),
+            HttpContext = httpContext,
+            RouteData = new RouteData()
+        };
+        model.TempData = new TempDataDictionary(httpContext, new TestTempDataProvider());
+        return model;
+    }
+
+    [Fact]
+    public async Task ExportSanitizedDb_ReturnsSanitizedFile()
+    {
+        // Seed sensitive data
+        var customer = new Customer
+        {
+            Name = "Test Customer",
+            Email = "secret@example.com",
+            CcEmails = "cc@example.com",
+            BccEmails = "bcc@example.com",
+            TimeZoneId = "UTC"
+        };
+        _db.Customers.Add(customer);
+        await _db.SaveChangesAsync();
+
+        var hub = new Hub
+        {
+            CustomerId = customer.Id,
+            HueBridgeId = "001788FFFE123456",
+            HueApplicationKey = "secret-app-key",
+            AccessToken = "secret-access-token",
+            RefreshToken = "secret-refresh-token",
+            TokenExpiresAt = DateTime.UtcNow.AddDays(7),
+            Status = HubStatus.Active
+        };
+        _db.Hubs.Add(hub);
+        await _db.SaveChangesAsync();
+
+        var model = CreateModel();
+        var result = await model.OnPostExportSanitizedDbAsync();
+
+        // Should return a file
+        var fileResult = Assert.IsType<FileContentResult>(result);
+        Assert.Equal("application/octet-stream", fileResult.ContentType);
+        Assert.StartsWith("hpoll-sanitized-", fileResult.FileDownloadName);
+        Assert.EndsWith(".db", fileResult.FileDownloadName);
+
+        // Open the exported DB and verify sanitization
+        var exportPath = Path.Combine(Path.GetTempPath(), $"hpoll-verify-{Guid.NewGuid()}.db");
+        try
+        {
+            await File.WriteAllBytesAsync(exportPath, fileResult.FileContents);
+            using var conn = new SqliteConnection($"Data Source={exportPath}");
+            await conn.OpenAsync();
+
+            // Verify hub tokens are cleared
+            using var hubCmd = conn.CreateCommand();
+            hubCmd.CommandText = "SELECT AccessToken, RefreshToken, HueApplicationKey, TokenExpiresAt FROM Hubs";
+            using var hubReader = await hubCmd.ExecuteReaderAsync();
+            Assert.True(await hubReader.ReadAsync());
+            Assert.Equal("", hubReader.GetString(0)); // AccessToken
+            Assert.Equal("", hubReader.GetString(1)); // RefreshToken
+            Assert.Equal("", hubReader.GetString(2)); // HueApplicationKey
+
+            // Verify customer emails are cleared
+            using var custCmd = conn.CreateCommand();
+            custCmd.CommandText = "SELECT Name, Email, CcEmails, BccEmails FROM Customers";
+            using var custReader = await custCmd.ExecuteReaderAsync();
+            Assert.True(await custReader.ReadAsync());
+            Assert.Equal("Test Customer", custReader.GetString(0)); // Name preserved
+            Assert.Equal("", custReader.GetString(1)); // Email cleared
+            Assert.Equal("", custReader.GetString(2)); // CcEmails cleared
+            Assert.Equal("", custReader.GetString(3)); // BccEmails cleared
+        }
+        finally
+        {
+            try { File.Delete(exportPath); } catch { }
+        }
+    }
+
+    [Fact]
+    public async Task ExportSanitizedDb_PreservesNonSensitiveData()
+    {
+        var customer = new Customer { Name = "Keep This", Email = "remove@example.com", TimeZoneId = "Australia/Sydney" };
+        _db.Customers.Add(customer);
+        await _db.SaveChangesAsync();
+
+        var hub = new Hub
+        {
+            CustomerId = customer.Id,
+            HueBridgeId = "BRIDGE123",
+            HueApplicationKey = "secret",
+            AccessToken = "secret",
+            RefreshToken = "secret",
+            TokenExpiresAt = DateTime.UtcNow,
+            Status = HubStatus.Active
+        };
+        _db.Hubs.Add(hub);
+        await _db.SaveChangesAsync();
+
+        var device = new Device { HubId = hub.Id, HueDeviceId = "dev-001", DeviceType = DeviceTypes.MotionSensor, Name = "Living Room" };
+        _db.Devices.Add(device);
+        await _db.SaveChangesAsync();
+
+        var model = CreateModel();
+        var result = await model.OnPostExportSanitizedDbAsync();
+
+        var fileResult = Assert.IsType<FileContentResult>(result);
+        var exportPath = Path.Combine(Path.GetTempPath(), $"hpoll-verify-{Guid.NewGuid()}.db");
+        try
+        {
+            await File.WriteAllBytesAsync(exportPath, fileResult.FileContents);
+            using var conn = new SqliteConnection($"Data Source={exportPath}");
+            await conn.OpenAsync();
+
+            // Non-sensitive hub data preserved
+            using var hubCmd = conn.CreateCommand();
+            hubCmd.CommandText = "SELECT HueBridgeId, Status FROM Hubs";
+            using var hubReader = await hubCmd.ExecuteReaderAsync();
+            Assert.True(await hubReader.ReadAsync());
+            Assert.Equal("BRIDGE123", hubReader.GetString(0));
+            Assert.Equal(HubStatus.Active, hubReader.GetString(1));
+
+            // Device data preserved
+            using var devCmd = conn.CreateCommand();
+            devCmd.CommandText = "SELECT Name, HueDeviceId FROM Devices";
+            using var devReader = await devCmd.ExecuteReaderAsync();
+            Assert.True(await devReader.ReadAsync());
+            Assert.Equal("Living Room", devReader.GetString(0));
+            Assert.Equal("dev-001", devReader.GetString(1));
+        }
+        finally
+        {
+            try { File.Delete(exportPath); } catch { }
+        }
+    }
+}
+
+/// <summary>Minimal ITempDataProvider for unit tests (stores in memory, no session needed).</summary>
+internal class TestTempDataProvider : ITempDataProvider
+{
+    private IDictionary<string, object?> _data = new Dictionary<string, object?>();
+    public IDictionary<string, object?> LoadTempData(HttpContext context) => _data;
+    public void SaveTempData(HttpContext context, IDictionary<string, object?> values) => _data = values;
 }
