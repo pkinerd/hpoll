@@ -410,6 +410,138 @@ public class DetailModelTests : IDisposable
     }
 
     [Fact]
+    public async Task OnPostUpdateSettingsAsync_InvalidWindowCount_ReturnsError()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditSummaryWindowCount = 0;
+
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("EditSummaryWindowCount"));
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSettingsAsync_NegativeWindowOffset_ReturnsError()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditSummaryWindowOffsetHours = -1;
+
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.True(model.ModelState.ContainsKey("EditSummaryWindowOffsetHours"));
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSettingsAsync_ValidWindowOffset_Saves()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditSummaryWindowOffsetHours = 0;
+        model.EditIncludeLatestLocations = true;
+
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal("Customer settings updated.", model.SuccessMessage);
+
+        var updated = await _db.Customers.FindAsync(customer.Id);
+        Assert.Equal(0, updated!.SummaryWindowOffsetHours);
+    }
+
+    [Fact]
+    public async Task OnPostUpdateSettingsAsync_IncludeLatestLocationsFalse_Saves()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        model.EditName = "Test User";
+        model.EditEmail = "test@example.com";
+        model.EditTimeZoneId = "UTC";
+        model.EditIncludeLatestLocations = false;
+
+        var result = await model.OnPostUpdateSettingsAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        var updated = await _db.Customers.FindAsync(customer.Id);
+        Assert.False(updated!.IncludeLatestLocations);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_PopulatesEmailSettingFields()
+    {
+        var customer = await SeedCustomerAsync();
+        customer.SummaryWindowHours = 6;
+        customer.SummaryWindowCount = 3;
+        customer.SummaryWindowOffsetHours = 2;
+        customer.IncludeLatestLocations = false;
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Equal(6, model.EditSummaryWindowHours);
+        Assert.Equal(3, model.EditSummaryWindowCount);
+        Assert.Equal(2, model.EditSummaryWindowOffsetHours);
+        Assert.False(model.EditIncludeLatestLocations);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_PopulatesDefaultWindowSettings()
+    {
+        var customer = await SeedCustomerAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Equal(4, model.DefaultWindowHours);
+        Assert.Equal(7, model.DefaultWindowCount);
+        Assert.Equal(1, model.DefaultWindowOffset);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_ActivitySummary_UsesPerCustomerWindowSettings()
+    {
+        var customer = await SeedCustomerAsync();
+        customer.SummaryWindowHours = 6;
+        customer.SummaryWindowCount = 2;
+        customer.SummaryWindowOffsetHours = 0;
+        await _db.SaveChangesAsync();
+
+        var hub = await SeedHubAsync(customer.Id);
+        var device = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "dev-001",
+            DeviceType = DeviceTypes.MotionSensor,
+            Name = "Sensor"
+        };
+        _db.Devices.Add(device);
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        // With windowCount=2, the activity summary should have exactly 2 windows
+        Assert.Equal(2, model.ActivityWindows.Count);
+    }
+
+    [Fact]
     public async Task OnGetAsync_DefaultSendTimesFromSystemInfo_WhenAvailable()
     {
         var customer = await SeedCustomerAsync();

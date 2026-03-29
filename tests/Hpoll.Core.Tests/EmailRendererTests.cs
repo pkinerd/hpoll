@@ -1410,6 +1410,165 @@ public class EmailRendererTests : IDisposable
         Assert.Contains("Daily Activity Summary", html);
     }
 
+    [Fact]
+    public async Task RenderDailySummaryAsync_CustomerWithCustomWindowHours_UsesOverride()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        customer.SummaryWindowHours = 6; // Override default 4h to 6h
+        await _db.SaveChangesAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.Contains("Daily Activity Summary", html);
+        // 6h windows with offset 1: boundaries at 01:00, 07:00, 13:00, 19:00
+        // Should see 6h-wide window labels (not the default 4h)
+        Assert.Contains("01:00", html);
+        Assert.Contains("07:00", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_CustomerWithCustomWindowCount_UsesOverride()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        customer.SummaryWindowCount = 3; // Override default 7 to 3
+        await _db.SaveChangesAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        // Default: 7 windows. Custom: 3 windows. The renderer uses 3.
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // Count "Motion Activity" rows — 3 windows means fewer time labels
+        var motionSection = html.Substring(html.IndexOf("Motion Activity"));
+        var locationSection = motionSection.Substring(0, motionSection.IndexOf("Location Diversity"));
+        // Each window produces one <tr> with a time label; with 3 windows we expect fewer rows
+        // than the default 7. Count the window label patterns.
+        var windowLabels = CountOccurrences(locationSection, "\u2013");
+        Assert.True(windowLabels <= 3, $"Expected at most 3 window labels but found {windowLabels}");
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_CustomerWithCustomOffset_UsesOverride()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        customer.SummaryWindowOffsetHours = 0; // Override default 1 to 0
+        await _db.SaveChangesAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // With offset 0 and 4h windows: boundaries at 00:00, 04:00, 08:00, 12:00, 16:00, 20:00
+        Assert.Contains("04:00", html);
+        Assert.Contains("08:00", html);
+        Assert.Contains("12:00", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_CustomerNullSettings_FallsBackToGlobal()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        // Ensure customer has null overrides (the defaults)
+        Assert.Null(customer.SummaryWindowHours);
+        Assert.Null(customer.SummaryWindowCount);
+        Assert.Null(customer.SummaryWindowOffsetHours);
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        // With default offset=1 and 4h windows: boundaries at 01:00, 05:00, 09:00, 13:00, 17:00, 21:00
+        Assert.Contains("05:00", html);
+        Assert.Contains("09:00", html);
+        Assert.Contains("13:00", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_IncludeLatestLocationsTrue_ShowsSection()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        customer.IncludeLatestLocations = true;
+        await _db.SaveChangesAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("Latest Locations", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_IncludeLatestLocationsFalse_OmitsSection()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        customer.IncludeLatestLocations = false;
+        await _db.SaveChangesAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.DoesNotContain("Latest Locations", html);
+        // Other sections should still be present
+        Assert.Contains("Motion Activity", html);
+        Assert.Contains("Location Diversity", html);
+        Assert.Contains("Temperature Range", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_IncludeLatestLocationsDefault_ShowsSection()
+    {
+        // When customer doesn't exist in DB (e.g. invalid ID), IncludeLatestLocations falls back to true
+        var options = new DbContextOptionsBuilder<HpollDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        using var db = new HpollDbContext(options);
+        var emailSettings = Options.Create(new EmailSettings());
+        var renderer = new EmailRenderer(db, NullLogger<EmailRenderer>.Instance, emailSettings);
+
+        var html = await renderer.RenderDailySummaryAsync(9999, TimeZone, NowUtc);
+
+        // Should include Latest Locations by default (fallback to true when customer not found)
+        Assert.Contains("Latest Locations", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_AllCustomerOverrides_Applied()
+    {
+        var (customer, _, device) = await SeedBaseDataAsync();
+        customer.SummaryWindowHours = 6;
+        customer.SummaryWindowCount = 2;
+        customer.SummaryWindowOffsetHours = 3;
+        customer.IncludeLatestLocations = false;
+        await _db.SaveChangesAsync();
+
+        AddMotion(device.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc));
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.NotNull(html);
+        Assert.DoesNotContain("Latest Locations", html);
+        // With 6h windows, offset 3, count 2: only 2 window rows in Motion Activity
+        var motionSection = html.Substring(html.IndexOf("Motion Activity"));
+        var diversityIdx = motionSection.IndexOf("Location Diversity");
+        var motionContent = motionSection.Substring(0, diversityIdx);
+        var windowLabels = CountOccurrences(motionContent, "\u2013");
+        Assert.True(windowLabels <= 2, $"Expected at most 2 window labels but found {windowLabels}");
+    }
+
     private static int CountOccurrences(string text, string pattern)
     {
         int count = 0, idx = 0;
