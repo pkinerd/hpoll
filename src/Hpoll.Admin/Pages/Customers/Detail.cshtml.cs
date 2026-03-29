@@ -414,45 +414,46 @@ public class DetailModel : PageModel
             .Where(d => hubIds.Contains(d.HubId) && d.DeviceType == DeviceTypes.Battery)
             .ToListAsync();
 
-        if (batteryDevices.Count == 0) return;
-
-        var batteryDeviceIds = batteryDevices.Select(d => d.Id).ToList();
-
-        // Get the most recent battery reading for each device
-        var latestReadings = await _db.DeviceReadings
-            .Where(r => batteryDeviceIds.Contains(r.DeviceId) && r.ReadingType == ReadingTypes.Battery)
-            .GroupBy(r => r.DeviceId)
-            .Select(g => g.OrderByDescending(r => r.Timestamp).First())
-            .AsNoTracking()
-            .ToListAsync();
-
-        var deviceMap = batteryDevices.ToDictionary(d => d.Id);
-
-        foreach (var reading in latestReadings)
+        if (batteryDevices.Count > 0)
         {
-            if (!deviceMap.TryGetValue(reading.DeviceId, out var device)) continue;
+            var batteryDeviceIds = batteryDevices.Select(d => d.Id).ToList();
 
-            try
+            // Get the most recent battery reading for each device
+            var latestReadings = await _db.DeviceReadings
+                .Where(r => batteryDeviceIds.Contains(r.DeviceId) && r.ReadingType == ReadingTypes.Battery)
+                .GroupBy(r => r.DeviceId)
+                .Select(g => g.OrderByDescending(r => r.Timestamp).First())
+                .AsNoTracking()
+                .ToListAsync();
+
+            var deviceMap = batteryDevices.ToDictionary(d => d.Id);
+
+            foreach (var reading in latestReadings)
             {
-                using var doc = JsonDocument.Parse(reading.Value);
-                var level = doc.RootElement.GetProperty("battery_level").GetInt32();
-                var state = doc.RootElement.GetProperty("battery_state").GetString() ?? "unknown";
+                if (!deviceMap.TryGetValue(reading.DeviceId, out var device)) continue;
 
-                BatteryStatuses.Add(new BatteryStatus
+                try
                 {
-                    DeviceName = device.Name,
-                    BatteryLevel = level,
-                    BatteryState = state,
-                    LastUpdated = reading.Timestamp,
-                });
-            }
-            catch (JsonException ex)
-            {
-                _logger.LogWarning(ex, "Failed to parse battery reading for DeviceId {DeviceId}", reading.DeviceId);
-            }
-        }
+                    using var doc = JsonDocument.Parse(reading.Value);
+                    var level = doc.RootElement.GetProperty("battery_level").GetInt32();
+                    var state = doc.RootElement.GetProperty("battery_state").GetString() ?? "unknown";
 
-        BatteryStatuses = BatteryStatuses.OrderBy(b => b.BatteryLevel).ToList();
+                    BatteryStatuses.Add(new BatteryStatus
+                    {
+                        DeviceName = device.Name,
+                        BatteryLevel = level,
+                        BatteryState = state,
+                        LastUpdated = reading.Timestamp,
+                    });
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "Failed to parse battery reading for DeviceId {DeviceId}", reading.DeviceId);
+                }
+            }
+
+            BatteryStatuses = BatteryStatuses.OrderBy(b => b.BatteryLevel).ToList();
+        }
 
         // Query latest connectivity reading per device to find unreachable devices
         var allDeviceIds = await _db.Devices
