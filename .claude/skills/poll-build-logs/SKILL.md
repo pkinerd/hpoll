@@ -87,10 +87,15 @@ CI builds typically take **15-30 minutes**, but builds with early errors can fai
 
 6. **Give up after 45 cycles** (~45 minutes of checking). You MUST run all 45 cycles before giving up — do NOT stop early.
 
+**CRITICAL — Polling is SYNCHRONOUS, not asynchronous:** Each poll cycle is a blocking wait. After launching one background task, you MUST completely stop and produce NO tool calls and NO text output until you receive the `task-notification` for that specific task ID in a new conversation turn. The `task-notification` arrives as a system message — you cannot trigger it yourself. The 60-second sleep means you will be idle for 60 seconds. This is expected and correct.
+
+**Common mistake to avoid:** Do NOT treat polling as an async fire-and-forget loop. Do NOT launch a background task and then immediately read its output file or launch the next cycle. The output file will be empty because the task is still sleeping. You must wait for the `task-notification` to arrive in a subsequent conversation turn before proceeding.
+
 **CRITICAL — One task at a time:** Launch exactly ONE background task per cycle. After launching it, you MUST wait for its `task-notification` before doing anything else related to polling. Do NOT:
 - Read the output file immediately after launching (it will be empty — the task is still sleeping)
 - Launch multiple background tasks in rapid succession
 - Try to "check" on the task before it completes
+- Use any tool calls between launching and receiving the task-notification
 
 **CRITICAL — Run all 45 cycles:** You MUST keep polling for the full 45 cycles before giving up. Track your cycle count (e.g., "Poll cycle 7/45"). Do NOT give up early because "no changes were detected" — CI builds take 15-30 minutes, so it is normal to see no changes for many cycles.
 
