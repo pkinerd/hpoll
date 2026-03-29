@@ -300,9 +300,14 @@ public class PollingService : BackgroundService
                     hub.HueBridgeId, connectivityResponse.Data.Count);
             }
 
-            // Remove stale devices in a single pass — a device is stale only if its
-            // HueDeviceId was not seen in ANY service type during this poll cycle.
-            await RemoveStaleDevicesAsync(db, hub, allCurrentDeviceIds, ct);
+            // Remove stale devices only when all endpoints were polled this cycle.
+            // On non-battery cycles we only poll motion and temperature, so devices
+            // that only appear in battery/connectivity (e.g. lights, plugs) would be
+            // incorrectly flagged as stale.
+            if (shouldPollBattery)
+            {
+                await RemoveStaleDevicesAsync(db, hub, allCurrentDeviceIds, ct);
+            }
 
             hub.LastSuccessAt = pollTime;
             hub.ConsecutiveFailures = 0;
