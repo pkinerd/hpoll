@@ -241,5 +241,5 @@ Claude:
 
 - `git ls-remote` only fetches ref names — very lightweight, safe to run frequently.
 - Blobless fetches (`--filter=blob:none`) download only tree metadata (~KB), not log file content (~300-500KB per build). Individual files are fetched on demand via `git show` with the `-c` promisor overrides.
-- Only the 10 most recent build folders are retained on the `build-logs` branch.
+- Only the 50 most recent build folders are retained on the `build-logs` branch.
 - The `Branch` field in build-summary.md is only present for `pull_request` events (not `push` events to dev/main).

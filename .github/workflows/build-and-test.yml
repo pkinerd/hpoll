@@ -236,7 +236,7 @@ jobs:
   # Captures build/test results as folders on the single `build-logs` orphan
   # branch so the poll-build-logs Claude skill can monitor CI outcomes.
   # Each build becomes a folder: <run_number>-<run_id>-<timestamp>-<status>.
-  # Only the 10 most recent builds are retained.
+  # Only the 50 most recent builds are retained.
   # ──────────────────────────────────────────────────────────────────────────
   push-build-logs:
     name: Push Build Logs
@@ -371,11 +371,11 @@ jobs:
             if git fetch origin build-logs --depth=1 --filter=blob:none 2>/dev/null; then
               git reset FETCH_HEAD
 
-              # Prune old folders — keep 9 existing + 1 new = 10
+              # Prune old folders — keep 49 existing + 1 new = 50
               FOLDERS=$(git ls-tree HEAD --name-only | sort -t- -k1 -n)
               if [ -n "$FOLDERS" ]; then
                 COUNT=$(echo "$FOLDERS" | wc -l)
-                KEEP=9
+                KEEP=49
                 if [ "$COUNT" -gt "$KEEP" ]; then
                   echo "$FOLDERS" | head -n $((COUNT - KEEP)) | while read -r old_folder; do
                     echo "Pruning old build folder: $old_folder"
