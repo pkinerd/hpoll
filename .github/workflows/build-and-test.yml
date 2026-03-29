@@ -198,7 +198,7 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   # Update Latest Commit
   #
-  # Writes the commit hash to the hpoll-latest orphan branch after successful
+  # Writes the commit hash to the latest-ci orphan branch after successful
   # Docker pushes so external systems can discover the latest deployed commit.
   # ──────────────────────────────────────────────────────────────────────────
   update-latest:
@@ -215,13 +215,13 @@ jobs:
           git init -b tmp
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan hpoll-latest
+          git checkout --orphan latest-ci
           echo "${{ github.sha }}" > commit.txt
           git add commit.txt
           git commit -m "Latest commit: ${{ github.sha }}"
           git push --force \
             "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
-            hpoll-latest
+            latest-ci
 
   # ──────────────────────────────────────────────────────────────────────────
   # Push Build Logs
