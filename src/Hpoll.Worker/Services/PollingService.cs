@@ -128,14 +128,18 @@ public class PollingService : BackgroundService
             var batteryTask = shouldPollBattery
                 ? hueClient.GetDevicePowerAsync(hub.AccessToken, hub.HueApplicationKey, ct)
                 : Task.FromResult(new HueResponse<HueDevicePowerResource>());
+            var connectivityTask = shouldPollBattery
+                ? hueClient.GetZigbeeConnectivityAsync(hub.AccessToken, hub.HueApplicationKey, ct)
+                : Task.FromResult(new HueResponse<HueZigbeeConnectivityResource>());
 
-            await Task.WhenAll(motionTask, tempTask, deviceTask, batteryTask);
-            apiCalls = shouldPollBattery ? 4 : 3;
+            await Task.WhenAll(motionTask, tempTask, deviceTask, batteryTask, connectivityTask);
+            apiCalls = shouldPollBattery ? 5 : 3;
 
             var motionResponse = await motionTask;
             var tempResponse = await tempTask;
             var deviceResponse = await deviceTask;
             var batteryResponse = await batteryTask;
+            var connectivityResponse = await connectivityTask;
 
             // Build device lookup: device ID -> device (for owner.rid lookups)
             var deviceById = deviceResponse.Data.ToDictionary(d => d.Id, d => d);
@@ -251,6 +255,41 @@ public class PollingService : BackgroundService
                 _logger.LogInformation(
                     "Hub {BridgeId}: battery data fetched. {BatteryCount} device_power resources",
                     hub.HueBridgeId, batteryResponse.Data.Count);
+            }
+
+            // Process Zigbee connectivity readings (polled alongside battery)
+            if (shouldPollBattery && connectivityResponse.Data.Count > 0)
+            {
+                var currentConnectivityDeviceIds = new HashSet<string>();
+
+                foreach (var conn in connectivityResponse.Data)
+                {
+                    currentConnectivityDeviceIds.Add(conn.Owner.Rid);
+
+                    var deviceName = deviceById.TryGetValue(conn.Owner.Rid, out var ownerDevice)
+                        ? ownerDevice.Metadata.Name
+                        : "Unknown";
+
+                    var dbDevice = await GetOrCreateDeviceAsync(db, hub, conn.Owner.Rid, DeviceTypes.ZigbeeConnectivity, deviceName, ct);
+
+                    db.DeviceReadings.Add(new DeviceReading
+                    {
+                        DeviceId = dbDevice.Id,
+                        Timestamp = pollTime,
+                        ReadingType = ReadingTypes.ZigbeeConnectivity,
+                        Value = JsonSerializer.Serialize(new
+                        {
+                            status = conn.Status,
+                            mac_address = conn.MacAddress
+                        })
+                    });
+                }
+
+                await RemoveStaleDevicesAsync(db, hub, DeviceTypes.ZigbeeConnectivity, currentConnectivityDeviceIds, ct);
+
+                _logger.LogInformation(
+                    "Hub {BridgeId}: connectivity data fetched. {ConnCount} zigbee_connectivity resources",
+                    hub.HueBridgeId, connectivityResponse.Data.Count);
             }
 
             hub.LastSuccessAt = pollTime;

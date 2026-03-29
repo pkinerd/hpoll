@@ -240,28 +240,49 @@ else
     <p>No activity data available for the current summary window.</p>
 }
 
-<h2>Battery Status</h2>
-@if (Model.BatteryStatuses.Any())
+<h2>Device Status</h2>
+@if (Model.BatteryStatuses.Any() || Model.UnreachableDevices.Any())
 {
-    <table>
-        <thead><tr><th>Device</th><th>Level</th><th>State</th><th>Last Updated</th></tr></thead>
-        <tbody>
-        @foreach (var b in Model.BatteryStatuses)
-        {
-            var color = b.BatteryLevel <= 30 ? "#e74c3c" : b.BatteryLevel <= 50 ? "#f39c12" : "#27ae60";
-            <tr>
-                <td>@b.DeviceName</td>
-                <td><span style="color: @color; font-weight: 600;">@b.BatteryLevel%</span></td>
-                <td>@b.BatteryState</td>
-                <td>@b.LastUpdated.ToString("yyyy-MM-dd HH:mm") UTC</td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    @if (Model.BatteryStatuses.Any())
+    {
+        <h3>Battery</h3>
+        <table>
+            <thead><tr><th>Device</th><th>Level</th><th>State</th><th>Last Updated</th></tr></thead>
+            <tbody>
+            @foreach (var b in Model.BatteryStatuses)
+            {
+                var color = b.BatteryLevel <= 30 ? "#e74c3c" : b.BatteryLevel <= 50 ? "#f39c12" : "#27ae60";
+                <tr>
+                    <td>@b.DeviceName</td>
+                    <td><span style="color: @color; font-weight: 600;">@b.BatteryLevel%</span></td>
+                    <td>@b.BatteryState</td>
+                    <td>@b.LastUpdated.ToString("yyyy-MM-dd HH:mm") UTC</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    @if (Model.UnreachableDevices.Any())
+    {
+        <h3>Unreachable Devices</h3>
+        <table>
+            <thead><tr><th>Device</th><th>Status</th><th>Last Updated</th></tr></thead>
+            <tbody>
+            @foreach (var d in Model.UnreachableDevices)
+            {
+                <tr>
+                    <td>@d.DeviceName</td>
+                    <td><span style="color: #e74c3c; font-weight: 600;">@d.Status</span></td>
+                    <td>@d.LastUpdated.ToString("yyyy-MM-dd HH:mm") UTC</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
 }
 else
 {
-    <p>No battery data available.</p>
+    <p>No battery or connectivity issues.</p>
 }
 
 @if (!string.IsNullOrEmpty(Model.EmailPreviewHtml))

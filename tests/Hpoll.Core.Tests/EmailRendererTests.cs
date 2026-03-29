@@ -613,7 +613,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Device Status", html);
         Assert.DoesNotContain("<script>", html);
         Assert.Contains("&lt;script&gt;", html);
     }
@@ -707,7 +707,7 @@ public class EmailRendererTests : IDisposable
 
         Assert.NotNull(html);
         // Should not crash; malformed battery data is silently skipped
-        Assert.DoesNotContain("Battery Status", html);
+        Assert.DoesNotContain("Device Status", html);
     }
 
     [Fact]
@@ -760,7 +760,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Device Status", html);
         Assert.Contains("Hallway Sensor", html);
         Assert.Contains("15%", html);
         // Red color for <30%
@@ -789,7 +789,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.DoesNotContain("Battery Status", html);
+        Assert.DoesNotContain("Device Status", html);
     }
 
     [Fact]
@@ -811,7 +811,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Device Status", html);
         Assert.Contains("Garage Sensor", html);
         Assert.Contains("Kitchen Sensor", html);
         Assert.Contains("Bedroom Sensor", html);
@@ -835,7 +835,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.DoesNotContain("Battery Status", html);
+        Assert.DoesNotContain("Device Status", html);
     }
 
     [Fact]
@@ -862,7 +862,7 @@ public class EmailRendererTests : IDisposable
 
         Assert.NotNull(html);
         // Should show battery section since latest reading is 20% (<30%)
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Device Status", html);
         Assert.Contains("20%", html);
     }
 
@@ -888,7 +888,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Device Status", html);
         Assert.Contains("Hallway Sensor", html);
         Assert.Contains("30%", html);
         // At exactly the critical threshold (30), should show red
@@ -1032,7 +1032,7 @@ public class EmailRendererTests : IDisposable
 
         Assert.NotNull(html);
         // Old battery reading should be excluded — no battery section shown
-        Assert.DoesNotContain("Battery Status", html);
+        Assert.DoesNotContain("Device Status", html);
         Assert.DoesNotContain("Old Battery Sensor", html);
     }
 
@@ -1058,7 +1058,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         Assert.NotNull(html);
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Device Status", html);
         Assert.Contains("Recent Battery Sensor", html);
         Assert.Contains("15%", html);
     }
@@ -1086,7 +1086,7 @@ public class EmailRendererTests : IDisposable
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
         // Latest reading is 90% (above 30% threshold) so no battery section shown
-        Assert.DoesNotContain("Battery Status", html);
+        Assert.DoesNotContain("Device Status", html);
     }
 
     [Fact]
@@ -1322,7 +1322,7 @@ public class EmailRendererTests : IDisposable
 
         var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
 
-        Assert.Contains("Battery Status", html);
+        Assert.Contains("Device Status", html);
         // Low Battery (5%) should appear before Mid Battery (40%) before High Battery (80%)
         var lowIdx = html.IndexOf("Low Battery");
         var midIdx = html.IndexOf("Mid Battery");
@@ -1567,6 +1567,158 @@ public class EmailRendererTests : IDisposable
         var motionContent = motionSection.Substring(0, diversityIdx);
         var windowLabels = CountOccurrences(motionContent, "\u2013");
         Assert.True(windowLabels <= 2, $"Expected at most 2 window labels but found {windowLabels}");
+    }
+
+    private void AddConnectivity(int deviceId, DateTime timestamp, string status, string macAddress = "00:11:22:33:44:55")
+    {
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = deviceId,
+            Timestamp = timestamp,
+            ReadingType = ReadingTypes.ZigbeeConnectivity,
+            Value = $"{{\"status\":\"{status}\",\"mac_address\":\"{macAddress}\"}}"
+        });
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_WithUnreachableDevice_ShowsDeviceStatusSection()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var zigbeeDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-zigbee-001",
+            DeviceType = DeviceTypes.ZigbeeConnectivity,
+            Name = "Hallway Sensor"
+        };
+        _db.Devices.Add(zigbeeDevice);
+        await _db.SaveChangesAsync();
+
+        AddConnectivity(zigbeeDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), "disconnected");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("Device Status", html);
+        Assert.Contains("Hallway Sensor", html);
+        Assert.Contains("Disconnected", html);
+        Assert.Contains("\u26a0", html); // warning icon
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_WithConnectedDevice_NoDeviceStatusSection()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var zigbeeDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-zigbee-002",
+            DeviceType = DeviceTypes.ZigbeeConnectivity,
+            Name = "Kitchen Sensor"
+        };
+        _db.Devices.Add(zigbeeDevice);
+        await _db.SaveChangesAsync();
+
+        AddConnectivity(zigbeeDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), "connected");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.DoesNotContain("Device Status", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_UnreachableDeviceOnly_ShowsSectionWithoutBattery()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        // No battery devices, just an unreachable zigbee device
+        var zigbeeDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-zigbee-003",
+            DeviceType = DeviceTypes.ZigbeeConnectivity,
+            Name = "Garage Sensor"
+        };
+        _db.Devices.Add(zigbeeDevice);
+        await _db.SaveChangesAsync();
+
+        AddConnectivity(zigbeeDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), "connectivity_issue");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("Device Status", html);
+        Assert.Contains("Garage Sensor", html);
+        Assert.Contains("Connectivity Issue", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_LowBatteryAndUnreachable_ShowsBoth()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var batteryDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-bat-both",
+            DeviceType = DeviceTypes.Battery,
+            Name = "Low Battery Device"
+        };
+        var zigbeeDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-zigbee-both",
+            DeviceType = DeviceTypes.ZigbeeConnectivity,
+            Name = "Unreachable Device"
+        };
+        _db.Devices.AddRange(batteryDevice, zigbeeDevice);
+        await _db.SaveChangesAsync();
+
+        AddBattery(batteryDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), 15, "low");
+        AddConnectivity(zigbeeDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), "disconnected");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("Device Status", html);
+        Assert.Contains("Low Battery Device", html);
+        Assert.Contains("15%", html);
+        Assert.Contains("Unreachable Device", html);
+        Assert.Contains("Disconnected", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_ConnectivityStatusLabels_MappedCorrectly()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var devices = new[]
+        {
+            ("device-z-1", "Sensor A", "disconnected", "Disconnected"),
+            ("device-z-2", "Sensor B", "connectivity_issue", "Connectivity Issue"),
+            ("device-z-3", "Sensor C", "unidirectional_incoming", "Limited Connectivity"),
+            ("device-z-4", "Sensor D", "configuration_error", "Configuration Error"),
+        };
+
+        foreach (var (hueId, name, status, _) in devices)
+        {
+            var d = new Device { HubId = hub.Id, HueDeviceId = hueId, DeviceType = DeviceTypes.ZigbeeConnectivity, Name = name };
+            _db.Devices.Add(d);
+            await _db.SaveChangesAsync();
+            AddConnectivity(d.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), status);
+        }
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        foreach (var (_, name, _, label) in devices)
+        {
+            Assert.Contains(name, html);
+            Assert.Contains(label, html);
+        }
     }
 
     private static int CountOccurrences(string text, string pattern)

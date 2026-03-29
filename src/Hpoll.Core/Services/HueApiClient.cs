@@ -61,6 +61,12 @@ public class HueApiClient : IHueApiClient
         return await GetResourceAsync<HueDevicePowerResource>("/resource/device_power", accessToken, applicationKey, ct);
     }
 
+    public async Task<HueResponse<HueZigbeeConnectivityResource>> GetZigbeeConnectivityAsync(
+        string accessToken, string applicationKey, CancellationToken ct = default)
+    {
+        return await GetResourceAsync<HueZigbeeConnectivityResource>("/resource/zigbee_connectivity", accessToken, applicationKey, ct);
+    }
+
     public async Task<HueTokenResponse> RefreshTokenAsync(string refreshToken, CancellationToken ct = default)
     {
         return await PostTokenRequestAsync(new Dictionary<string, string>

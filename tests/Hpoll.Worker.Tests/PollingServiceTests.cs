@@ -174,6 +174,22 @@ public class PollingServiceTests : IDisposable
                     }
                 }
             });
+
+        _mockHueClient.Setup(c => c.GetZigbeeConnectivityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueZigbeeConnectivityResource>
+            {
+                Data = new List<HueZigbeeConnectivityResource>
+                {
+                    new()
+                    {
+                        Id = "zigbee-001",
+                        Type = "zigbee_connectivity",
+                        Owner = new HueResourceRef { Rid = deviceId, Rtype = "device" },
+                        Status = "connected",
+                        MacAddress = "00:11:22:33:44:55"
+                    }
+                }
+            });
     }
 
     [Fact]
@@ -1189,7 +1205,7 @@ public class PollingServiceTests : IDisposable
 
         using var db = CreateDb();
         var log = await db.PollingLogs.FirstAsync();
-        Assert.Equal(4, log.ApiCallsMade); // motion + temp + devices + battery
+        Assert.Equal(5, log.ApiCallsMade); // motion + temp + devices + battery + zigbee connectivity
     }
 
     [Fact]
@@ -1204,6 +1220,42 @@ public class PollingServiceTests : IDisposable
         using var db = CreateDb();
         var log = await db.PollingLogs.FirstAsync();
         Assert.Equal(3, log.ApiCallsMade);
+    }
+
+    [Fact]
+    public async Task PollHub_WithBatteryPoll_StoresZigbeeConnectivityReading()
+    {
+        var hub = await SeedHubAsync();
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService();
+        await service.PollAllHubsAsync(forceBatteryPoll: true, CancellationToken.None);
+
+        using var db = CreateDb();
+        var connectivityReadings = await db.DeviceReadings
+            .Where(r => r.ReadingType == ReadingTypes.ZigbeeConnectivity)
+            .ToListAsync();
+        Assert.NotEmpty(connectivityReadings);
+
+        var reading = connectivityReadings.First();
+        Assert.Contains("connected", reading.Value);
+        Assert.Contains("mac_address", reading.Value);
+    }
+
+    [Fact]
+    public async Task PollHub_WithoutBatteryPoll_DoesNotStoreConnectivityReading()
+    {
+        await SeedHubAsync(lastBatteryPollUtc: _fakeTime.GetUtcNow().UtcDateTime.AddHours(-1));
+        SetupSuccessfulHueResponses();
+
+        var service = CreateService(new PollingSettings { IntervalMinutes = 60, BatteryPollIntervalHours = 84 });
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var connectivityReadings = await db.DeviceReadings
+            .Where(r => r.ReadingType == ReadingTypes.ZigbeeConnectivity)
+            .ToListAsync();
+        Assert.Empty(connectivityReadings);
     }
 
     [Fact]

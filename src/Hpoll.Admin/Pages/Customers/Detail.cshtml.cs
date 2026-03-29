@@ -77,6 +77,7 @@ public class DetailModel : PageModel
     public List<ActivityWindow> ActivityWindows { get; set; } = new();
     public int MotionSensorCount { get; set; }
     public List<BatteryStatus> BatteryStatuses { get; set; } = new();
+    public List<UnreachableDevice> UnreachableDevices { get; set; } = new();
     public string EmailPreviewHtml { get; set; } = string.Empty;
 
     public async Task<IActionResult> OnGetAsync(int id)
@@ -452,6 +453,44 @@ public class DetailModel : PageModel
         }
 
         BatteryStatuses = BatteryStatuses.OrderBy(b => b.BatteryLevel).ToList();
+
+        // Query latest connectivity reading per device to find unreachable devices
+        var allDeviceIds = await _db.Devices
+            .Where(d => hubIds.Contains(d.HubId))
+            .Select(d => d.Id)
+            .ToListAsync();
+
+        var connectivityReadings = await _db.DeviceReadings
+            .Include(r => r.Device)
+            .Where(r => allDeviceIds.Contains(r.DeviceId) && r.ReadingType == ReadingTypes.ZigbeeConnectivity)
+            .GroupBy(r => r.DeviceId)
+            .Select(g => g.OrderByDescending(r => r.Timestamp).First())
+            .AsNoTracking()
+            .ToListAsync();
+
+        foreach (var reading in connectivityReadings)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(reading.Value);
+                var status = doc.RootElement.GetProperty("status").GetString() ?? "unknown";
+                if (status != "connected")
+                {
+                    UnreachableDevices.Add(new UnreachableDevice
+                    {
+                        DeviceName = reading.Device.Name,
+                        Status = status,
+                        LastUpdated = reading.Timestamp,
+                    });
+                }
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse connectivity reading for DeviceId {DeviceId}", reading.DeviceId);
+            }
+        }
+
+        UnreachableDevices = UnreachableDevices.OrderBy(d => d.DeviceName).ToList();
     }
 
     public class ActivityWindow
@@ -471,6 +510,13 @@ public class DetailModel : PageModel
         public string DeviceName { get; set; } = string.Empty;
         public int BatteryLevel { get; set; }
         public string BatteryState { get; set; } = string.Empty;
+        public DateTime LastUpdated { get; set; }
+    }
+
+    public class UnreachableDevice
+    {
+        public string DeviceName { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
         public DateTime LastUpdated { get; set; }
     }
 }
