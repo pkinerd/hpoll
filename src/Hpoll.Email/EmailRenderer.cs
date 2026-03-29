@@ -250,6 +250,7 @@ public class EmailRenderer : IEmailRenderer
         // Visual section
         sb.AppendLine("<tr><td style=\"padding:20px;\">");
         sb.AppendLine("<h2 style=\"margin:0 0 15px;font-size:16px;color:#2c3e50;\">Activity Overview</h2>");
+        sb.AppendLine("<p style=\"margin:0 0 10px;font-size:11px;color:#999;\">* Most recent (newest) first</p>");
 
         // Motion activity bars — capped at 5 events
         sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"margin-bottom:20px;\">");
@@ -339,7 +340,7 @@ public class EmailRenderer : IEmailRenderer
         // Temperature range
         sb.AppendLine("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\">");
         sb.AppendLine("<tr><td colspan=\"4\" style=\"font-size:13px;font-weight:bold;color:#555;padding-bottom:8px;\">Temperature Range (\u00b0C)</td></tr>");
-        sb.AppendLine("<tr><td style=\"font-size:11px;color:#999;\"></td><td style=\"font-size:11px;color:#999;text-align:center;\">Low</td><td style=\"font-size:11px;color:#999;text-align:center;\">Med</td><td style=\"font-size:11px;color:#999;text-align:center;\">High</td></tr>");
+        sb.AppendLine("<tr><td style=\"font-size:11px;color:#999;\"></td><td style=\"font-size:11px;color:#999;text-align:center;\">Low</td><td style=\"font-size:11px;color:#999;text-align:center;\">Median</td><td style=\"font-size:11px;color:#999;text-align:center;\">High</td></tr>");
         foreach (var w in windows)
         {
             sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:90px;\">{FormatLabelHtml(w)}</td>");
