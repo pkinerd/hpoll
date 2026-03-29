@@ -144,6 +144,13 @@ public class PollingService : BackgroundService
             // Build device lookup: device ID -> device (for owner.rid lookups)
             var deviceById = deviceResponse.Data.ToDictionary(d => d.Id, d => d);
 
+            // Track all device IDs seen across all service types so we can remove
+            // stale devices in a single pass at the end. A physical Hue device
+            // (identified by owner.rid) may appear across motion, temperature,
+            // battery, and connectivity endpoints — we store one Device row per
+            // physical device and use the Hue archetype as the DeviceType.
+            var allCurrentDeviceIds = new HashSet<string>();
+
             // Compute the cutoff for motion detection: the lower of last poll time
             // or current time minus the polling interval. If Changed is after this
             // cutoff, motion occurred since we last checked.
@@ -155,19 +162,19 @@ public class PollingService : BackgroundService
                 : intervalCutoff;
 
             // Process motion readings
-            var currentMotionDeviceIds = new HashSet<string>();
             foreach (var motion in motionResponse.Data)
             {
                 if (!motion.Enabled || motion.Motion.MotionReport == null) continue;
 
-                currentMotionDeviceIds.Add(motion.Owner.Rid);
+                allCurrentDeviceIds.Add(motion.Owner.Rid);
 
                 // owner.rid is the parent device ID
                 var deviceName = deviceById.TryGetValue(motion.Owner.Rid, out var ownerDevice)
                     ? ownerDevice.Metadata.Name
                     : "Unknown";
+                var deviceType = ownerDevice?.Metadata.Archetype ?? DeviceTypes.Unknown;
 
-                var dbDevice = await GetOrCreateDeviceAsync(db, hub, motion.Owner.Rid, DeviceTypes.MotionSensor, deviceName, ct);
+                var dbDevice = await GetOrCreateDeviceAsync(db, hub, motion.Owner.Rid, deviceType, deviceName, ct);
 
                 var motionDetected = motion.Motion.MotionReport.Changed > motionCutoff;
 
@@ -184,22 +191,20 @@ public class PollingService : BackgroundService
                 });
             }
 
-            await RemoveStaleDevicesAsync(db, hub, DeviceTypes.MotionSensor, currentMotionDeviceIds, ct);
-
             // Process temperature readings
-            var currentTempDeviceIds = new HashSet<string>();
             foreach (var temp in tempResponse.Data)
             {
                 if (!temp.Enabled || temp.Temperature.TemperatureReport == null) continue;
 
-                currentTempDeviceIds.Add(temp.Owner.Rid);
+                allCurrentDeviceIds.Add(temp.Owner.Rid);
 
                 // owner.rid is the parent device ID
                 var deviceName = deviceById.TryGetValue(temp.Owner.Rid, out var ownerDevice)
                     ? ownerDevice.Metadata.Name
                     : "Unknown";
+                var deviceType = ownerDevice?.Metadata.Archetype ?? DeviceTypes.Unknown;
 
-                var dbDevice = await GetOrCreateDeviceAsync(db, hub, temp.Owner.Rid, DeviceTypes.TemperatureSensor, deviceName, ct);
+                var dbDevice = await GetOrCreateDeviceAsync(db, hub, temp.Owner.Rid, deviceType, deviceName, ct);
 
                 db.DeviceReadings.Add(new DeviceReading
                 {
@@ -214,26 +219,21 @@ public class PollingService : BackgroundService
                 });
             }
 
-            await RemoveStaleDevicesAsync(db, hub, DeviceTypes.TemperatureSensor, currentTempDeviceIds, ct);
-
             // Process battery readings (only when polled this cycle)
             if (shouldPollBattery && batteryResponse.Data.Count > 0)
             {
-                // Track which device IDs are still present on the hub so we can
-                // remove stale battery devices that have been retired/removed.
-                var currentBatteryDeviceIds = new HashSet<string>();
-
                 foreach (var power in batteryResponse.Data)
                 {
                     if (power.PowerState.BatteryLevel == null) continue;
 
-                    currentBatteryDeviceIds.Add(power.Owner.Rid);
+                    allCurrentDeviceIds.Add(power.Owner.Rid);
 
                     var deviceName = deviceById.TryGetValue(power.Owner.Rid, out var ownerDevice)
                         ? ownerDevice.Metadata.Name
                         : "Unknown";
+                    var deviceType = ownerDevice?.Metadata.Archetype ?? DeviceTypes.Unknown;
 
-                    var dbDevice = await GetOrCreateDeviceAsync(db, hub, power.Owner.Rid, DeviceTypes.Battery, deviceName, ct);
+                    var dbDevice = await GetOrCreateDeviceAsync(db, hub, power.Owner.Rid, deviceType, deviceName, ct);
 
                     db.DeviceReadings.Add(new DeviceReading
                     {
@@ -248,8 +248,6 @@ public class PollingService : BackgroundService
                     });
                 }
 
-                await RemoveStaleDevicesAsync(db, hub, DeviceTypes.Battery, currentBatteryDeviceIds, ct);
-
                 hub.LastBatteryPollUtc = pollTime;
 
                 _logger.LogInformation(
@@ -260,17 +258,16 @@ public class PollingService : BackgroundService
             // Process Zigbee connectivity readings (polled alongside battery)
             if (shouldPollBattery && connectivityResponse.Data.Count > 0)
             {
-                var currentConnectivityDeviceIds = new HashSet<string>();
-
                 foreach (var conn in connectivityResponse.Data)
                 {
-                    currentConnectivityDeviceIds.Add(conn.Owner.Rid);
+                    allCurrentDeviceIds.Add(conn.Owner.Rid);
 
                     var deviceName = deviceById.TryGetValue(conn.Owner.Rid, out var ownerDevice)
                         ? ownerDevice.Metadata.Name
                         : "Unknown";
+                    var deviceType = ownerDevice?.Metadata.Archetype ?? DeviceTypes.Unknown;
 
-                    var dbDevice = await GetOrCreateDeviceAsync(db, hub, conn.Owner.Rid, DeviceTypes.ZigbeeConnectivity, deviceName, ct);
+                    var dbDevice = await GetOrCreateDeviceAsync(db, hub, conn.Owner.Rid, deviceType, deviceName, ct);
 
                     db.DeviceReadings.Add(new DeviceReading
                     {
@@ -285,12 +282,14 @@ public class PollingService : BackgroundService
                     });
                 }
 
-                await RemoveStaleDevicesAsync(db, hub, DeviceTypes.ZigbeeConnectivity, currentConnectivityDeviceIds, ct);
-
                 _logger.LogInformation(
                     "Hub {BridgeId}: connectivity data fetched. {ConnCount} zigbee_connectivity resources",
                     hub.HueBridgeId, connectivityResponse.Data.Count);
             }
+
+            // Remove stale devices in a single pass — a device is stale only if its
+            // HueDeviceId was not seen in ANY service type during this poll cycle.
+            await RemoveStaleDevicesAsync(db, hub, allCurrentDeviceIds, ct);
 
             hub.LastSuccessAt = pollTime;
             hub.ConsecutiveFailures = 0;
@@ -388,10 +387,10 @@ public class PollingService : BackgroundService
     }
 
     private async Task RemoveStaleDevicesAsync(
-        HpollDbContext db, Hub hub, string deviceType, HashSet<string> currentDeviceIds, CancellationToken ct)
+        HpollDbContext db, Hub hub, HashSet<string> currentDeviceIds, CancellationToken ct)
     {
         var staleDevices = await db.Devices
-            .Where(d => d.HubId == hub.Id && d.DeviceType == deviceType && !currentDeviceIds.Contains(d.HueDeviceId))
+            .Where(d => d.HubId == hub.Id && !currentDeviceIds.Contains(d.HueDeviceId))
             .ToListAsync(ct);
 
         if (staleDevices.Count > 0)
@@ -403,8 +402,8 @@ public class PollingService : BackgroundService
             db.DeviceReadings.RemoveRange(staleReadings);
             db.Devices.RemoveRange(staleDevices);
             _logger.LogInformation(
-                "Hub {BridgeId}: removed {Count} stale {DeviceType} device(s) no longer on hub",
-                hub.HueBridgeId, staleDevices.Count, deviceType);
+                "Hub {BridgeId}: removed {Count} stale device(s) no longer on hub",
+                hub.HueBridgeId, staleDevices.Count);
         }
     }
 
@@ -425,10 +424,12 @@ public class PollingService : BackgroundService
             await db.SaveChangesAsync(ct);
             hub.Devices.Add(device);
         }
-        else if (device.Name != name)
+        else
         {
-            device.Name = name;
-            device.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
+            bool changed = false;
+            if (device.Name != name) { device.Name = name; changed = true; }
+            if (device.DeviceType != deviceType) { device.DeviceType = deviceType; changed = true; }
+            if (changed) device.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         }
         return device;
     }

@@ -817,7 +817,7 @@ public class DetailModelTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "bat-001",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Hallway Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -847,8 +847,8 @@ public class DetailModelTests : IDisposable
         var customer = await SeedCustomerAsync();
         var hub = await SeedHubAsync(customer.Id);
 
-        var bat1 = new Device { HubId = hub.Id, HueDeviceId = "bat-high", DeviceType = DeviceTypes.Battery, Name = "High" };
-        var bat2 = new Device { HubId = hub.Id, HueDeviceId = "bat-low", DeviceType = DeviceTypes.Battery, Name = "Low" };
+        var bat1 = new Device { HubId = hub.Id, HueDeviceId = "bat-high", DeviceType = DeviceTypes.MotionSensor, Name = "High" };
+        var bat2 = new Device { HubId = hub.Id, HueDeviceId = "bat-low", DeviceType = DeviceTypes.MotionSensor, Name = "Low" };
         _db.Devices.AddRange(bat1, bat2);
         await _db.SaveChangesAsync();
 
@@ -880,7 +880,7 @@ public class DetailModelTests : IDisposable
 
         var batteryDevice = new Device
         {
-            HubId = hub.Id, HueDeviceId = "bat-multi", DeviceType = DeviceTypes.Battery, Name = "Study"
+            HubId = hub.Id, HueDeviceId = "bat-multi", DeviceType = DeviceTypes.MotionSensor, Name = "Study"
         };
         _db.Devices.Add(batteryDevice);
         await _db.SaveChangesAsync();
@@ -926,7 +926,7 @@ public class DetailModelTests : IDisposable
 
         var batteryDevice = new Device
         {
-            HubId = hub.Id, HueDeviceId = "bat-bad", DeviceType = DeviceTypes.Battery, Name = "Bad Sensor"
+            HubId = hub.Id, HueDeviceId = "bat-bad", DeviceType = DeviceTypes.MotionSensor, Name = "Bad Sensor"
         };
         _db.Devices.Add(batteryDevice);
         await _db.SaveChangesAsync();

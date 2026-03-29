@@ -600,7 +600,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-xss",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "<script>alert('xss')</script>"
         };
         _db.Devices.Add(xssDevice);
@@ -687,7 +687,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-bad",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Bad Battery Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -747,7 +747,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-001",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Hallway Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -776,7 +776,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-002",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Living Room Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -797,9 +797,9 @@ public class EmailRendererTests : IDisposable
     {
         var (customer, hub, device) = await SeedBaseDataAsync();
 
-        var lowDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-low", DeviceType = DeviceTypes.Battery, Name = "Garage Sensor" };
-        var midDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-mid", DeviceType = DeviceTypes.Battery, Name = "Kitchen Sensor" };
-        var highDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-high", DeviceType = DeviceTypes.Battery, Name = "Bedroom Sensor" };
+        var lowDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-low", DeviceType = DeviceTypes.MotionSensor, Name = "Garage Sensor" };
+        var midDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-mid", DeviceType = DeviceTypes.MotionSensor, Name = "Kitchen Sensor" };
+        var highDevice = new Device { HubId = hub.Id, HueDeviceId = "device-bat-high", DeviceType = DeviceTypes.MotionSensor, Name = "Bedroom Sensor" };
         _db.Devices.AddRange(lowDevice, midDevice, highDevice);
         await _db.SaveChangesAsync();
 
@@ -847,7 +847,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-003",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Study Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -875,7 +875,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-boundary",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Hallway Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -1017,7 +1017,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-old",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Old Battery Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -1045,7 +1045,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-recent",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Recent Battery Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -1072,7 +1072,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-latest-high",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Recovered Sensor"
         };
         _db.Devices.Add(batteryDevice);
@@ -1309,9 +1309,9 @@ public class EmailRendererTests : IDisposable
     {
         var (customer, hub, _) = await SeedBaseDataAsync();
 
-        var bat1 = new Device { HubId = hub.Id, HueDeviceId = "bat-high", DeviceType = DeviceTypes.Battery, Name = "High Battery" };
-        var bat2 = new Device { HubId = hub.Id, HueDeviceId = "bat-low", DeviceType = DeviceTypes.Battery, Name = "Low Battery" };
-        var bat3 = new Device { HubId = hub.Id, HueDeviceId = "bat-mid", DeviceType = DeviceTypes.Battery, Name = "Mid Battery" };
+        var bat1 = new Device { HubId = hub.Id, HueDeviceId = "bat-high", DeviceType = DeviceTypes.MotionSensor, Name = "High Battery" };
+        var bat2 = new Device { HubId = hub.Id, HueDeviceId = "bat-low", DeviceType = DeviceTypes.MotionSensor, Name = "Low Battery" };
+        var bat3 = new Device { HubId = hub.Id, HueDeviceId = "bat-mid", DeviceType = DeviceTypes.MotionSensor, Name = "Mid Battery" };
         _db.Devices.AddRange(bat1, bat2, bat3);
         await _db.SaveChangesAsync();
 
@@ -1589,7 +1589,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-zigbee-001",
-            DeviceType = DeviceTypes.ZigbeeConnectivity,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Hallway Sensor"
         };
         _db.Devices.Add(zigbeeDevice);
@@ -1615,7 +1615,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-zigbee-002",
-            DeviceType = DeviceTypes.ZigbeeConnectivity,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Kitchen Sensor"
         };
         _db.Devices.Add(zigbeeDevice);
@@ -1639,7 +1639,7 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-zigbee-003",
-            DeviceType = DeviceTypes.ZigbeeConnectivity,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Garage Sensor"
         };
         _db.Devices.Add(zigbeeDevice);
@@ -1664,14 +1664,14 @@ public class EmailRendererTests : IDisposable
         {
             HubId = hub.Id,
             HueDeviceId = "device-bat-both",
-            DeviceType = DeviceTypes.Battery,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Low Battery Device"
         };
         var zigbeeDevice = new Device
         {
             HubId = hub.Id,
             HueDeviceId = "device-zigbee-both",
-            DeviceType = DeviceTypes.ZigbeeConnectivity,
+            DeviceType = DeviceTypes.MotionSensor,
             Name = "Unreachable Device"
         };
         _db.Devices.AddRange(batteryDevice, zigbeeDevice);
@@ -1705,7 +1705,7 @@ public class EmailRendererTests : IDisposable
 
         foreach (var (hueId, name, status, _) in devices)
         {
-            var d = new Device { HubId = hub.Id, HueDeviceId = hueId, DeviceType = DeviceTypes.ZigbeeConnectivity, Name = name };
+            var d = new Device { HubId = hub.Id, HueDeviceId = hueId, DeviceType = DeviceTypes.MotionSensor, Name = name };
             _db.Devices.Add(d);
             await _db.SaveChangesAsync();
             AddConnectivity(d.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), status);

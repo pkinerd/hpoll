@@ -4,6 +4,5 @@ public static class DeviceTypes
 {
     public const string MotionSensor = "motion_sensor";
     public const string TemperatureSensor = "temperature_sensor";
-    public const string Battery = "battery";
-    public const string ZigbeeConnectivity = "zigbee_connectivity";
+    public const string Unknown = "unknown";
 }
