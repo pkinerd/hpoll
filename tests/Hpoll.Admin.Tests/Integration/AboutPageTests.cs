@@ -88,5 +88,16 @@ public class AboutPageTests : IClassFixture<HpollWebApplicationFactory>, IAsyncL
         Assert.Contains("Customers", html);
     }
 
+    [Fact]
+    public async Task About_ShowsExportDatabaseButton()
+    {
+        var response = await _client.GetAsync("/About");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Contains("Database Export", html);
+        Assert.Contains("Download Sanitized Database", html);
+        Assert.Contains("ExportSanitizedDb", html);
+    }
+
     public void Dispose() => _client.Dispose();
 }

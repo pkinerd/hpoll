@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Hpoll.Core;
 using Microsoft.Extensions.Options;
@@ -10,13 +12,17 @@ namespace Hpoll.Admin.Pages;
 
 public class AboutModel : PageModel
 {
+    private static readonly SemaphoreSlim _exportLock = new(1, 1);
+
     private readonly HpollDbContext _db;
     private readonly HueAppSettings _hueApp;
+    private readonly ILogger<AboutModel> _logger;
 
-    public AboutModel(HpollDbContext db, IOptions<HueAppSettings> hueApp)
+    public AboutModel(HpollDbContext db, IOptions<HueAppSettings> hueApp, ILogger<AboutModel> logger)
     {
         _db = db;
         _hueApp = hueApp.Value;
+        _logger = logger;
     }
 
     public int CustomerCount { get; set; }
@@ -75,6 +81,57 @@ public class AboutModel : PageModel
         // Always surface the Admin's own Hue callback URL from config
         EnsureAdminCallbackUrl();
 
+    }
+
+    public async Task<IActionResult> OnPostExportSanitizedDbAsync()
+    {
+        if (!await _exportLock.WaitAsync(TimeSpan.Zero))
+        {
+            TempData["Error"] = "An export is already in progress. Please try again shortly.";
+            return RedirectToPage();
+        }
+
+        var tempPath = Path.Combine(Path.GetTempPath(), $"hpoll-export-{Guid.NewGuid()}.db");
+        try
+        {
+            _logger.LogInformation("Starting sanitized database export");
+
+            // Create a consistent snapshot using VACUUM INTO (same pattern as DatabaseBackupService)
+#pragma warning disable EF1002
+            await _db.Database.ExecuteSqlRawAsync($"VACUUM INTO '{tempPath}'");
+#pragma warning restore EF1002
+
+            // Open the copy directly and sanitize sensitive fields
+            using (var conn = new SqliteConnection($"Data Source={tempPath}"))
+            {
+                await conn.OpenAsync();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = """
+                    UPDATE Hubs SET AccessToken = '', RefreshToken = '', HueApplicationKey = '', TokenExpiresAt = '0001-01-01T00:00:00';
+                    UPDATE Customers SET Email = '', CcEmails = '', BccEmails = '';
+                    VACUUM;
+                    """;
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            var bytes = await System.IO.File.ReadAllBytesAsync(tempPath);
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
+
+            _logger.LogInformation("Sanitized database export completed ({SizeKB:F1} KB)", bytes.Length / 1024.0);
+
+            return File(bytes, "application/octet-stream", $"hpoll-sanitized-{timestamp}.db");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to export sanitized database");
+            TempData["Error"] = "Failed to export database. Check logs for details.";
+            return RedirectToPage();
+        }
+        finally
+        {
+            try { System.IO.File.Delete(tempPath); } catch { /* best effort cleanup */ }
+            _exportLock.Release();
+        }
     }
 
     private void EnsureAdminCallbackUrl()

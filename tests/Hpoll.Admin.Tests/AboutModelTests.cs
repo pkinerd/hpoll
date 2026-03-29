@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Hpoll.Admin.Pages;
 using Hpoll.Core.Configuration;
@@ -31,6 +32,12 @@ public class AboutModelTests : IDisposable
         });
     }
 
+    private AboutModel CreateModel(string? callbackUrl = null, string? clientId = null)
+    {
+        return new AboutModel(_db, CreateHueOptions(callbackUrl, clientId),
+            NullLogger<AboutModel>.Instance);
+    }
+
     [Fact]
     public async Task OnGetAsync_ReturnsCorrectDbCounts()
     {
@@ -55,7 +62,7 @@ public class AboutModelTests : IDisposable
         _db.Devices.Add(device);
         await _db.SaveChangesAsync();
 
-        var model = new AboutModel(_db, CreateHueOptions());
+        var model = CreateModel();
         await model.OnGetAsync();
 
         Assert.Equal(1, model.CustomerCount);
@@ -73,7 +80,7 @@ public class AboutModelTests : IDisposable
         );
         await _db.SaveChangesAsync();
 
-        var model = new AboutModel(_db, CreateHueOptions());
+        var model = CreateModel();
         await model.OnGetAsync();
 
         Assert.Equal(3, model.Sections.Count);
@@ -88,7 +95,7 @@ public class AboutModelTests : IDisposable
         _db.SystemInfo.Add(new SystemInfo { Key = "polling.interval_minutes", Value = "60", Category = "Polling" });
         await _db.SaveChangesAsync();
 
-        var model = new AboutModel(_db, CreateHueOptions());
+        var model = CreateModel();
         await model.OnGetAsync();
 
         var entry = model.Sections[0].Entries[0];
@@ -101,7 +108,7 @@ public class AboutModelTests : IDisposable
         _db.SystemInfo.Add(new SystemInfo { Key = "runtime.last_poll_completed", Value = "2026-03-01T10:00:00.0000000Z", Category = "Runtime" });
         await _db.SaveChangesAsync();
 
-        var model = new AboutModel(_db, CreateHueOptions());
+        var model = CreateModel();
         await model.OnGetAsync();
 
         var entry = model.Sections[0].Entries[0];
@@ -112,7 +119,7 @@ public class AboutModelTests : IDisposable
     [Fact]
     public async Task OnGetAsync_HandlesEmptySystemInfoTable()
     {
-        var model = new AboutModel(_db, CreateHueOptions());
+        var model = CreateModel();
         await model.OnGetAsync();
 
         Assert.Empty(model.Sections);
@@ -133,7 +140,7 @@ public class AboutModelTests : IDisposable
         );
         await _db.SaveChangesAsync();
 
-        var model = new AboutModel(_db, CreateHueOptions());
+        var model = CreateModel();
         await model.OnGetAsync();
 
         var categories = model.Sections.Select(s => s.Category).ToList();
@@ -144,9 +151,9 @@ public class AboutModelTests : IDisposable
     public async Task OnGetAsync_ShowsCallbackUrlFromConfig_WhenWorkerHasNotStarted()
     {
         // No SystemInfo data at all — Worker hasn't started
-        var model = new AboutModel(_db, CreateHueOptions(
+        var model = CreateModel(
             callbackUrl: "https://admin.example.com/Hubs/OAuthCallback",
-            clientId: "test-client-id"));
+            clientId: "test-client-id");
         await model.OnGetAsync();
 
         Assert.Single(model.Sections);
@@ -163,8 +170,8 @@ public class AboutModelTests : IDisposable
         _db.SystemInfo.Add(new SystemInfo { Key = "hue.app_configured", Value = "True", Category = "Hue" });
         await _db.SaveChangesAsync();
 
-        var model = new AboutModel(_db, CreateHueOptions(
-            callbackUrl: "https://admin.example.com/Hubs/OAuthCallback"));
+        var model = CreateModel(
+            callbackUrl: "https://admin.example.com/Hubs/OAuthCallback");
         await model.OnGetAsync();
 
         var hueSection = model.Sections.Single(s => s.Category == "Hue");
@@ -181,8 +188,8 @@ public class AboutModelTests : IDisposable
         );
         await _db.SaveChangesAsync();
 
-        var model = new AboutModel(_db, CreateHueOptions(
-            callbackUrl: "https://admin.example.com/Hubs/OAuthCallback"));
+        var model = CreateModel(
+            callbackUrl: "https://admin.example.com/Hubs/OAuthCallback");
         await model.OnGetAsync();
 
         var hueSection = model.Sections.Single(s => s.Category == "Hue");
@@ -200,8 +207,8 @@ public class AboutModelTests : IDisposable
         );
         await _db.SaveChangesAsync();
 
-        var model = new AboutModel(_db, CreateHueOptions(
-            callbackUrl: "https://admin.example.com/Hubs/OAuthCallback"));
+        var model = CreateModel(
+            callbackUrl: "https://admin.example.com/Hubs/OAuthCallback");
         await model.OnGetAsync();
 
         var hueSection = model.Sections.Single(s => s.Category == "Hue");
@@ -211,7 +218,7 @@ public class AboutModelTests : IDisposable
     [Fact]
     public async Task OnGetAsync_NoCallbackUrlEntry_WhenConfigIsEmpty()
     {
-        var model = new AboutModel(_db, CreateHueOptions(callbackUrl: ""));
+        var model = CreateModel(callbackUrl: "");
         await model.OnGetAsync();
 
         // No Hue section at all since config is empty and Worker hasn't written anything
