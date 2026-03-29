@@ -1730,6 +1730,60 @@ public class EmailRendererTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task RenderDailySummaryAsync_MalformedConnectivityJson_SkipsGracefully()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var zigbeeDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-zigbee-bad",
+            DeviceType = DeviceTypes.MotionSensor,
+            Name = "Bad Zigbee Sensor"
+        };
+        _db.Devices.Add(zigbeeDevice);
+        await _db.SaveChangesAsync();
+
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = zigbeeDevice.Id,
+            Timestamp = new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc),
+            ReadingType = ReadingTypes.ZigbeeConnectivity,
+            Value = "not-valid-json"
+        });
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        // Should not crash; malformed connectivity data is silently skipped
+        Assert.DoesNotContain("Bad Zigbee Sensor", html);
+    }
+
+    [Fact]
+    public async Task RenderDailySummaryAsync_UnknownConnectivityStatus_UsesRawValue()
+    {
+        var (customer, hub, device) = await SeedBaseDataAsync();
+
+        var zigbeeDevice = new Device
+        {
+            HubId = hub.Id,
+            HueDeviceId = "device-zigbee-unknown",
+            DeviceType = DeviceTypes.MotionSensor,
+            Name = "Custom Status Sensor"
+        };
+        _db.Devices.Add(zigbeeDevice);
+        await _db.SaveChangesAsync();
+
+        AddConnectivity(zigbeeDevice.Id, new DateTime(2026, 2, 27, 10, 0, 0, DateTimeKind.Utc), "some_new_status");
+        await _db.SaveChangesAsync();
+
+        var html = await _renderer.RenderDailySummaryAsync(customer.Id, TimeZone, NowUtc);
+
+        Assert.Contains("Device Status", html);
+        Assert.Contains("some_new_status", html);
+    }
+
     private static int CountOccurrences(string text, string pattern)
     {
         int count = 0, idx = 0;
