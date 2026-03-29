@@ -21,6 +21,21 @@
     </div>
 </div>
 
+@if (TempData["Error"] is string error)
+{
+    <div class="card" style="border-left:4px solid #c0392b; background:#fdf0ef;">
+        <p style="color:#c0392b; margin:0;">@error</p>
+    </div>
+}
+
+<h2>Database Export</h2>
+<div class="card">
+    <p>Download a sanitized copy of the database with sensitive fields (OAuth tokens, email addresses) removed.</p>
+    <form method="post" asp-page-handler="ExportSanitizedDb" style="margin-top:12px;">
+        <button type="submit" style="padding:8px 16px; background:#2563eb; color:#fff; border:none; border-radius:4px; cursor:pointer;">Download Sanitized Database</button>
+    </form>
+</div>
+
 @if (Model.BuildEntries.Count > 0)
 {
     <h2>Admin Build</h2>

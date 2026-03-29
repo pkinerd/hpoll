@@ -15,7 +15,9 @@ Build logs are stored as folders on a single `build-logs` orphan branch. Each fo
 - `*.log` — individual job logs (e.g. `build-&-test.log`, `docker-build-&-push.log`)
 - `test-reports/` — code coverage reports (Cobertura XML) from the test run
 
-**IMPORTANT — Do not wait for a build that won't come:** Before entering the polling loop, check whether there are recent unpushed or just-pushed changes on the session branch that would have triggered a new CI run. If there are NO recent changes (e.g., the branch hasn't been pushed to since the last known build), skip the polling loop entirely — just find the most recent matching build (Step 2) and report its result. Only enter the polling loop (Step 3) when you have evidence that a new build should be in progress (e.g., you just pushed, or the user just pushed, and no matching build exists yet for the current HEAD commit).
+**IMPORTANT — Always poll when explicitly invoked:** When this skill is invoked explicitly by the user, always assume a build is expected (e.g., a PR may have been created, a merge may be in progress, or CI may have been triggered externally). Do NOT try to infer CI trigger rules from the workflow configuration or refuse to poll because you believe no build will be triggered. If no matching build exists yet for the current HEAD commit, proceed to the polling loop (Step 3).
+
+The only case where you should skip the polling loop is when a matching build already exists (Step 2) — i.e., a build that matches both the current branch and HEAD commit SHA has already completed.
 
 ### Blobless Fetch Helper
 
