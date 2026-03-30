@@ -323,4 +323,18 @@ public class SendTimeHelperTests
         Assert.NotNull(result);
         Assert.Equal(new DateTime(2026, 3, 1, 10, 0, 0), result.Value);
     }
+
+    [Fact]
+    public void ComputeNextSendTimeUtc_DstSpringForward_AustraliaTimezone()
+    {
+        // Australia/Sydney: Spring forward on Oct 4, 2026 at 2:00 AM AEST → 3:00 AM AEDT
+        // 2:30 AM is in the gap — should be adjusted forward by DST delta (+1h) to 3:30 AM AEDT
+        // Now is Oct 3 15:00 UTC = Oct 4 01:00 AEST (before the gap)
+        var now = new DateTime(2026, 10, 3, 15, 0, 0, DateTimeKind.Utc);
+        var result = SendTimeHelper.ComputeNextSendTimeUtc("02:30", "Australia/Sydney", now);
+
+        Assert.NotNull(result);
+        // 2:30 AM doesn't exist; adjusted to 3:30 AM AEDT = 16:30 UTC on Oct 3
+        Assert.Equal(new DateTime(2026, 10, 3, 16, 30, 0), result.Value);
+    }
 }

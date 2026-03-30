@@ -826,4 +826,93 @@ public class EmailSchedulerServiceTests : IDisposable
         Assert.Contains("sent individually", capturedHtml);
         Assert.Contains("one or more recipients failed", capturedHtml);
     }
+
+    [Fact]
+    public void MaskEmail_DelegatesTo_EmailMasker()
+    {
+        var result = EmailSchedulerService.MaskEmail("test@example.com");
+        Assert.NotNull(result);
+        Assert.Contains("@", result);
+        Assert.DoesNotContain("test@example.com", result);
+    }
+
+    [Fact]
+    public void ParseEmailList_OnlyCommas_ReturnsNull()
+    {
+        var result = EmailSchedulerService.ParseEmailList(",,,");
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task ProcessDueCustomers_NoFutureCustomers_SetsNextDueToNA()
+    {
+        var pastTime = _fakeTime.GetUtcNow().UtcDateTime.AddMinutes(-5);
+
+        // Seed a customer with a non-empty local send time but an invalid timezone,
+        // so ComputeNextSendTimeUtc returns null after processing (no future send time)
+        using (var db = CreateDb())
+        {
+            db.Customers.Add(new Customer
+            {
+                Name = "Test User",
+                Email = "test@example.com",
+                Status = CustomerStatus.Active,
+                SendTimesLocal = "08:00",
+                TimeZoneId = "Invalid/Timezone",
+                NextSendTimeUtc = pastTime
+            });
+            await db.SaveChangesAsync();
+        }
+
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("<html>Summary</html>");
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var systemInfoMock = new Mock<ISystemInfoService>();
+        var service = new EmailSchedulerService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<EmailSchedulerService>.Instance,
+            Options.Create(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" }),
+            systemInfoMock.Object,
+            _fakeTime);
+
+        await service.ProcessDueCustomersAsync(CancellationToken.None);
+
+        // With an invalid timezone and no default SendTimesUtc, ComputeNextSendTimeUtc returns null,
+        // so NextSendTimeUtc is null after processing, and next_email_due should be "N/A"
+        systemInfoMock.Verify(s => s.SetBatchAsync("Runtime",
+            It.Is<Dictionary<string, string>>(d => d.ContainsKey("runtime.next_email_due") && d["runtime.next_email_due"] == "N/A"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SendCustomerEmailAsync_SubjectContainsCustomerName()
+    {
+        _mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("<html>Summary</html>");
+
+        string? capturedSubject = null;
+        _mockSender.Setup(s => s.SendEmailAsync(It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>?>(), It.IsAny<List<string>?>(), It.IsAny<CancellationToken>()))
+            .Callback<List<string>, string, string, List<string>?, List<string>?, CancellationToken>((to, subj, html, cc, bcc, ct) => capturedSubject = subj)
+            .Returns(Task.CompletedTask);
+
+        using var scope = _serviceProvider.CreateScope();
+        var renderer = scope.ServiceProvider.GetRequiredService<IEmailRenderer>();
+        var sender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
+
+        var customer = new Customer
+        {
+            Name = "Acme Corp",
+            Email = "acme@example.com",
+            TimeZoneId = "UTC",
+            Status = CustomerStatus.Active
+        };
+
+        var service = CreateService(new EmailSettings { FromAddress = "noreply@hpoll.com", AwsRegion = "us-east-1" });
+        await service.SendCustomerEmailAsync(customer, renderer, sender, CancellationToken.None);
+
+        Assert.NotNull(capturedSubject);
+        Assert.Equal("Activity Summary - Acme Corp", capturedSubject);
+    }
 }
