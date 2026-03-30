@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Hpoll.Core.Configuration;
+using Hpoll.Core.Services;
 using Hpoll.Core.Constants;
 using Hpoll.Core.Interfaces;
 using Hpoll.Data;
@@ -96,8 +97,8 @@ public class EmailRenderer : IEmailRenderer
         {
             var windowStartLocal = bucketStartLocal.AddHours(i * windowHours);
             var windowEndLocal = windowStartLocal.AddHours(windowHours);
-            var windowStartUtc = TimeZoneInfo.ConvertTimeToUtc(windowStartLocal, tz);
-            var windowEndUtc = TimeZoneInfo.ConvertTimeToUtc(windowEndLocal, tz);
+            var windowStartUtc = SendTimeHelper.SafeConvertToUtc(windowStartLocal, tz);
+            var windowEndUtc = SendTimeHelper.SafeConvertToUtc(windowEndLocal, tz);
 
             var windowReadings = readings.Where(r => r.Timestamp >= windowStartUtc && r.Timestamp < windowEndUtc).ToList();
 
@@ -418,6 +419,7 @@ public class EmailRenderer : IEmailRenderer
                     "connectivity_issue" => "Connectivity Issue",
                     "unidirectional_incoming" => "Limited Connectivity",
                     "configuration_error" => "Configuration Error",
+                    "pending_discovery" => "Pending Discovery",
                     _ => d.Status
                 };
                 sb.AppendLine($"<tr><td style=\"font-size:12px;color:#777;width:140px;white-space:nowrap;\">{Encode(d.DeviceName)}</td>");

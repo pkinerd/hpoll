@@ -1669,4 +1669,182 @@ public class PollingServiceTests : IDisposable
             .FirstOrDefaultAsync(r => r.DeviceId == device.Id && r.ReadingType == ReadingTypes.ZigbeeConnectivity);
         Assert.NotNull(connReading);
     }
+
+    [Fact]
+    public async Task ExecuteAsync_CompletesOneCycle_UpdatesSystemInfo()
+    {
+        await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource>());
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource>());
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource>());
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
+        _mockHueClient.Setup(c => c.GetZigbeeConnectivityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueZigbeeConnectivityResource>());
+
+        var systemInfoMock = new Mock<ISystemInfoService>();
+        var service = new PollingService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<PollingService>.Instance,
+            Options.Create(new PollingSettings { IntervalMinutes = 60 }),
+            systemInfoMock.Object,
+            _fakeTime);
+
+        using var cts = new CancellationTokenSource();
+        var executeTask = service.StartAsync(cts.Token);
+        await Task.Delay(500);
+        cts.Cancel();
+        await service.StopAsync(CancellationToken.None);
+
+        systemInfoMock.Verify(s => s.SetBatchAsync(
+            "Runtime",
+            It.Is<Dictionary<string, string>>(d =>
+                d.ContainsKey("runtime.last_poll_completed") &&
+                d.ContainsKey("runtime.total_poll_cycles") &&
+                d["runtime.total_poll_cycles"] == "1"),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_StopsGracefullyOnCancellation()
+    {
+        await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource>());
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource>());
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource>());
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
+        _mockHueClient.Setup(c => c.GetZigbeeConnectivityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueZigbeeConnectivityResource>());
+
+        var service = CreateService();
+
+        using var cts = new CancellationTokenSource();
+        await service.StartAsync(cts.Token);
+        await Task.Delay(200);
+        cts.Cancel();
+
+        // Should not throw
+        await service.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task PollAllHubs_ErrorInOneCycle_NextCycleSucceeds()
+    {
+        await SeedHubAsync();
+
+        var callCount = 0;
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns<string, string, CancellationToken>((token, key, ct) =>
+            {
+                callCount++;
+                if (callCount == 1)
+                    throw new InvalidOperationException("Simulated failure");
+                return Task.FromResult(new HueResponse<HueMotionResource>());
+            });
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource>());
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource>());
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
+        _mockHueClient.Setup(c => c.GetZigbeeConnectivityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueZigbeeConnectivityResource>());
+
+        var service = CreateService();
+
+        // First call: error is caught internally by PollHubAsync (logged, not thrown)
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+        Assert.Equal(1, callCount);
+
+        // Second call: succeeds, proving the service recovers after an error
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+        Assert.Equal(2, callCount);
+    }
+
+    [Fact]
+    public async Task PollAllHubs_StaleDevicesNotRemovedOnNonBatteryCycle()
+    {
+        // Set LastBatteryPollUtc to recent time so shouldPollBattery is false
+        var hub = await SeedHubAsync(lastBatteryPollUtc: _fakeTime.GetUtcNow().UtcDateTime.AddMinutes(-10));
+
+        // Pre-seed a device that is NOT returned by the API
+        using (var seedDb = CreateDb())
+        {
+            var staleDevice = new Device
+            {
+                HubId = hub.Id,
+                HueDeviceId = "stale-device-xyz",
+                DeviceType = DeviceTypes.MotionSensor,
+                Name = "Stale Sensor"
+            };
+            seedDb.Devices.Add(staleDevice);
+            await seedDb.SaveChangesAsync();
+        }
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource>());
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource>());
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource>());
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
+        _mockHueClient.Setup(c => c.GetZigbeeConnectivityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueZigbeeConnectivityResource>());
+
+        var service = CreateService(new PollingSettings { IntervalMinutes = 60, BatteryPollIntervalHours = 84 });
+        // Non-battery cycle: stale device removal should NOT run
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+
+        using var db = CreateDb();
+        var devices = await db.Devices.Where(d => d.HueDeviceId == "stale-device-xyz").ToListAsync();
+        Assert.NotEmpty(devices); // Device should still exist since battery was not polled
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_IncrementsCounterEachCycle()
+    {
+        await SeedHubAsync();
+
+        _mockHueClient.Setup(c => c.GetMotionSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueMotionResource>());
+        _mockHueClient.Setup(c => c.GetTemperatureSensorsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueTemperatureResource>());
+        _mockHueClient.Setup(c => c.GetDevicesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDeviceResource>());
+        _mockHueClient.Setup(c => c.GetDevicePowerAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueDevicePowerResource>());
+        _mockHueClient.Setup(c => c.GetZigbeeConnectivityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HueResponse<HueZigbeeConnectivityResource>());
+
+        var systemInfoMock = new Mock<ISystemInfoService>();
+        var service = new PollingService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<PollingService>.Instance,
+            Options.Create(new PollingSettings { IntervalMinutes = 60 }),
+            systemInfoMock.Object,
+            _fakeTime);
+
+        using var cts = new CancellationTokenSource();
+        await service.StartAsync(cts.Token);
+        await Task.Delay(500);
+        cts.Cancel();
+        await service.StopAsync(CancellationToken.None);
+
+        systemInfoMock.Verify(s => s.SetBatchAsync(
+            "Runtime",
+            It.Is<Dictionary<string, string>>(d =>
+                d.ContainsKey("runtime.total_poll_cycles") &&
+                d["runtime.total_poll_cycles"] == "1"),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
 }

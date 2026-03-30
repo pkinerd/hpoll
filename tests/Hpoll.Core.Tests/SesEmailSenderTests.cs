@@ -182,4 +182,24 @@ public class SesEmailSenderTests
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task SendEmailAsync_SimpleOverload_CallsSesClient()
+    {
+        _mockSes.Setup(s => s.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SendEmailResponse { MessageId = "msg-simple" });
+
+        await _sender.SendEmailAsync(new List<string> { "simple@example.com" }, "Simple Subject", "<html>Simple</html>");
+
+        _mockSes.Verify(s => s.SendEmailAsync(
+            It.Is<SendEmailRequest>(r =>
+                r.Source == "noreply@hpoll.com" &&
+                r.Destination.ToAddresses.Contains("simple@example.com") &&
+                r.Message.Subject.Data == "Simple Subject" &&
+                r.Message.Body.Html.Data == "<html>Simple</html>" &&
+                (r.Destination.CcAddresses == null || r.Destination.CcAddresses.Count == 0) &&
+                (r.Destination.BccAddresses == null || r.Destination.BccAddresses.Count == 0)),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 }

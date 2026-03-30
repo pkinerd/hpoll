@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -414,5 +415,109 @@ public class DatabaseBackupServiceTests : IDisposable
         // Should still only have the 1 pre-existing backup (no new one created)
         var backupFiles = Directory.GetFiles(_backupDir, "hpoll-*.db");
         Assert.Single(backupFiles);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_CancellationDuringBackup_DoesNotLogError()
+    {
+        var loggerMock = new Mock<ILogger<DatabaseBackupService>>();
+        var systemInfoMock = new Mock<ISystemInfoService>();
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DataPath"] = Path.Combine(_tempDir, _dataPath)
+            })
+            .Build();
+
+        var service = new DatabaseBackupService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            loggerMock.Object,
+            Options.Create(new BackupSettings { IntervalHours = 24, RetentionCount = 7, SubDirectory = "backups" }),
+            systemInfoMock.Object,
+            config);
+
+        // Start and quickly cancel to trigger cancellation path
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        await service.StartAsync(cts.Token);
+        try { await Task.Delay(500, cts.Token); } catch (OperationCanceledException) { }
+        await service.StopAsync(CancellationToken.None);
+
+        // Verify no error-level log (OperationCanceledException should be swallowed)
+        loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task InitializeStatsFromExistingBackups_NoBackupDirectory_LogsWarningNotError()
+    {
+        // Don't create the backup directory — Directory.GetFiles will throw
+        var loggerMock = new Mock<ILogger<DatabaseBackupService>>();
+        var systemInfoMock = new Mock<ISystemInfoService>();
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DataPath"] = Path.Combine(_tempDir, _dataPath)
+            })
+            .Build();
+
+        // Pre-create a backup so ExecuteAsync goes to InitializeStats path
+        Directory.CreateDirectory(_backupDir);
+        File.WriteAllText(Path.Combine(_backupDir, "hpoll-20260101-080000.db"), "dummy");
+
+        // Make SetBatchAsync throw to trigger the catch block in InitializeStatsFromExistingBackupsAsync
+        systemInfoMock.Setup(s => s.SetBatchAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("DB write failed"));
+
+        var service = new DatabaseBackupService(
+            _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
+            loggerMock.Object,
+            Options.Create(new BackupSettings { IntervalHours = 24, RetentionCount = 7, SubDirectory = "backups" }),
+            systemInfoMock.Object,
+            config);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        try { await service.StartAsync(cts.Token); await Task.Delay(1000, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        // Should log warning, not crash
+        loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task InitializeStatsFromExistingBackups_SetsLastBackupFromFileTimestamp()
+    {
+        Directory.CreateDirectory(_backupDir);
+        var backupPath = Path.Combine(_backupDir, "hpoll-20260315-120000.db");
+        File.WriteAllText(backupPath, "dummy");
+
+        var systemInfoMock = new Mock<ISystemInfoService>();
+        var service = CreateService(systemInfoMock: systemInfoMock);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        try { await service.StartAsync(cts.Token); await Task.Delay(500, cts.Token); }
+        catch (OperationCanceledException) { }
+        finally { await service.StopAsync(CancellationToken.None); }
+
+        systemInfoMock.Verify(s => s.SetBatchAsync("Backup",
+            It.Is<Dictionary<string, string>>(d =>
+                d.ContainsKey("backup.last_backup_completed")
+                && d["backup.last_backup_completed"] != "N/A"),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 }

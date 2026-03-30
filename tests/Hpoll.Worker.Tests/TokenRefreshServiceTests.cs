@@ -369,6 +369,38 @@ public class TokenRefreshServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task RefreshExpiringTokens_AllRetriesFail_HubMarkedNeedsReauthAndAccessTokenUnchanged()
+    {
+        var hub = await SeedHubAsync(tokenExpiresAt: _fakeTime.GetUtcNow().UtcDateTime.AddHours(1));
+
+        _mockHueClient.Setup(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Server error"));
+
+        var service = CreateService(new PollingSettings { TokenRefreshMaxRetries = 3, TokenRefreshThresholdHours = 48 });
+        await service.RefreshExpiringTokensAsync(CancellationToken.None);
+
+        using var db = CreateDb();
+        var updatedHub = await db.Hubs.FirstAsync(h => h.Id == hub.Id);
+        Assert.Equal(HubStatus.NeedsReauth, updatedHub.Status);
+        Assert.Equal("old-access-token", updatedHub.AccessToken); // Token not changed
+        _mockHueClient.Verify(c => c.RefreshTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_CancellationDuringDelay_StopsGracefully()
+    {
+        var service = CreateService(new PollingSettings { TokenRefreshCheckHours = 100 });
+
+        // Start, let it run once and enter the delay, then cancel
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        await service.StartAsync(CancellationToken.None);
+        try { await Task.Delay(1000, cts.Token); } catch (OperationCanceledException) { }
+        await service.StopAsync(CancellationToken.None);
+
+        // No exception means it stopped gracefully via the OperationCanceledException catch in the delay
+    }
+
+    [Fact]
     public async Task RefreshExpiringTokens_TokenExpiresAtBoundary_RefreshesToken()
     {
         // Token expires exactly at the threshold boundary

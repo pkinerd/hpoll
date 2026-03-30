@@ -1708,6 +1708,7 @@ public class EmailRendererTests : IDisposable
             ("device-z-2", "Sensor B", "connectivity_issue", "Connectivity Issue"),
             ("device-z-3", "Sensor C", "unidirectional_incoming", "Limited Connectivity"),
             ("device-z-4", "Sensor D", "configuration_error", "Configuration Error"),
+            ("device-z-5", "Sensor E", "pending_discovery", "Pending Discovery"),
         };
 
         foreach (var (hueId, name, status, _) in devices)

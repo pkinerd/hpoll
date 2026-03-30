@@ -332,8 +332,8 @@ public class DetailModel : PageModel
         {
             var windowStartLocal = bucketStartLocal.AddHours(i * windowHours);
             var windowEndLocal = windowStartLocal.AddHours(windowHours);
-            var windowStartUtc = TimeZoneInfo.ConvertTimeToUtc(windowStartLocal, tz);
-            var windowEndUtc = TimeZoneInfo.ConvertTimeToUtc(windowEndLocal, tz);
+            var windowStartUtc = SendTimeHelper.SafeConvertToUtc(windowStartLocal, tz);
+            var windowEndUtc = SendTimeHelper.SafeConvertToUtc(windowEndLocal, tz);
 
             var windowReadings = readings.Where(r => r.Timestamp >= windowStartUtc && r.Timestamp < windowEndUtc).ToList();
             var motionReadings = windowReadings.Where(r => r.ReadingType == ReadingTypes.Motion).ToList();
