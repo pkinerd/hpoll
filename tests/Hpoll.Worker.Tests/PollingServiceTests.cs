@@ -1737,7 +1737,7 @@ public class PollingServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task ExecuteAsync_ErrorInPollCycle_ContinuesRunning()
+    public async Task PollAllHubs_ErrorInOneCycle_NextCycleSucceeds()
     {
         await SeedHubAsync();
 
@@ -1759,17 +1759,15 @@ public class PollingServiceTests : IDisposable
         _mockHueClient.Setup(c => c.GetZigbeeConnectivityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HueResponse<HueZigbeeConnectivityResource>());
 
-        var service = CreateService(new PollingSettings { IntervalMinutes = 0 });
+        var service = CreateService();
 
-        using var cts = new CancellationTokenSource();
-        await service.StartAsync(cts.Token);
-        // Give it time to run at least two cycles (first fails, second should succeed)
-        await Task.Delay(1000);
-        cts.Cancel();
-        await service.StopAsync(CancellationToken.None);
+        // First call: error is caught internally by PollHubAsync (logged, not thrown)
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+        Assert.Equal(1, callCount);
 
-        // The service should have attempted more than one call, proving it continued after the error
-        Assert.True(callCount >= 2, $"Expected at least 2 calls but got {callCount}");
+        // Second call: succeeds, proving the service recovers after an error
+        await service.PollAllHubsAsync(forceBatteryPoll: false, CancellationToken.None);
+        Assert.Equal(2, callCount);
     }
 
     [Fact]
