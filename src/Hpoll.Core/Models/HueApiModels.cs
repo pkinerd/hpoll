@@ -216,7 +216,7 @@ public class HueZigbeeConnectivityResource
     [JsonPropertyName("owner")]
     public HueResourceRef Owner { get; set; } = new();
 
-    /// <summary>Connection status: "connected", "disconnected", "connectivity_issue", "unidirectional_incoming", or "configuration_error".</summary>
+    /// <summary>Connection status: "connected", "disconnected", "connectivity_issue", "unidirectional_incoming", or "pending_discovery".</summary>
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
 

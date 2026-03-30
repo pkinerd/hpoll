@@ -114,7 +114,8 @@ public static class SendTimeHelper
     /// <summary>
     /// Safely converts local time to UTC, handling ambiguous and invalid times during DST transitions.
     /// </summary>
-    private static DateTime SafeConvertToUtc(DateTime localTime, TimeZoneInfo tz)
+    /// <remarks>Exposed as public for reuse in EmailRenderer and Admin activity summary.</remarks>
+    public static DateTime SafeConvertToUtc(DateTime localTime, TimeZoneInfo tz)
     {
         if (tz.IsInvalidTime(localTime))
         {
