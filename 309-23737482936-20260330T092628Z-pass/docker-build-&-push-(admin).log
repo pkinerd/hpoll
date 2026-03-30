@@ -1,0 +1,1517 @@
+﻿2026-03-30T09:25:02.2106706Z Current runner version: '2.333.0'
+2026-03-30T09:25:02.2132804Z ##[group]Runner Image Provisioner
+2026-03-30T09:25:02.2133705Z Hosted Compute Agent
+2026-03-30T09:25:02.2134345Z Version: 20260213.493
+2026-03-30T09:25:02.2134994Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+2026-03-30T09:25:02.2135674Z Build Date: 2026-02-13T00:28:41Z
+2026-03-30T09:25:02.2136370Z Worker ID: {ba36119d-3981-45c3-a08d-ec2d99ce182d}
+2026-03-30T09:25:02.2137096Z Azure Region: westus
+2026-03-30T09:25:02.2137583Z ##[endgroup]
+2026-03-30T09:25:02.2139107Z ##[group]Operating System
+2026-03-30T09:25:02.2139770Z Ubuntu
+2026-03-30T09:25:02.2140215Z 24.04.4
+2026-03-30T09:25:02.2140718Z LTS
+2026-03-30T09:25:02.2141238Z ##[endgroup]
+2026-03-30T09:25:02.2141708Z ##[group]Runner Image
+2026-03-30T09:25:02.2142738Z Image: ubuntu-24.04
+2026-03-30T09:25:02.2143306Z Version: 20260323.65.1
+2026-03-30T09:25:02.2144466Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260323.65/images/ubuntu/Ubuntu2404-Readme.md
+2026-03-30T09:25:02.2146018Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260323.65
+2026-03-30T09:25:02.2146947Z ##[endgroup]
+2026-03-30T09:25:02.2148014Z ##[group]GITHUB_TOKEN Permissions
+2026-03-30T09:25:02.2150169Z Contents: read
+2026-03-30T09:25:02.2150830Z Metadata: read
+2026-03-30T09:25:02.2151419Z ##[endgroup]
+2026-03-30T09:25:02.2153881Z Secret source: Actions
+2026-03-30T09:25:02.2154694Z Prepare workflow directory
+2026-03-30T09:25:02.2515797Z Prepare all required actions
+2026-03-30T09:25:02.2557221Z Getting action download info
+2026-03-30T09:25:02.8003277Z Download action repository 'actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332' (SHA:692973e3d937129bcbf40652eb9f2f61becf3332)
+2026-03-30T09:25:02.9823172Z Download action repository 'docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2' (SHA:b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2)
+2026-03-30T09:25:03.8209447Z Download action repository 'docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772' (SHA:74a5d142397b4f367a81961eba4e8cd7edddf772)
+2026-03-30T09:25:04.5680011Z Download action repository 'docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1' (SHA:14487ce63c7a62a4a324b0bfb37086795e31c6c1)
+2026-03-30T09:25:05.5475998Z Complete job name: Docker Build & Push (Admin)
+2026-03-30T09:25:05.6182833Z ##[group]Run actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+2026-03-30T09:25:05.6183656Z with:
+2026-03-30T09:25:05.6184011Z   repository: ***/hpoll
+2026-03-30T09:25:05.6184417Z   token: ***
+2026-03-30T09:25:05.6184649Z   ssh-strict: true
+2026-03-30T09:25:05.6184881Z   ssh-user: git
+2026-03-30T09:25:05.6185121Z   persist-credentials: true
+2026-03-30T09:25:05.6185384Z   clean: true
+2026-03-30T09:25:05.6185634Z   sparse-checkout-cone-mode: true
+2026-03-30T09:25:05.6185916Z   fetch-depth: 1
+2026-03-30T09:25:05.6186148Z   fetch-tags: false
+2026-03-30T09:25:05.6186393Z   show-progress: true
+2026-03-30T09:25:05.6186643Z   lfs: false
+2026-03-30T09:25:05.6186853Z   submodules: false
+2026-03-30T09:25:05.6187117Z   set-safe-directory: true
+2026-03-30T09:25:05.6187600Z ##[endgroup]
+2026-03-30T09:25:05.7286464Z Syncing repository: ***/hpoll
+2026-03-30T09:25:05.7288207Z ##[group]Getting Git version info
+2026-03-30T09:25:05.7289022Z Working directory is '/home/runner/work/hpoll/hpoll'
+2026-03-30T09:25:05.7289820Z [command]/usr/bin/git version
+2026-03-30T09:25:05.7335823Z git version 2.53.0
+2026-03-30T09:25:05.7363614Z ##[endgroup]
+2026-03-30T09:25:05.7378647Z Temporarily overriding HOME='/home/runner/work/_temp/ff5f2bb0-8eb4-47ed-9fc2-2a124972cb88' before making global git config changes
+2026-03-30T09:25:05.7384861Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-30T09:25:05.7385929Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hpoll/hpoll
+2026-03-30T09:25:05.7419468Z Deleting the contents of '/home/runner/work/hpoll/hpoll'
+2026-03-30T09:25:05.7423488Z ##[group]Initializing the repository
+2026-03-30T09:25:05.7427825Z [command]/usr/bin/git init /home/runner/work/hpoll/hpoll
+2026-03-30T09:25:05.7509961Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-03-30T09:25:05.7511324Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-03-30T09:25:05.7512979Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-03-30T09:25:05.7514031Z hint: call:
+2026-03-30T09:25:05.7514610Z hint:
+2026-03-30T09:25:05.7515904Z hint: 	git config --global init.defaultBranch <name>
+2026-03-30T09:25:05.7516660Z hint:
+2026-03-30T09:25:05.7517462Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-03-30T09:25:05.7518727Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-03-30T09:25:05.7519601Z hint:
+2026-03-30T09:25:05.7520184Z hint: 	git branch -m <name>
+2026-03-30T09:25:05.7520895Z hint:
+2026-03-30T09:25:05.7521592Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-03-30T09:25:05.7523108Z Initialized empty Git repository in /home/runner/work/hpoll/hpoll/.git/
+2026-03-30T09:25:05.7526374Z [command]/usr/bin/git remote add origin https://github.com/***/hpoll
+2026-03-30T09:25:05.7559352Z ##[endgroup]
+2026-03-30T09:25:05.7560319Z ##[group]Disabling automatic garbage collection
+2026-03-30T09:25:05.7564838Z [command]/usr/bin/git config --local gc.auto 0
+2026-03-30T09:25:05.7595180Z ##[endgroup]
+2026-03-30T09:25:05.7596235Z ##[group]Setting up auth
+2026-03-30T09:25:05.7603669Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-30T09:25:05.7636775Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-30T09:25:05.7923464Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-30T09:25:05.7954361Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-30T09:25:05.8178720Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-03-30T09:25:05.8215498Z ##[endgroup]
+2026-03-30T09:25:05.8216188Z ##[group]Fetching the repository
+2026-03-30T09:25:05.8224307Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +1e5569bfb76f1c5dde10eace1c8ffc17bb33c6d4:refs/remotes/pull/77/merge
+2026-03-30T09:25:06.4203759Z From https://github.com/***/hpoll
+2026-03-30T09:25:06.4205045Z  * [new ref]         1e5569bfb76f1c5dde10eace1c8ffc17bb33c6d4 -> pull/77/merge
+2026-03-30T09:25:06.4233555Z ##[endgroup]
+2026-03-30T09:25:06.4234501Z ##[group]Determining the checkout info
+2026-03-30T09:25:06.4236408Z ##[endgroup]
+2026-03-30T09:25:06.4242453Z [command]/usr/bin/git sparse-checkout disable
+2026-03-30T09:25:06.4281492Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-03-30T09:25:06.4309246Z ##[group]Checking out the ref
+2026-03-30T09:25:06.4314916Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/77/merge
+2026-03-30T09:25:06.4456616Z Note: switching to 'refs/remotes/pull/77/merge'.
+2026-03-30T09:25:06.4457250Z 
+2026-03-30T09:25:06.4457785Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-03-30T09:25:06.4458734Z changes and commit them, and you can discard any commits you make in this
+2026-03-30T09:25:06.4459731Z state without impacting any branches by switching back to a branch.
+2026-03-30T09:25:06.4460246Z 
+2026-03-30T09:25:06.4460650Z If you want to create a new branch to retain commits you create, you may
+2026-03-30T09:25:06.4461197Z do so (now or later) by using -c with the switch command. Example:
+2026-03-30T09:25:06.4461540Z 
+2026-03-30T09:25:06.4461674Z   git switch -c <new-branch-name>
+2026-03-30T09:25:06.4462163Z 
+2026-03-30T09:25:06.4462730Z Or undo this operation with:
+2026-03-30T09:25:06.4462947Z 
+2026-03-30T09:25:06.4463104Z   git switch -
+2026-03-30T09:25:06.4463344Z 
+2026-03-30T09:25:06.4463591Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-03-30T09:25:06.4464152Z 
+2026-03-30T09:25:06.4464844Z HEAD is now at 1e5569b Merge 17d93eaa929c01f056a5a098b9561d6aca1322b6 into 4288f775f0fd3f7b7e0c22cbd9cf0e3ec7cb5b88
+2026-03-30T09:25:06.4466556Z ##[endgroup]
+2026-03-30T09:25:06.4503583Z [command]/usr/bin/git log -1 --format='%H'
+2026-03-30T09:25:06.4526429Z '1e5569bfb76f1c5dde10eace1c8ffc17bb33c6d4'
+2026-03-30T09:25:06.4831150Z ##[group]Run docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
+2026-03-30T09:25:06.4831612Z with:
+2026-03-30T09:25:06.4831807Z   driver: docker-container
+2026-03-30T09:25:06.4832309Z   install: false
+2026-03-30T09:25:06.4832496Z   use: true
+2026-03-30T09:25:06.4832668Z   cache-binary: true
+2026-03-30T09:25:06.4832865Z   cleanup: true
+2026-03-30T09:25:06.4833053Z ##[endgroup]
+2026-03-30T09:25:06.7401769Z ##[group]Docker info
+2026-03-30T09:25:06.7442810Z [command]/usr/bin/docker version
+2026-03-30T09:25:06.8935139Z Client: Docker Engine - Community
+2026-03-30T09:25:06.8938166Z  Version:           28.0.4
+2026-03-30T09:25:06.8938727Z  API version:       1.48
+2026-03-30T09:25:06.8939196Z  Go version:        go1.23.7
+2026-03-30T09:25:06.8939623Z  Git commit:        b8034c0
+2026-03-30T09:25:06.8940062Z  Built:             Tue Mar 25 15:07:16 2025
+2026-03-30T09:25:06.8940569Z  OS/Arch:           linux/amd64
+2026-03-30T09:25:06.8941003Z  Context:           default
+2026-03-30T09:25:06.8941350Z 
+2026-03-30T09:25:06.8941532Z Server: Docker Engine - Community
+2026-03-30T09:25:06.8942222Z  Engine:
+2026-03-30T09:25:06.8942542Z   Version:          28.0.4
+2026-03-30T09:25:06.8943004Z   API version:      1.48 (minimum version 1.24)
+2026-03-30T09:25:06.8943521Z   Go version:       go1.23.7
+2026-03-30T09:25:06.8943941Z   Git commit:       6430e49
+2026-03-30T09:25:06.8944432Z   Built:            Tue Mar 25 15:07:16 2025
+2026-03-30T09:25:06.8944924Z   OS/Arch:          linux/amd64
+2026-03-30T09:25:06.8945329Z   Experimental:     false
+2026-03-30T09:25:06.8945708Z  containerd:
+2026-03-30T09:25:06.8946009Z   Version:          v2.2.2
+2026-03-30T09:25:06.8946473Z   GitCommit:        301b2dac98f15c27117da5c8af12118a041a31d9
+2026-03-30T09:25:06.8947026Z  runc:
+2026-03-30T09:25:06.8947315Z   Version:          1.3.4
+2026-03-30T09:25:06.8947695Z   GitCommit:        v1.3.4-0-gd6d73eb8
+2026-03-30T09:25:06.8948120Z  docker-init:
+2026-03-30T09:25:06.8948432Z   Version:          0.19.0
+2026-03-30T09:25:06.8948806Z   GitCommit:        de40ad0
+2026-03-30T09:25:06.8992526Z [command]/usr/bin/docker info
+2026-03-30T09:25:08.6449679Z Client: Docker Engine - Community
+2026-03-30T09:25:08.6450216Z  Version:    28.0.4
+2026-03-30T09:25:08.6450778Z  Context:    default
+2026-03-30T09:25:08.6451120Z  Debug Mode: false
+2026-03-30T09:25:08.6451447Z  Plugins:
+2026-03-30T09:25:08.6451767Z   buildx: Docker Buildx (Docker Inc.)
+2026-03-30T09:25:08.6452742Z     Version:  v0.32.1
+2026-03-30T09:25:08.6453195Z     Path:     /usr/libexec/docker/cli-plugins/docker-buildx
+2026-03-30T09:25:08.6453746Z   compose: Docker Compose (Docker Inc.)
+2026-03-30T09:25:08.6454173Z     Version:  v2.38.2
+2026-03-30T09:25:08.6454612Z     Path:     /usr/libexec/docker/cli-plugins/docker-compose
+2026-03-30T09:25:08.6455015Z 
+2026-03-30T09:25:08.6455129Z Server:
+2026-03-30T09:25:08.6455401Z  Containers: 0
+2026-03-30T09:25:08.6455725Z   Running: 0
+2026-03-30T09:25:08.6456056Z   Paused: 0
+2026-03-30T09:25:08.6456344Z   Stopped: 0
+2026-03-30T09:25:08.6456633Z  Images: 6
+2026-03-30T09:25:08.6456996Z  Server Version: 28.0.4
+2026-03-30T09:25:08.6457387Z  Storage Driver: overlay2
+2026-03-30T09:25:08.6457772Z   Backing Filesystem: extfs
+2026-03-30T09:25:08.6458181Z   Supports d_type: true
+2026-03-30T09:25:08.6458539Z   Using metacopy: false
+2026-03-30T09:25:08.6458898Z   Native Overlay Diff: false
+2026-03-30T09:25:08.6459269Z   userxattr: false
+2026-03-30T09:25:08.6459963Z  Logging Driver: json-file
+2026-03-30T09:25:08.6460320Z  Cgroup Driver: systemd
+2026-03-30T09:25:08.6460655Z  Cgroup Version: 2
+2026-03-30T09:25:08.6460984Z  Plugins:
+2026-03-30T09:25:08.6461363Z   Volume: local
+2026-03-30T09:25:08.6461789Z   Network: bridge host ipvlan macvlan null overlay
+2026-03-30T09:25:08.6462877Z   Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+2026-03-30T09:25:08.6463562Z  Swarm: inactive
+2026-03-30T09:25:08.6463963Z  Runtimes: io.containerd.runc.v2 runc
+2026-03-30T09:25:08.6464408Z  Default Runtime: runc
+2026-03-30T09:25:08.6464906Z  Init Binary: docker-init
+2026-03-30T09:25:08.6465212Z  containerd version: 301b2dac98f15c27117da5c8af12118a041a31d9
+2026-03-30T09:25:08.6465560Z  runc version: v1.3.4-0-gd6d73eb8
+2026-03-30T09:25:08.6465984Z  init version: de40ad0
+2026-03-30T09:25:08.6466189Z  Security Options:
+2026-03-30T09:25:08.6466377Z   apparmor
+2026-03-30T09:25:08.6466539Z   seccomp
+2026-03-30T09:25:08.6466706Z    Profile: builtin
+2026-03-30T09:25:08.6466900Z   cgroupns
+2026-03-30T09:25:08.6467290Z  Kernel Version: 6.17.0-1008-azure
+2026-03-30T09:25:08.6467561Z  Operating System: Ubuntu 24.04.4 LTS
+2026-03-30T09:25:08.6467800Z  OSType: linux
+2026-03-30T09:25:08.6468078Z  Architecture: x86_64
+2026-03-30T09:25:08.6468411Z  CPUs: 4
+2026-03-30T09:25:08.6468712Z  Total Memory: 15.62GiB
+2026-03-30T09:25:08.6468932Z  Name: runnervmrg6be
+2026-03-30T09:25:08.6469143Z  ID: 26c853c4-ebf5-403c-a446-44e39e017c08
+2026-03-30T09:25:08.6469405Z  Docker Root Dir: /var/lib/docker
+2026-03-30T09:25:08.6469627Z  Debug Mode: false
+2026-03-30T09:25:08.6469831Z  Username: githubactions
+2026-03-30T09:25:08.6470045Z  Experimental: false
+2026-03-30T09:25:08.6470237Z  Insecure Registries:
+2026-03-30T09:25:08.6474900Z   ::1/128
+2026-03-30T09:25:08.6475199Z   127.0.0.0/8
+2026-03-30T09:25:08.6475497Z  Live Restore Enabled: false
+2026-03-30T09:25:08.6475669Z 
+2026-03-30T09:25:08.6476284Z ##[endgroup]
+2026-03-30T09:25:08.7138826Z ##[group]Buildx version
+2026-03-30T09:25:08.7165366Z [command]/usr/bin/docker buildx version
+2026-03-30T09:25:08.7823385Z github.com/docker/buildx v0.32.1 d3bfb3f4e48a67dda56e957a6636f4fab6c5fcb2
+2026-03-30T09:25:08.7863635Z ##[endgroup]
+2026-03-30T09:25:08.8020923Z ##[group]Inspecting default docker context
+2026-03-30T09:25:08.8172945Z [
+2026-03-30T09:25:08.8173303Z   {
+2026-03-30T09:25:08.8173586Z     "Name": "default",
+2026-03-30T09:25:08.8173995Z     "Metadata": {},
+2026-03-30T09:25:08.8174333Z     "Endpoints": {
+2026-03-30T09:25:08.8174655Z       "docker": {
+2026-03-30T09:25:08.8175007Z         "Host": "unix:///var/run/docker.sock",
+2026-03-30T09:25:08.8175543Z         "SkipTLSVerify": false
+2026-03-30T09:25:08.8175920Z       }
+2026-03-30T09:25:08.8176194Z     },
+2026-03-30T09:25:08.8176497Z     "TLSMaterial": {},
+2026-03-30T09:25:08.8176849Z     "Storage": {
+2026-03-30T09:25:08.8177201Z       "MetadataPath": "<IN MEMORY>",
+2026-03-30T09:25:08.8177711Z       "TLSPath": "<IN MEMORY>"
+2026-03-30T09:25:08.8178083Z     }
+2026-03-30T09:25:08.8178337Z   }
+2026-03-30T09:25:08.8178601Z ]
+2026-03-30T09:25:08.8179462Z ##[endgroup]
+2026-03-30T09:25:08.8180207Z ##[group]Creating a new builder instance
+2026-03-30T09:25:08.8870235Z [command]/usr/bin/docker buildx create --name builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc --driver docker-container --buildkitd-flags --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host --use
+2026-03-30T09:25:08.9502659Z builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc
+2026-03-30T09:25:08.9540317Z ##[endgroup]
+2026-03-30T09:25:08.9540999Z ##[group]Booting builder
+2026-03-30T09:25:08.9587342Z [command]/usr/bin/docker buildx inspect --bootstrap --builder builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc
+2026-03-30T09:25:09.0205924Z #1 [internal] booting buildkit
+2026-03-30T09:25:09.1714917Z #1 pulling image moby/buildkit:buildx-stable-1
+2026-03-30T09:25:14.5107051Z #1 pulling image moby/buildkit:buildx-stable-1 5.5s done
+2026-03-30T09:25:14.6635248Z #1 creating container buildx_buildkit_builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc0
+2026-03-30T09:25:14.9022480Z #1 creating container buildx_buildkit_builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc0 0.4s done
+2026-03-30T09:25:14.9035306Z #1 DONE 5.9s
+2026-03-30T09:25:14.9365040Z Name:          builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc
+2026-03-30T09:25:14.9366721Z Driver:        docker-container
+2026-03-30T09:25:14.9368309Z Last Activity: 2026-03-30 09:25:08 +0000 UTC
+2026-03-30T09:25:14.9368646Z 
+2026-03-30T09:25:14.9368753Z Nodes:
+2026-03-30T09:25:14.9369116Z Name:                  builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc0
+2026-03-30T09:25:14.9371533Z Endpoint:              unix:///var/run/docker.sock
+2026-03-30T09:25:14.9372461Z Status:                running
+2026-03-30T09:25:14.9373346Z BuildKit daemon flags: --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host
+2026-03-30T09:25:14.9374253Z BuildKit version:      v0.28.1
+2026-03-30T09:25:14.9374801Z Platforms:             linux/amd64, linux/amd64/v2, linux/amd64/v3, linux/386
+2026-03-30T09:25:14.9375394Z Labels:
+2026-03-30T09:25:14.9375802Z  org.mobyproject.buildkit.worker.executor:         oci
+2026-03-30T09:25:14.9376500Z  org.mobyproject.buildkit.worker.hostname:         40f78012d57e
+2026-03-30T09:25:14.9377187Z  org.mobyproject.buildkit.worker.network:          host
+2026-03-30T09:25:14.9377901Z  org.mobyproject.buildkit.worker.oci.process-mode: sandbox
+2026-03-30T09:25:14.9378606Z  org.mobyproject.buildkit.worker.selinux.enabled:  false
+2026-03-30T09:25:14.9379310Z  org.mobyproject.buildkit.worker.snapshotter:      overlayfs
+2026-03-30T09:25:14.9379897Z GC Policy rule#0:
+2026-03-30T09:25:14.9380240Z  All:            false
+2026-03-30T09:25:14.9380819Z  Filters:        type==source.local,type==exec.cachemount,type==source.git.checkout
+2026-03-30T09:25:14.9381502Z  Keep Duration:  48h0m0s
+2026-03-30T09:25:14.9382139Z  Max Used Space: 488.3MiB
+2026-03-30T09:25:14.9382501Z GC Policy rule#1:
+2026-03-30T09:25:14.9382824Z  All:            false
+2026-03-30T09:25:14.9383175Z  Keep Duration:  1440h0m0s
+2026-03-30T09:25:14.9383557Z  Reserved Space: 9.313GiB
+2026-03-30T09:25:14.9384314Z  Max Used Space: 93.13GiB
+2026-03-30T09:25:14.9384707Z  Min Free Space: 27.01GiB
+2026-03-30T09:25:14.9385070Z GC Policy rule#2:
+2026-03-30T09:25:14.9385405Z  All:            false
+2026-03-30T09:25:14.9385751Z  Reserved Space: 9.313GiB
+2026-03-30T09:25:14.9386125Z  Max Used Space: 93.13GiB
+2026-03-30T09:25:14.9386493Z  Min Free Space: 27.01GiB
+2026-03-30T09:25:14.9386856Z GC Policy rule#3:
+2026-03-30T09:25:14.9387172Z  All:            true
+2026-03-30T09:25:14.9387522Z  Reserved Space: 9.313GiB
+2026-03-30T09:25:14.9387908Z  Max Used Space: 93.13GiB
+2026-03-30T09:25:14.9388263Z  Min Free Space: 27.01GiB
+2026-03-30T09:25:14.9420525Z ##[endgroup]
+2026-03-30T09:25:15.0408650Z ##[group]Inspect builder
+2026-03-30T09:25:15.0411264Z {
+2026-03-30T09:25:15.0411579Z   "nodes": [
+2026-03-30T09:25:15.0412392Z     {
+2026-03-30T09:25:15.0412809Z       "name": "builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc0",
+2026-03-30T09:25:15.0413623Z       "endpoint": "unix:///var/run/docker.sock",
+2026-03-30T09:25:15.0414253Z       "status": "running",
+2026-03-30T09:25:15.0415070Z       "buildkitd-flags": "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host",
+2026-03-30T09:25:15.0416036Z       "buildkit": "v0.28.1",
+2026-03-30T09:25:15.0416612Z       "platforms": "linux/amd64,linux/amd64/v2,linux/amd64/v3,linux/386",
+2026-03-30T09:25:15.0417239Z       "features": {
+2026-03-30T09:25:15.0417778Z         "Automatically load images to the Docker Engine image store": true,
+2026-03-30T09:25:15.0418452Z         "Cache export": true,
+2026-03-30T09:25:15.0418871Z         "Direct push": true,
+2026-03-30T09:25:15.0419281Z         "Docker exporter": true,
+2026-03-30T09:25:15.0419713Z         "Multi-platform build": true,
+2026-03-30T09:25:15.0420176Z         "OCI exporter": true
+2026-03-30T09:25:15.0420563Z       },
+2026-03-30T09:25:15.0420856Z       "labels": {
+2026-03-30T09:25:15.0421334Z         "org.mobyproject.buildkit.worker.executor": "oci",
+2026-03-30T09:25:15.0422864Z         "org.mobyproject.buildkit.worker.hostname": "40f78012d57e",
+2026-03-30T09:25:15.0423611Z         "org.mobyproject.buildkit.worker.network": "host",
+2026-03-30T09:25:15.0424360Z         "org.mobyproject.buildkit.worker.oci.process-mode": "sandbox",
+2026-03-30T09:25:15.0425155Z         "org.mobyproject.buildkit.worker.selinux.enabled": "false",
+2026-03-30T09:25:15.0425853Z         "org.mobyproject.buildkit.worker.snapshotter": "overlayfs"
+2026-03-30T09:25:15.0426367Z       },
+2026-03-30T09:25:15.0426624Z       "gcPolicy": [
+2026-03-30T09:25:15.0427138Z         {
+2026-03-30T09:25:15.0427395Z           "all": false,
+2026-03-30T09:25:15.0427773Z           "filter": [
+2026-03-30T09:25:15.0428111Z             "type==source.local",
+2026-03-30T09:25:15.0428542Z             "type==exec.cachemount",
+2026-03-30T09:25:15.0428960Z             "type==source.git.checkout"
+2026-03-30T09:25:15.0429348Z           ],
+2026-03-30T09:25:15.0429633Z           "keepDuration": "48h0m0s"
+2026-03-30T09:25:15.0430014Z         },
+2026-03-30T09:25:15.0430271Z         {
+2026-03-30T09:25:15.0430526Z           "all": false,
+2026-03-30T09:25:15.0430862Z           "keepDuration": "1440h0m0s"
+2026-03-30T09:25:15.0431234Z         },
+2026-03-30T09:25:15.0431479Z         {
+2026-03-30T09:25:15.0431734Z           "all": false
+2026-03-30T09:25:15.0435627Z         },
+2026-03-30T09:25:15.0436643Z         {
+2026-03-30T09:25:15.0436925Z           "all": true
+2026-03-30T09:25:15.0437234Z         }
+2026-03-30T09:25:15.0437635Z       ]
+2026-03-30T09:25:15.0437905Z     }
+2026-03-30T09:25:15.0438148Z   ],
+2026-03-30T09:25:15.0438669Z   "name": "builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc",
+2026-03-30T09:25:15.0439657Z   "driver": "docker-container",
+2026-03-30T09:25:15.0440086Z   "lastActivity": "2026-03-30T09:25:08.000Z"
+2026-03-30T09:25:15.0440519Z }
+2026-03-30T09:25:15.0441121Z ##[endgroup]
+2026-03-30T09:25:15.0443049Z ##[group]BuildKit version
+2026-03-30T09:25:15.0443585Z builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc0: v0.28.1
+2026-03-30T09:25:15.0444578Z ##[endgroup]
+2026-03-30T09:25:15.0595367Z ##[group]Run docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+2026-03-30T09:25:15.0595761Z with:
+2026-03-30T09:25:15.0596046Z   username: ***
+2026-03-30T09:25:15.0596289Z   password: ***
+2026-03-30T09:25:15.0596477Z   ecr: auto
+2026-03-30T09:25:15.0596636Z   logout: true
+2026-03-30T09:25:15.0596813Z ##[endgroup]
+2026-03-30T09:25:15.3644500Z Logging into Docker Hub...
+2026-03-30T09:25:15.9109731Z Login Succeeded!
+2026-03-30T09:25:15.9266462Z ##[group]Run SHORT_SHA=$(echo "1e5569bfb76f1c5dde10eace1c8ffc17bb33c6d4" | cut -c1-7)
+2026-03-30T09:25:15.9267163Z [36;1mSHORT_SHA=$(echo "1e5569bfb76f1c5dde10eace1c8ffc17bb33c6d4" | cut -c1-7)[0m
+2026-03-30T09:25:15.9267713Z [36;1mIMAGE="***/hpoll-admin"[0m
+2026-03-30T09:25:15.9268016Z [36;1mecho "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"[0m
+2026-03-30T09:25:15.9268349Z [36;1mecho "image=${IMAGE}" >> "$GITHUB_OUTPUT"[0m
+2026-03-30T09:25:15.9268617Z [36;1m[0m
+2026-03-30T09:25:15.9268836Z [36;1m# Build tag list based on context[0m
+2026-03-30T09:25:15.9269139Z [36;1mTAGS="${IMAGE}:${SHORT_SHA},${IMAGE}:latest-any"[0m
+2026-03-30T09:25:15.9269497Z [36;1mif [ "refs/pull/77/merge" = "refs/heads/main" ]; then[0m
+2026-03-30T09:25:15.9269809Z [36;1m  TAGS="${TAGS},${IMAGE}:latest"[0m
+2026-03-30T09:25:15.9270098Z [36;1melif [ "pull_request" = "pull_request" ]; then[0m
+2026-03-30T09:25:15.9270417Z [36;1m  TAGS="${TAGS},${IMAGE}:dev,${IMAGE}:pr-77"[0m
+2026-03-30T09:25:15.9270737Z [36;1melse[0m
+2026-03-30T09:25:15.9270987Z [36;1m  # Branch build — sanitize branch name for use as a tag[0m
+2026-03-30T09:25:15.9271417Z [36;1m  BRANCH_TAG=$(echo "77/merge" | sed 's|[^a-zA-Z0-9._-]|-|g' | cut -c1-128)[0m
+2026-03-30T09:25:15.9272077Z [36;1m  TAGS="${TAGS},${IMAGE}:${BRANCH_TAG}"[0m
+2026-03-30T09:25:15.9272402Z [36;1mfi[0m
+2026-03-30T09:25:15.9272604Z [36;1mecho "tags=${TAGS}" >> "$GITHUB_OUTPUT"[0m
+2026-03-30T09:25:15.9302784Z shell: /usr/bin/bash -e {0}
+2026-03-30T09:25:15.9303297Z ##[endgroup]
+2026-03-30T09:25:15.9507904Z ##[group]Run docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1
+2026-03-30T09:25:15.9508426Z with:
+2026-03-30T09:25:15.9508714Z   context: .
+2026-03-30T09:25:15.9509012Z   file: Dockerfile.admin
+2026-03-30T09:25:15.9509349Z   push: true
+2026-03-30T09:25:15.9509973Z   tags: ***/hpoll-admin:1e5569b,***/hpoll-admin:latest-any,***/hpoll-admin:dev,***/hpoll-admin:pr-77
+2026-03-30T09:25:15.9511051Z   build-args: BUILD_BRANCH=claude/improve-test-coverage-AyK3U
+BUILD_COMMIT=1e5569bfb76f1c5dde10eace1c8ffc17bb33c6d4
+BUILD_NUMBER=309
+BUILD_RUN_ID=23737482936
+PULL_REQUEST_NUMBER=77
+
+2026-03-30T09:25:15.9512216Z   cache-from: type=gha,scope=admin
+2026-03-30T09:25:15.9512642Z   cache-to: type=gha,mode=max,scope=admin
+2026-03-30T09:25:15.9512960Z   load: false
+2026-03-30T09:25:15.9513258Z   no-cache: false
+2026-03-30T09:25:15.9513571Z   pull: false
+2026-03-30T09:25:15.9513995Z   github-token: ***
+2026-03-30T09:25:15.9514246Z ##[endgroup]
+2026-03-30T09:25:16.2003952Z ##[group]GitHub Actions runtime token ACs
+2026-03-30T09:25:16.2039594Z refs/pull/77/merge: read/write
+2026-03-30T09:25:16.2040044Z refs/heads/main: read
+2026-03-30T09:25:16.2040901Z ##[endgroup]
+2026-03-30T09:25:16.2041459Z ##[group]Docker info
+2026-03-30T09:25:16.2093079Z [command]/usr/bin/docker version
+2026-03-30T09:25:16.2299262Z Client: Docker Engine - Community
+2026-03-30T09:25:16.2302606Z  Version:           28.0.4
+2026-03-30T09:25:16.2303334Z  API version:       1.48
+2026-03-30T09:25:16.2303785Z  Go version:        go1.23.7
+2026-03-30T09:25:16.2304551Z  Git commit:        b8034c0
+2026-03-30T09:25:16.2304985Z  Built:             Tue Mar 25 15:07:16 2025
+2026-03-30T09:25:16.2305766Z  OS/Arch:           linux/amd64
+2026-03-30T09:25:16.2306157Z  Context:           default
+2026-03-30T09:25:16.2306705Z 
+2026-03-30T09:25:16.2306881Z Server: Docker Engine - Community
+2026-03-30T09:25:16.2307294Z  Engine:
+2026-03-30T09:25:16.2307870Z   Version:          28.0.4
+2026-03-30T09:25:16.2308385Z   API version:      1.48 (minimum version 1.24)
+2026-03-30T09:25:16.2309199Z   Go version:       go1.23.7
+2026-03-30T09:25:16.2309586Z   Git commit:       6430e49
+2026-03-30T09:25:16.2309996Z   Built:            Tue Mar 25 15:07:16 2025
+2026-03-30T09:25:16.2310756Z   OS/Arch:          linux/amd64
+2026-03-30T09:25:16.2311151Z   Experimental:     false
+2026-03-30T09:25:16.2311758Z  containerd:
+2026-03-30T09:25:16.2312104Z   Version:          v2.2.2
+2026-03-30T09:25:16.2313337Z   GitCommit:        301b2dac98f15c27117da5c8af12118a041a31d9
+2026-03-30T09:25:16.2313895Z  runc:
+2026-03-30T09:25:16.2314189Z   Version:          1.3.4
+2026-03-30T09:25:16.2314579Z   GitCommit:        v1.3.4-0-gd6d73eb8
+2026-03-30T09:25:16.2315014Z  docker-init:
+2026-03-30T09:25:16.2315336Z   Version:          0.19.0
+2026-03-30T09:25:16.2315685Z   GitCommit:        de40ad0
+2026-03-30T09:25:16.2382963Z [command]/usr/bin/docker info
+2026-03-30T09:25:16.3034626Z Client: Docker Engine - Community
+2026-03-30T09:25:16.3034967Z  Version:    28.0.4
+2026-03-30T09:25:16.3035209Z  Context:    default
+2026-03-30T09:25:16.3035415Z  Debug Mode: false
+2026-03-30T09:25:16.3035598Z  Plugins:
+2026-03-30T09:25:16.3035781Z   buildx: Docker Buildx (Docker Inc.)
+2026-03-30T09:25:16.3036028Z     Version:  v0.32.1
+2026-03-30T09:25:16.3036286Z     Path:     /usr/libexec/docker/cli-plugins/docker-buildx
+2026-03-30T09:25:16.3036599Z   compose: Docker Compose (Docker Inc.)
+2026-03-30T09:25:16.3036842Z     Version:  v2.38.2
+2026-03-30T09:25:16.3037102Z     Path:     /usr/libexec/docker/cli-plugins/docker-compose
+2026-03-30T09:25:16.3037345Z 
+2026-03-30T09:25:16.3037412Z Server:
+2026-03-30T09:25:16.3037584Z  Containers: 1
+2026-03-30T09:25:16.3037769Z   Running: 1
+2026-03-30T09:25:16.3037934Z   Paused: 0
+2026-03-30T09:25:16.3038100Z   Stopped: 0
+2026-03-30T09:25:16.3038266Z  Images: 7
+2026-03-30T09:25:16.3038429Z  Server Version: 28.0.4
+2026-03-30T09:25:16.3038640Z  Storage Driver: overlay2
+2026-03-30T09:25:16.3038857Z   Backing Filesystem: extfs
+2026-03-30T09:25:16.3039474Z   Supports d_type: true
+2026-03-30T09:25:16.3039880Z   Using metacopy: false
+2026-03-30T09:25:16.3040095Z   Native Overlay Diff: false
+2026-03-30T09:25:16.3040301Z   userxattr: false
+2026-03-30T09:25:16.3040496Z  Logging Driver: json-file
+2026-03-30T09:25:16.3040735Z  Cgroup Driver: systemd
+2026-03-30T09:25:16.3040917Z  Cgroup Version: 2
+2026-03-30T09:25:16.3041095Z  Plugins:
+2026-03-30T09:25:16.3041258Z   Volume: local
+2026-03-30T09:25:16.3041463Z   Network: bridge host ipvlan macvlan null overlay
+2026-03-30T09:25:16.3042561Z   Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+2026-03-30T09:25:16.3042997Z  Swarm: inactive
+2026-03-30T09:25:16.3043202Z  Runtimes: io.containerd.runc.v2 runc
+2026-03-30T09:25:16.3043452Z  Default Runtime: runc
+2026-03-30T09:25:16.3043654Z  Init Binary: docker-init
+2026-03-30T09:25:16.3043928Z  containerd version: 301b2dac98f15c27117da5c8af12118a041a31d9
+2026-03-30T09:25:16.3044249Z  runc version: v1.3.4-0-gd6d73eb8
+2026-03-30T09:25:16.3044478Z  init version: de40ad0
+2026-03-30T09:25:16.3044692Z  Security Options:
+2026-03-30T09:25:16.3044878Z   apparmor
+2026-03-30T09:25:16.3045040Z   seccomp
+2026-03-30T09:25:16.3045196Z    Profile: builtin
+2026-03-30T09:25:16.3045371Z   cgroupns
+2026-03-30T09:25:16.3045541Z  Kernel Version: 6.17.0-1008-azure
+2026-03-30T09:25:16.3045778Z  Operating System: Ubuntu 24.04.4 LTS
+2026-03-30T09:25:16.3046023Z  OSType: linux
+2026-03-30T09:25:16.3046204Z  Architecture: x86_64
+2026-03-30T09:25:16.3046385Z  CPUs: 4
+2026-03-30T09:25:16.3046550Z  Total Memory: 15.62GiB
+2026-03-30T09:25:16.3046750Z  Name: runnervmrg6be
+2026-03-30T09:25:16.3046955Z  ID: 26c853c4-ebf5-403c-a446-44e39e017c08
+2026-03-30T09:25:16.3047213Z  Docker Root Dir: /var/lib/docker
+2026-03-30T09:25:16.3047435Z  Debug Mode: false
+2026-03-30T09:25:16.3047825Z  Username: ***
+2026-03-30T09:25:16.3048009Z  Experimental: false
+2026-03-30T09:25:16.3048210Z  Insecure Registries:
+2026-03-30T09:25:16.3048434Z   ::1/128
+2026-03-30T09:25:16.3048633Z   127.0.0.0/8
+2026-03-30T09:25:16.3048856Z  Live Restore Enabled: false
+2026-03-30T09:25:16.3049000Z 
+2026-03-30T09:25:16.3057829Z ##[endgroup]
+2026-03-30T09:25:16.3058653Z ##[group]Proxy configuration
+2026-03-30T09:25:16.3062744Z No proxy configuration found
+2026-03-30T09:25:16.3063787Z ##[endgroup]
+2026-03-30T09:25:16.3848992Z ##[group]Buildx version
+2026-03-30T09:25:16.3877668Z [command]/usr/bin/docker buildx version
+2026-03-30T09:25:16.4556395Z github.com/docker/buildx v0.32.1 d3bfb3f4e48a67dda56e957a6636f4fab6c5fcb2
+2026-03-30T09:25:16.4599606Z ##[endgroup]
+2026-03-30T09:25:16.4600316Z ##[group]Builder info
+2026-03-30T09:25:16.5604944Z {
+2026-03-30T09:25:16.5605401Z   "nodes": [
+2026-03-30T09:25:16.5605731Z     {
+2026-03-30T09:25:16.5606134Z       "name": "builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc0",
+2026-03-30T09:25:16.5606772Z       "endpoint": "unix:///var/run/docker.sock",
+2026-03-30T09:25:16.5607278Z       "status": "running",
+2026-03-30T09:25:16.5608203Z       "buildkitd-flags": "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host",
+2026-03-30T09:25:16.5609146Z       "buildkit": "v0.28.1",
+2026-03-30T09:25:16.5609650Z       "platforms": "linux/amd64,linux/amd64/v2,linux/amd64/v3,linux/386",
+2026-03-30T09:25:16.5610011Z       "features": {
+2026-03-30T09:25:16.5610334Z         "Automatically load images to the Docker Engine image store": true,
+2026-03-30T09:25:16.5610911Z         "Cache export": true,
+2026-03-30T09:25:16.5611143Z         "Direct push": true,
+2026-03-30T09:25:16.5611358Z         "Docker exporter": true,
+2026-03-30T09:25:16.5611599Z         "Multi-platform build": true,
+2026-03-30T09:25:16.5612555Z         "OCI exporter": true
+2026-03-30T09:25:16.5612971Z       },
+2026-03-30T09:25:16.5613236Z       "labels": {
+2026-03-30T09:25:16.5613660Z         "org.mobyproject.buildkit.worker.executor": "oci",
+2026-03-30T09:25:16.5614257Z         "org.mobyproject.buildkit.worker.hostname": "40f78012d57e",
+2026-03-30T09:25:16.5614661Z         "org.mobyproject.buildkit.worker.network": "host",
+2026-03-30T09:25:16.5615570Z         "org.mobyproject.buildkit.worker.oci.process-mode": "sandbox",
+2026-03-30T09:25:16.5616038Z         "org.mobyproject.buildkit.worker.selinux.enabled": "false",
+2026-03-30T09:25:16.5616467Z         "org.mobyproject.buildkit.worker.snapshotter": "overlayfs"
+2026-03-30T09:25:16.5616783Z       },
+2026-03-30T09:25:16.5616947Z       "gcPolicy": [
+2026-03-30T09:25:16.5617119Z         {
+2026-03-30T09:25:16.5617286Z           "all": false,
+2026-03-30T09:25:16.5617476Z           "filter": [
+2026-03-30T09:25:16.5617665Z             "type==source.local",
+2026-03-30T09:25:16.5617905Z             "type==exec.cachemount",
+2026-03-30T09:25:16.5618159Z             "type==source.git.checkout"
+2026-03-30T09:25:16.5618381Z           ],
+2026-03-30T09:25:16.5618558Z           "keepDuration": "48h0m0s"
+2026-03-30T09:25:16.5618771Z         },
+2026-03-30T09:25:16.5618920Z         {
+2026-03-30T09:25:16.5619079Z           "all": false,
+2026-03-30T09:25:16.5619280Z           "keepDuration": "1440h0m0s"
+2026-03-30T09:25:16.5619509Z         },
+2026-03-30T09:25:16.5619663Z         {
+2026-03-30T09:25:16.5619820Z           "all": false
+2026-03-30T09:25:16.5619991Z         },
+2026-03-30T09:25:16.5620136Z         {
+2026-03-30T09:25:16.5620288Z           "all": true
+2026-03-30T09:25:16.5620456Z         }
+2026-03-30T09:25:16.5620605Z       ]
+2026-03-30T09:25:16.5620751Z     }
+2026-03-30T09:25:16.5620894Z   ],
+2026-03-30T09:25:16.5621111Z   "name": "builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc",
+2026-03-30T09:25:16.5621412Z   "driver": "docker-container",
+2026-03-30T09:25:16.5621649Z   "lastActivity": "2026-03-30T09:25:08.000Z"
+2026-03-30T09:25:16.5622153Z }
+2026-03-30T09:25:16.5622681Z ##[endgroup]
+2026-03-30T09:25:16.7359953Z [command]/usr/bin/docker buildx build --build-arg BUILD_BRANCH=claude/improve-test-coverage-AyK3U --build-arg BUILD_COMMIT=1e5569bfb76f1c5dde10eace1c8ffc17bb33c6d4 --build-arg BUILD_NUMBER=309 --build-arg BUILD_RUN_ID=23737482936 --build-arg PULL_REQUEST_NUMBER=77 --cache-from type=gha,scope=admin --cache-to type=gha,mode=max,scope=admin --file Dockerfile.admin --iidfile /home/runner/work/_temp/docker-actions-toolkit-J1x5lY/build-iidfile-d5be80b325.txt --attest type=provenance,mode=max,builder-id=https://github.com/***/hpoll/actions/runs/23737482936/attempts/1 --tag ***/hpoll-admin:1e5569b --tag ***/hpoll-admin:latest-any --tag ***/hpoll-admin:dev --tag ***/hpoll-admin:pr-77 --metadata-file /home/runner/work/_temp/docker-actions-toolkit-J1x5lY/build-metadata-7624113c17.json --push .
+2026-03-30T09:25:16.9923256Z #0 building with "builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc" instance using docker-container driver
+2026-03-30T09:25:16.9924231Z 
+2026-03-30T09:25:16.9924403Z #1 [internal] load build definition from Dockerfile.admin
+2026-03-30T09:25:16.9924778Z #1 transferring dockerfile: 1.82kB done
+2026-03-30T09:25:16.9925235Z #1 DONE 0.0s
+2026-03-30T09:25:16.9925346Z 
+2026-03-30T09:25:16.9925516Z #2 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:8.0
+2026-03-30T09:25:16.9925830Z #2 DONE 0.1s
+2026-03-30T09:25:16.9925960Z 
+2026-03-30T09:25:16.9926202Z #3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:8.0
+2026-03-30T09:25:17.1901455Z #3 DONE 0.1s
+2026-03-30T09:25:17.1901639Z 
+2026-03-30T09:25:17.1901758Z #4 [internal] load .dockerignore
+2026-03-30T09:25:17.1903586Z #4 transferring context: 219B done
+2026-03-30T09:25:17.1903884Z #4 DONE 0.0s
+2026-03-30T09:25:17.1904014Z 
+2026-03-30T09:25:17.1904115Z #5 [internal] load build context
+2026-03-30T09:25:17.1904381Z #5 DONE 0.0s
+2026-03-30T09:25:17.1904498Z 
+2026-03-30T09:25:17.1904998Z #6 [runtime 1/4] FROM mcr.microsoft.com/dotnet/aspnet:8.0@sha256:d4d80bf500f4c8307e5c44bf61eb58aec027da07c4d1c40816846fe5eef3f34d
+2026-03-30T09:25:17.1906075Z #6 resolve mcr.microsoft.com/dotnet/aspnet:8.0@sha256:d4d80bf500f4c8307e5c44bf61eb58aec027da07c4d1c40816846fe5eef3f34d done
+2026-03-30T09:25:17.1906747Z #6 DONE 0.0s
+2026-03-30T09:25:17.1906864Z 
+2026-03-30T09:25:17.1907681Z #7 [build  1/14] FROM mcr.microsoft.com/dotnet/sdk:8.0@sha256:a9330090b730c2abde8f3f43b3d1e24e4b8cba028de7bab1a7fdcd50cb7a3b7e
+2026-03-30T09:25:17.1908833Z #7 resolve mcr.microsoft.com/dotnet/sdk:8.0@sha256:a9330090b730c2abde8f3f43b3d1e24e4b8cba028de7bab1a7fdcd50cb7a3b7e done
+2026-03-30T09:25:17.1909467Z #7 DONE 0.0s
+2026-03-30T09:25:17.1909584Z 
+2026-03-30T09:25:17.1909747Z #8 importing cache manifest from gha:10549494386137884763
+2026-03-30T09:25:17.5448264Z #8 DONE 0.5s
+2026-03-30T09:25:17.7541101Z 
+2026-03-30T09:25:17.7541641Z #5 [internal] load build context
+2026-03-30T09:25:17.7542584Z #5 transferring context: 943.96kB 0.0s done
+2026-03-30T09:25:17.7543216Z #5 DONE 0.1s
+2026-03-30T09:25:17.7543391Z 
+2026-03-30T09:25:17.7543535Z #9 [build  3/14] COPY Hpoll.sln ./
+2026-03-30T09:25:17.7543887Z #9 CACHED
+2026-03-30T09:25:17.7543992Z 
+2026-03-30T09:25:17.7544212Z #10 [build  8/14] COPY src/Hpoll.Admin/Hpoll.Admin.csproj src/Hpoll.Admin/
+2026-03-30T09:25:17.7544603Z #10 CACHED
+2026-03-30T09:25:17.7544731Z 
+2026-03-30T09:25:17.7545037Z #11 [build  9/14] COPY tests/Hpoll.Core.Tests/Hpoll.Core.Tests.csproj tests/Hpoll.Core.Tests/
+2026-03-30T09:25:17.7545520Z #11 CACHED
+2026-03-30T09:25:17.7545622Z 
+2026-03-30T09:25:17.7545814Z #12 [build  4/14] COPY src/Hpoll.Core/Hpoll.Core.csproj src/Hpoll.Core/
+2026-03-30T09:25:17.7546171Z #12 CACHED
+2026-03-30T09:25:17.7546277Z 
+2026-03-30T09:25:17.7546465Z #13 [build  6/14] COPY src/Hpoll.Email/Hpoll.Email.csproj src/Hpoll.Email/
+2026-03-30T09:25:17.7546837Z #13 CACHED
+2026-03-30T09:25:17.7546933Z 
+2026-03-30T09:25:17.7547237Z #14 [build 10/14] COPY tests/Hpoll.Worker.Tests/Hpoll.Worker.Tests.csproj tests/Hpoll.Worker.Tests/
+2026-03-30T09:25:17.7547719Z #14 CACHED
+2026-03-30T09:25:17.7547822Z 
+2026-03-30T09:25:17.7548104Z #15 [build 11/14] COPY tests/Hpoll.Admin.Tests/Hpoll.Admin.Tests.csproj tests/Hpoll.Admin.Tests/
+2026-03-30T09:25:17.7548574Z #15 CACHED
+2026-03-30T09:25:17.7548672Z 
+2026-03-30T09:25:17.7548881Z #16 [build  7/14] COPY src/Hpoll.Worker/Hpoll.Worker.csproj src/Hpoll.Worker/
+2026-03-30T09:25:17.7549265Z #16 CACHED
+2026-03-30T09:25:17.7549363Z 
+2026-03-30T09:25:17.7549547Z #17 [build  5/14] COPY src/Hpoll.Data/Hpoll.Data.csproj src/Hpoll.Data/
+2026-03-30T09:25:17.7549877Z #17 CACHED
+2026-03-30T09:25:17.7549973Z 
+2026-03-30T09:25:17.7550050Z #18 [build  2/14] WORKDIR /src
+2026-03-30T09:25:17.7550256Z #18 CACHED
+2026-03-30T09:25:17.7550343Z 
+2026-03-30T09:25:17.7550427Z #19 [build 12/14] RUN dotnet restore
+2026-03-30T09:25:17.9300639Z #19 CACHED
+2026-03-30T09:25:18.0809148Z 
+2026-03-30T09:25:18.0809436Z #19 [build 12/14] RUN dotnet restore
+2026-03-30T09:25:18.0842922Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 0B / 324.55MB 0.2s
+2026-03-30T09:25:18.2238287Z #19 sha256:583e41b21efcc45145e500bb141fa31be44853972f998edbf58360b0bbd361e2 0B / 643B 0.2s
+2026-03-30T09:25:18.2239579Z #19 sha256:4dc85a4bfdb640257b26ac64590b4101ad1f60e7c2777db0f700fd978980a0e8 0B / 653B 0.2s
+2026-03-30T09:25:18.2240524Z #19 sha256:92cca30004566549bde92f5ae218b88290d3dca845b7176a0cf59ef1492a4396 612B / 612B 0.3s done
+2026-03-30T09:25:18.3746172Z #19 sha256:583e41b21efcc45145e500bb141fa31be44853972f998edbf58360b0bbd361e2 643B / 643B 0.3s done
+2026-03-30T09:25:18.3747037Z #19 sha256:4dc85a4bfdb640257b26ac64590b4101ad1f60e7c2777db0f700fd978980a0e8 653B / 653B 0.3s done
+2026-03-30T09:25:18.3747942Z #19 sha256:cc2fb0a65744b34fa9714dd5f45c3747ff3272e23f55393b2ca4388fb4d67745 595B / 595B 0.1s done
+2026-03-30T09:25:18.3748832Z #19 sha256:e2a76c183a424b2f0521ed3e7e26f5dc341f59c68d750a37b6e260b54e831384 0B / 440B 0.2s
+2026-03-30T09:25:18.5152426Z #19 sha256:e2a76c183a424b2f0521ed3e7e26f5dc341f59c68d750a37b6e260b54e831384 440B / 440B 0.3s done
+2026-03-30T09:25:18.5156621Z #19 sha256:8b0b1607d2ce2a733ab1ac68739356163cc7876eb68845d27d26cc61334cfb4d 0B / 481B 0.2s
+2026-03-30T09:25:18.5157795Z #19 sha256:a995f9e5e1c18bb827487a8ab515715e4400a02daee758773c6f46a64615b3b3 0B / 397B 0.2s
+2026-03-30T09:25:18.6190823Z #19 sha256:8b0b1607d2ce2a733ab1ac68739356163cc7876eb68845d27d26cc61334cfb4d 481B / 481B 0.3s done
+2026-03-30T09:25:18.7728920Z #19 sha256:a995f9e5e1c18bb827487a8ab515715e4400a02daee758773c6f46a64615b3b3 397B / 397B 0.3s done
+2026-03-30T09:25:18.7730349Z #19 sha256:d9f73a10d9ca13e699b6b6c137019b9bfcb86ea171c2003a742908eb59efe6d0 0B / 391B 0.2s
+2026-03-30T09:25:18.7731497Z #19 sha256:044800e5bea8c645d18455af3ebd036c07de4dbbd78810fe39933faf35953446 0B / 1.08kB 0.2s
+2026-03-30T09:25:18.7732757Z #19 sha256:fa47fd6cb9a258a2db9d27df1fa0dee1bd3a3df8dac091e186996df0cd51a990 0B / 92B 0.2s
+2026-03-30T09:25:18.8992829Z #19 sha256:d9f73a10d9ca13e699b6b6c137019b9bfcb86ea171c2003a742908eb59efe6d0 391B / 391B 0.3s done
+2026-03-30T09:25:18.8993687Z #19 sha256:044800e5bea8c645d18455af3ebd036c07de4dbbd78810fe39933faf35953446 1.08kB / 1.08kB 0.3s done
+2026-03-30T09:25:18.8994665Z #19 sha256:fa47fd6cb9a258a2db9d27df1fa0dee1bd3a3df8dac091e186996df0cd51a990 92B / 92B 0.3s done
+2026-03-30T09:25:19.0496436Z #19 sha256:b277f43e4782539ab503f8c4e4cc09f0fd2be948e8f9a9619353456428a0840b 0B / 16.95MB 0.2s
+2026-03-30T09:25:19.0498151Z #19 sha256:61a861fa65a938e56f7f21db6417b7a31285709057a8f408dd774b98f79935f1 0B / 2.62kB 0.2s
+2026-03-30T09:25:19.0499356Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 0B / 178.33MB 0.2s
+2026-03-30T09:25:19.2000048Z #19 sha256:61a861fa65a938e56f7f21db6417b7a31285709057a8f408dd774b98f79935f1 2.62kB / 2.62kB 0.3s done
+2026-03-30T09:25:19.3498406Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 0B / 30.89MB 0.2s
+2026-03-30T09:25:19.8002836Z #19 sha256:b277f43e4782539ab503f8c4e4cc09f0fd2be948e8f9a9619353456428a0840b 1.05MB / 16.95MB 0.9s
+2026-03-30T09:25:19.9501240Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 16.78MB / 324.55MB 2.0s
+2026-03-30T09:25:19.9502559Z #19 sha256:b277f43e4782539ab503f8c4e4cc09f0fd2be948e8f9a9619353456428a0840b 2.10MB / 16.95MB 1.1s
+2026-03-30T09:25:20.1002338Z #19 sha256:b277f43e4782539ab503f8c4e4cc09f0fd2be948e8f9a9619353456428a0840b 3.15MB / 16.95MB 1.2s
+2026-03-30T09:25:20.2505891Z #19 sha256:b277f43e4782539ab503f8c4e4cc09f0fd2be948e8f9a9619353456428a0840b 5.24MB / 16.95MB 1.4s
+2026-03-30T09:25:20.2507622Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 2.10MB / 30.89MB 1.1s
+2026-03-30T09:25:20.3994712Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 33.55MB / 324.55MB 2.4s
+2026-03-30T09:25:20.3995857Z #19 sha256:b277f43e4782539ab503f8c4e4cc09f0fd2be948e8f9a9619353456428a0840b 7.34MB / 16.95MB 1.5s
+2026-03-30T09:25:20.5502543Z #19 sha256:b277f43e4782539ab503f8c4e4cc09f0fd2be948e8f9a9619353456428a0840b 10.49MB / 16.95MB 1.7s
+2026-03-30T09:25:20.5503463Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 10.49MB / 178.33MB 1.7s
+2026-03-30T09:25:20.5504272Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 4.19MB / 30.89MB 1.4s
+2026-03-30T09:25:20.6995397Z #19 sha256:b277f43e4782539ab503f8c4e4cc09f0fd2be948e8f9a9619353456428a0840b 12.58MB / 16.95MB 1.8s
+2026-03-30T09:25:20.8496761Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 54.53MB / 324.55MB 2.9s
+2026-03-30T09:25:20.8498137Z #19 sha256:b277f43e4782539ab503f8c4e4cc09f0fd2be948e8f9a9619353456428a0840b 14.68MB / 16.95MB 2.0s
+2026-03-30T09:25:20.8499349Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 7.34MB / 30.89MB 1.7s
+2026-03-30T09:25:21.0030995Z #19 sha256:b277f43e4782539ab503f8c4e4cc09f0fd2be948e8f9a9619353456428a0840b 16.95MB / 16.95MB 2.1s done
+2026-03-30T09:25:21.0032067Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 9.44MB / 30.89MB 1.8s
+2026-03-30T09:25:21.1500723Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 11.53MB / 30.89MB 2.0s
+2026-03-30T09:25:21.1501595Z #19 sha256:3c6d3c066084b175dce93ba5776b5dd7f036edf2e404612d5fa93ccf116f0c27 1.05MB / 11.09MB 0.2s
+2026-03-30T09:25:21.2997194Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 75.50MB / 324.55MB 3.3s
+2026-03-30T09:25:21.2998079Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 20.97MB / 178.33MB 2.4s
+2026-03-30T09:25:21.2999603Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 13.63MB / 30.89MB 2.1s
+2026-03-30T09:25:21.3000360Z #19 sha256:3c6d3c066084b175dce93ba5776b5dd7f036edf2e404612d5fa93ccf116f0c27 4.19MB / 11.09MB 0.3s
+2026-03-30T09:25:21.4501109Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 15.73MB / 30.89MB 2.3s
+2026-03-30T09:25:21.4502897Z #19 sha256:3c6d3c066084b175dce93ba5776b5dd7f036edf2e404612d5fa93ccf116f0c27 6.29MB / 11.09MB 0.5s
+2026-03-30T09:25:21.6001674Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 92.27MB / 324.55MB 3.6s
+2026-03-30T09:25:21.6004569Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 17.83MB / 30.89MB 2.4s
+2026-03-30T09:25:21.6005639Z #19 sha256:3c6d3c066084b175dce93ba5776b5dd7f036edf2e404612d5fa93ccf116f0c27 8.39MB / 11.09MB 0.6s
+2026-03-30T09:25:21.7087853Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 19.92MB / 30.89MB 2.6s
+2026-03-30T09:25:21.7088961Z #19 sha256:3c6d3c066084b175dce93ba5776b5dd7f036edf2e404612d5fa93ccf116f0c27 11.09MB / 11.09MB 0.7s done
+2026-03-30T09:25:21.7089957Z #19 sha256:cc471c325bf87bbcee9dfcc97d067a9a09fbd4ecb15aef95ebc96bbcffced994 152B / 152B 0.1s done
+2026-03-30T09:25:21.8340676Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 23.07MB / 30.89MB 2.7s
+2026-03-30T09:25:21.9525226Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 30.41MB / 178.33MB 3.0s
+2026-03-30T09:25:21.9526362Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 25.17MB / 30.89MB 2.9s
+2026-03-30T09:25:21.9527250Z #19 sha256:f08927b81ba5ccf716dd8b726a9e79e59f141af47aa0842cd0b637f1d21bc8a8 0B / 32.25MB 0.2s
+2026-03-30T09:25:22.1023685Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 113.25MB / 324.55MB 4.1s
+2026-03-30T09:25:22.1025407Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 27.26MB / 30.89MB 3.0s
+2026-03-30T09:25:22.3095407Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 29.36MB / 30.89MB 3.2s
+2026-03-30T09:25:22.4347899Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 134.22MB / 324.55MB 4.5s
+2026-03-30T09:25:22.4349270Z #19 sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 30.89MB / 30.89MB 3.3s done
+2026-03-30T09:25:22.5847232Z #19 sha256:4f218a7f69dc742a56d551bce7e022a96d279448a43b383b6a2dcae2e89485eb 3.29kB / 3.29kB 0.1s done
+2026-03-30T09:25:22.7343838Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 150.99MB / 324.55MB 4.8s
+2026-03-30T09:25:22.7345187Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 40.89MB / 178.33MB 3.8s
+2026-03-30T09:25:22.7346336Z #19 sha256:8a4bd0e0a35d02b2c56f27f0fdd9a384dd93aa271f00f8ab007a85ab7911ea78 0B / 18.74MB 0.2s
+2026-03-30T09:25:22.8839848Z #19 sha256:f08927b81ba5ccf716dd8b726a9e79e59f141af47aa0842cd0b637f1d21bc8a8 2.10MB / 32.25MB 1.1s
+2026-03-30T09:25:23.0346901Z #19 sha256:f08927b81ba5ccf716dd8b726a9e79e59f141af47aa0842cd0b637f1d21bc8a8 4.19MB / 32.25MB 1.2s
+2026-03-30T09:25:23.1839811Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 171.97MB / 324.55MB 5.3s
+2026-03-30T09:25:23.1840957Z #19 sha256:f08927b81ba5ccf716dd8b726a9e79e59f141af47aa0842cd0b637f1d21bc8a8 6.29MB / 32.25MB 1.4s
+2026-03-30T09:25:23.3340346Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 50.33MB / 178.33MB 4.4s
+2026-03-30T09:25:23.3341289Z #19 sha256:f08927b81ba5ccf716dd8b726a9e79e59f141af47aa0842cd0b637f1d21bc8a8 9.44MB / 32.25MB 1.5s
+2026-03-30T09:25:23.3342434Z #19 sha256:8a4bd0e0a35d02b2c56f27f0fdd9a384dd93aa271f00f8ab007a85ab7911ea78 1.05MB / 18.74MB 0.8s
+2026-03-30T09:25:23.4841364Z #19 sha256:f08927b81ba5ccf716dd8b726a9e79e59f141af47aa0842cd0b637f1d21bc8a8 13.63MB / 32.25MB 1.7s
+2026-03-30T09:25:23.6340315Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 192.94MB / 324.55MB 5.7s
+2026-03-30T09:25:23.6341462Z #19 sha256:f08927b81ba5ccf716dd8b726a9e79e59f141af47aa0842cd0b637f1d21bc8a8 15.73MB / 32.25MB 1.8s
+2026-03-30T09:25:23.6342584Z #19 sha256:8a4bd0e0a35d02b2c56f27f0fdd9a384dd93aa271f00f8ab007a85ab7911ea78 3.15MB / 18.74MB 1.1s
+2026-03-30T09:25:23.7840612Z #19 sha256:8a4bd0e0a35d02b2c56f27f0fdd9a384dd93aa271f00f8ab007a85ab7911ea78 5.24MB / 18.74MB 1.2s
+2026-03-30T09:25:23.9339086Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 209.72MB / 324.55MB 6.0s
+2026-03-30T09:25:23.9340120Z #19 sha256:8a4bd0e0a35d02b2c56f27f0fdd9a384dd93aa271f00f8ab007a85ab7911ea78 6.29MB / 18.74MB 1.4s
+2026-03-30T09:25:24.0845223Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 60.82MB / 178.33MB 5.1s
+2026-03-30T09:25:24.0846466Z #19 sha256:f08927b81ba5ccf716dd8b726a9e79e59f141af47aa0842cd0b637f1d21bc8a8 17.83MB / 32.25MB 2.3s
+2026-03-30T09:25:24.0847569Z #19 sha256:8a4bd0e0a35d02b2c56f27f0fdd9a384dd93aa271f00f8ab007a85ab7911ea78 8.39MB / 18.74MB 1.5s
+2026-03-30T09:25:24.2348169Z #19 sha256:f08927b81ba5ccf716dd8b726a9e79e59f141af47aa0842cd0b637f1d21bc8a8 22.02MB / 32.25MB 2.4s
+2026-03-30T09:25:24.2349133Z #19 sha256:8a4bd0e0a35d02b2c56f27f0fdd9a384dd93aa271f00f8ab007a85ab7911ea78 9.44MB / 18.74MB 1.7s
+2026-03-30T09:25:24.3839279Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 230.69MB / 324.55MB 6.5s
+2026-03-30T09:25:24.3840068Z #19 sha256:f08927b81ba5ccf716dd8b726a9e79e59f141af47aa0842cd0b637f1d21bc8a8 26.21MB / 32.25MB 2.6s
+2026-03-30T09:25:24.3840743Z #19 sha256:8a4bd0e0a35d02b2c56f27f0fdd9a384dd93aa271f00f8ab007a85ab7911ea78 10.49MB / 18.74MB 1.8s
+2026-03-30T09:25:24.5345584Z #19 sha256:f08927b81ba5ccf716dd8b726a9e79e59f141af47aa0842cd0b637f1d21bc8a8 32.25MB / 32.25MB 2.7s done
+2026-03-30T09:25:24.5346811Z #19 sha256:8a4bd0e0a35d02b2c56f27f0fdd9a384dd93aa271f00f8ab007a85ab7911ea78 13.63MB / 18.74MB 2.0s
+2026-03-30T09:25:24.6839683Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 247.46MB / 324.55MB 6.8s
+2026-03-30T09:25:24.6841160Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 70.25MB / 178.33MB 5.7s
+2026-03-30T09:25:24.6842136Z #19 sha256:8a4bd0e0a35d02b2c56f27f0fdd9a384dd93aa271f00f8ab007a85ab7911ea78 15.73MB / 18.74MB 2.1s
+2026-03-30T09:25:24.6843135Z #19 sha256:6db0909c4473287ed4d1f950d26b8bc5b7b4206d365a0e7740cb89e46979153e 0B / 28.24MB 0.2s
+2026-03-30T09:25:24.8345380Z #19 sha256:8a4bd0e0a35d02b2c56f27f0fdd9a384dd93aa271f00f8ab007a85ab7911ea78 18.74MB / 18.74MB 2.3s done
+2026-03-30T09:25:25.1341849Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 268.44MB / 324.55MB 7.2s
+2026-03-30T09:25:25.2847682Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 79.69MB / 178.33MB 6.3s
+2026-03-30T09:25:25.5844029Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 289.41MB / 324.55MB 7.7s
+2026-03-30T09:25:25.5845357Z #19 sha256:6db0909c4473287ed4d1f950d26b8bc5b7b4206d365a0e7740cb89e46979153e 2.10MB / 28.24MB 1.1s
+2026-03-30T09:25:25.8844050Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 306.18MB / 324.55MB 8.0s
+2026-03-30T09:25:25.8844857Z #19 sha256:6db0909c4473287ed4d1f950d26b8bc5b7b4206d365a0e7740cb89e46979153e 5.24MB / 28.24MB 1.4s
+2026-03-30T09:25:26.0347230Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 90.18MB / 178.33MB 7.1s
+2026-03-30T09:25:26.0348369Z #19 sha256:6db0909c4473287ed4d1f950d26b8bc5b7b4206d365a0e7740cb89e46979153e 7.34MB / 28.24MB 1.5s
+2026-03-30T09:25:26.1841238Z #19 sha256:6db0909c4473287ed4d1f950d26b8bc5b7b4206d365a0e7740cb89e46979153e 10.49MB / 28.24MB 1.7s
+2026-03-30T09:25:26.3342665Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 324.55MB / 324.55MB 8.4s
+2026-03-30T09:25:26.3343767Z #19 sha256:6db0909c4473287ed4d1f950d26b8bc5b7b4206d365a0e7740cb89e46979153e 14.68MB / 28.24MB 1.8s
+2026-03-30T09:25:26.4842286Z #19 sha256:6db0909c4473287ed4d1f950d26b8bc5b7b4206d365a0e7740cb89e46979153e 20.97MB / 28.24MB 2.0s
+2026-03-30T09:25:26.6346428Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 99.61MB / 178.33MB 7.7s
+2026-03-30T09:25:26.6347287Z #19 sha256:6db0909c4473287ed4d1f950d26b8bc5b7b4206d365a0e7740cb89e46979153e 26.21MB / 28.24MB 2.1s
+2026-03-30T09:25:26.7847711Z #19 sha256:6db0909c4473287ed4d1f950d26b8bc5b7b4206d365a0e7740cb89e46979153e 28.24MB / 28.24MB 2.3s
+2026-03-30T09:25:26.9994017Z #19 sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 324.55MB / 324.55MB 8.9s done
+2026-03-30T09:25:26.9994795Z #19 sha256:6db0909c4473287ed4d1f950d26b8bc5b7b4206d365a0e7740cb89e46979153e 28.24MB / 28.24MB 2.5s done
+2026-03-30T09:25:26.9995429Z #19 extracting sha256:6db0909c4473287ed4d1f950d26b8bc5b7b4206d365a0e7740cb89e46979153e
+2026-03-30T09:25:27.2993597Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 110.10MB / 178.33MB 8.4s
+2026-03-30T09:25:27.7493011Z #19 extracting sha256:6db0909c4473287ed4d1f950d26b8bc5b7b4206d365a0e7740cb89e46979153e 0.7s done
+2026-03-30T09:25:27.7494554Z #19 extracting sha256:8a4bd0e0a35d02b2c56f27f0fdd9a384dd93aa271f00f8ab007a85ab7911ea78
+2026-03-30T09:25:27.8578962Z #19 extracting sha256:8a4bd0e0a35d02b2c56f27f0fdd9a384dd93aa271f00f8ab007a85ab7911ea78 0.3s done
+2026-03-30T09:25:28.0494570Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 119.54MB / 178.33MB 9.0s
+2026-03-30T09:25:28.0501712Z #19 extracting sha256:4f218a7f69dc742a56d551bce7e022a96d279448a43b383b6a2dcae2e89485eb done
+2026-03-30T09:25:28.0502961Z #19 extracting sha256:f08927b81ba5ccf716dd8b726a9e79e59f141af47aa0842cd0b637f1d21bc8a8
+2026-03-30T09:25:28.3364915Z #19 extracting sha256:f08927b81ba5ccf716dd8b726a9e79e59f141af47aa0842cd0b637f1d21bc8a8 0.3s done
+2026-03-30T09:25:28.3366278Z #19 extracting sha256:cc471c325bf87bbcee9dfcc97d067a9a09fbd4ecb15aef95ebc96bbcffced994 done
+2026-03-30T09:25:28.3367238Z #19 extracting sha256:3c6d3c066084b175dce93ba5776b5dd7f036edf2e404612d5fa93ccf116f0c27 0.1s done
+2026-03-30T09:25:28.4995469Z #19 extracting sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835
+2026-03-30T09:25:28.6494637Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 130.02MB / 178.33MB 9.8s
+2026-03-30T09:25:29.0999546Z #19 extracting sha256:397ec0a74e3c9d52967bbf423d4547d854e86e14b2e0618b24c533952b9af835 0.6s done
+2026-03-30T09:25:29.2496104Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 139.46MB / 178.33MB 10.4s
+2026-03-30T09:25:29.9998055Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 149.95MB / 178.33MB 11.1s
+2026-03-30T09:25:30.5997698Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 159.38MB / 178.33MB 11.7s
+2026-03-30T09:25:31.3497364Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 169.87MB / 178.33MB 12.5s
+2026-03-30T09:25:32.1013656Z #19 sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 178.33MB / 178.33MB 13.2s done
+2026-03-30T09:25:32.1014417Z #19 DONE 14.5s
+2026-03-30T09:25:32.2538517Z 
+2026-03-30T09:25:32.2539255Z #19 [build 12/14] RUN dotnet restore
+2026-03-30T09:25:32.2540819Z #19 extracting sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4
+2026-03-30T09:25:34.6340517Z #19 extracting sha256:296c556ba6accf654cd905729ba7038b8c212f7303dcde70a8bda36e3bdb9db4 2.5s done
+2026-03-30T09:25:34.6342440Z #19 DONE 17.0s
+2026-03-30T09:25:34.7931335Z 
+2026-03-30T09:25:34.7932063Z #19 [build 12/14] RUN dotnet restore
+2026-03-30T09:25:34.7932725Z #19 extracting sha256:61a861fa65a938e56f7f21db6417b7a31285709057a8f408dd774b98f79935f1 done
+2026-03-30T09:25:34.7933319Z #19 extracting sha256:b277f43e4782539ab503f8c4e4cc09f0fd2be948e8f9a9619353456428a0840b
+2026-03-30T09:25:34.9008502Z #19 extracting sha256:b277f43e4782539ab503f8c4e4cc09f0fd2be948e8f9a9619353456428a0840b 0.3s done
+2026-03-30T09:25:34.9009366Z #19 DONE 17.3s
+2026-03-30T09:25:35.0992107Z 
+2026-03-30T09:25:35.1004473Z #19 [build 12/14] RUN dotnet restore
+2026-03-30T09:25:35.1005957Z #19 extracting sha256:fa47fd6cb9a258a2db9d27df1fa0dee1bd3a3df8dac091e186996df0cd51a990 done
+2026-03-30T09:25:35.1007050Z #19 extracting sha256:044800e5bea8c645d18455af3ebd036c07de4dbbd78810fe39933faf35953446 done
+2026-03-30T09:25:35.1007875Z #19 extracting sha256:d9f73a10d9ca13e699b6b6c137019b9bfcb86ea171c2003a742908eb59efe6d0 done
+2026-03-30T09:25:35.1008728Z #19 extracting sha256:8b0b1607d2ce2a733ab1ac68739356163cc7876eb68845d27d26cc61334cfb4d done
+2026-03-30T09:25:35.1009347Z #19 extracting sha256:a995f9e5e1c18bb827487a8ab515715e4400a02daee758773c6f46a64615b3b3 done
+2026-03-30T09:25:35.1009956Z #19 extracting sha256:cc2fb0a65744b34fa9714dd5f45c3747ff3272e23f55393b2ca4388fb4d67745 done
+2026-03-30T09:25:35.1010555Z #19 extracting sha256:e2a76c183a424b2f0521ed3e7e26f5dc341f59c68d750a37b6e260b54e831384 done
+2026-03-30T09:25:35.1011142Z #19 extracting sha256:92cca30004566549bde92f5ae218b88290d3dca845b7176a0cf59ef1492a4396 done
+2026-03-30T09:25:35.1011720Z #19 extracting sha256:4dc85a4bfdb640257b26ac64590b4101ad1f60e7c2777db0f700fd978980a0e8 done
+2026-03-30T09:25:35.1012833Z #19 extracting sha256:583e41b21efcc45145e500bb141fa31be44853972f998edbf58360b0bbd361e2 done
+2026-03-30T09:25:35.1013756Z #19 extracting sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4
+2026-03-30T09:25:37.5571193Z #19 extracting sha256:784c9ace29f16c80c6062dc5d6048d6b5ebe317a3223b211dd4e656134a41de4 2.6s done
+2026-03-30T09:25:37.5572210Z #19 DONE 20.0s
+2026-03-30T09:25:37.7091179Z 
+2026-03-30T09:25:37.7091674Z #20 [build 13/14] COPY . .
+2026-03-30T09:25:40.6885481Z #20 DONE 3.1s
+2026-03-30T09:25:40.8399823Z 
+2026-03-30T09:25:40.8402444Z #21 [build 14/14] RUN dotnet publish src/Hpoll.Admin/Hpoll.Admin.csproj -c Release -o /app/publish --no-restore     -p:BuildBranch="claude/improve-test-coverage-AyK3U"     -p:BuildCommit="1e5569bfb76f1c5dde10eace1c8ffc17bb33c6d4"     -p:BuildNumber="309"     -p:BuildRunId="23737482936"     -p:PullRequestNumber="77"
+2026-03-30T09:25:44.3110280Z #21 3.621   Hpoll.Core -> /src/src/Hpoll.Core/bin/Release/net8.0/Hpoll.Core.dll
+2026-03-30T09:25:45.6075367Z #21 4.918   Hpoll.Data -> /src/src/Hpoll.Data/bin/Release/net8.0/Hpoll.Data.dll
+2026-03-30T09:25:47.0355978Z #21 6.346   Hpoll.Email -> /src/src/Hpoll.Email/bin/Release/net8.0/Hpoll.Email.dll
+2026-03-30T09:25:50.5614247Z #21 9.871   Hpoll.Admin -> /src/src/Hpoll.Admin/bin/Release/net8.0/Hpoll.Admin.dll
+2026-03-30T09:25:50.7370148Z #21 9.936   Hpoll.Admin -> /app/publish/
+2026-03-30T09:25:50.7370897Z #21 DONE 10.0s
+2026-03-30T09:25:50.8966495Z 
+2026-03-30T09:25:50.8968635Z #22 [runtime 2/4] WORKDIR /app
+2026-03-30T09:25:50.8969112Z #22 CACHED
+2026-03-30T09:25:50.8969369Z 
+2026-03-30T09:25:50.8970092Z #23 [runtime 3/4] RUN adduser --disabled-password --gecos "" appuser     && mkdir -p /app/data     && chown -R appuser:appuser /app
+2026-03-30T09:25:50.8971075Z #23 CACHED
+2026-03-30T09:25:51.0522954Z 
+2026-03-30T09:25:51.0524642Z #23 [runtime 3/4] RUN adduser --disabled-password --gecos "" appuser     && mkdir -p /app/data     && chown -R appuser:appuser /app
+2026-03-30T09:25:51.0525930Z #23 sha256:5c6d3f21dc5088ce49d7b61c5b59b594ddc2d3e4e6920d1f51b79b318784e907 3.42kB / 3.42kB 0.1s done
+2026-03-30T09:25:51.0526875Z #23 sha256:2fbff3e65b417eeaa72fc1c2806a0b494a2078e6a5dd6432ec6fa4481941e89d 0B / 93B 0.2s
+2026-03-30T09:25:51.1835915Z #23 sha256:2fbff3e65b417eeaa72fc1c2806a0b494a2078e6a5dd6432ec6fa4481941e89d 93B / 93B 0.3s done
+2026-03-30T09:25:51.1836710Z #23 DONE 0.4s
+2026-03-30T09:25:51.3908100Z 
+2026-03-30T09:25:51.3909204Z #23 [runtime 3/4] RUN adduser --disabled-password --gecos "" appuser     && mkdir -p /app/data     && chown -R appuser:appuser /app
+2026-03-30T09:25:51.3910217Z #23 extracting sha256:2fbff3e65b417eeaa72fc1c2806a0b494a2078e6a5dd6432ec6fa4481941e89d done
+2026-03-30T09:25:51.3911009Z #23 extracting sha256:5c6d3f21dc5088ce49d7b61c5b59b594ddc2d3e4e6920d1f51b79b318784e907 done
+2026-03-30T09:25:51.3911534Z #23 DONE 0.4s
+2026-03-30T09:25:51.3911660Z 
+2026-03-30T09:25:51.3912534Z #24 [runtime 4/4] COPY --from=build --chown=appuser:appuser /app/publish .
+2026-03-30T09:25:51.3913146Z #24 DONE 0.0s
+2026-03-30T09:25:51.3913272Z 
+2026-03-30T09:25:51.3913362Z #25 exporting to image
+2026-03-30T09:25:51.3913600Z #25 exporting layers
+2026-03-30T09:25:52.4689345Z #25 exporting layers 1.2s done
+2026-03-30T09:25:52.6448842Z #25 exporting manifest sha256:515d3cbd6c1e6db6186d253e0142c59940cfd0b076e268aa611b90dcbc65e884 done
+2026-03-30T09:25:52.6450031Z #25 exporting config sha256:aaaf581c282a51f71ab2d0dfc2f7914eb06d87947355b21d134db09ace343689 done
+2026-03-30T09:25:52.6451250Z #25 exporting attestation manifest sha256:07a1429a826f773339e3c111867272feb193e523ffc793fc00d3b2385b344f01 done
+2026-03-30T09:25:52.6452784Z #25 exporting manifest list sha256:78352216c44a4214626558dd841224fd7aae1aadca8f1caa9eff094895566fa3 done
+2026-03-30T09:25:52.6453587Z #25 DONE 1.3s
+2026-03-30T09:25:52.6453759Z 
+2026-03-30T09:25:52.6453908Z #26 exporting to GitHub Actions Cache
+2026-03-30T09:25:52.6454338Z #26 preparing build cache for export
+2026-03-30T09:25:52.8558074Z #26 ...
+2026-03-30T09:25:52.8558336Z 
+2026-03-30T09:25:52.8559004Z #27 [auth] ***/hpoll-admin:pull,push token for registry-1.docker.io
+2026-03-30T09:25:52.8559576Z #27 DONE 0.0s
+2026-03-30T09:25:53.0059737Z 
+2026-03-30T09:25:53.0060688Z #26 exporting to GitHub Actions Cache
+2026-03-30T09:25:55.4350329Z #26 preparing build cache for export 2.9s done
+2026-03-30T09:25:55.4350901Z #26 sending cache export
+2026-03-30T09:25:55.9829822Z #26 writing layer sha256:49d044d54ec7f4cf8cf4cfc1155af38c4aa6e8791cec7cdc237d9ca33e56b948
+2026-03-30T09:25:59.9321787Z #26 writing layer sha256:49d044d54ec7f4cf8cf4cfc1155af38c4aa6e8791cec7cdc237d9ca33e56b948 3.9s done
+2026-03-30T09:26:00.1718063Z #26 writing layer sha256:507f16ccf5e440212debd956b293d7bc02e14362e64c06bfde1cfe31676daa24
+2026-03-30T09:26:00.9449479Z #26 writing layer sha256:507f16ccf5e440212debd956b293d7bc02e14362e64c06bfde1cfe31676daa24 0.8s done
+2026-03-30T09:26:01.6910348Z #26 writing layer sha256:9f243f8ecece9a6374edf40b80524abc636a575e6f22e83d3b0e5e00af071cb5
+2026-03-30T09:26:04.0361837Z #26 writing layer sha256:9f243f8ecece9a6374edf40b80524abc636a575e6f22e83d3b0e5e00af071cb5 2.3s done
+2026-03-30T09:26:05.3603577Z #26 sending cache export 9.9s done
+2026-03-30T09:26:05.3604514Z #26 DONE 12.9s
+2026-03-30T09:26:05.3927840Z 
+2026-03-30T09:26:05.3928413Z #28 resolving provenance for metadata file
+2026-03-30T09:26:05.3928741Z #28 DONE 0.0s
+2026-03-30T09:26:05.4021466Z ##[group]ImageID
+2026-03-30T09:26:05.4022238Z sha256:78352216c44a4214626558dd841224fd7aae1aadca8f1caa9eff094895566fa3
+2026-03-30T09:26:05.4033403Z ##[endgroup]
+2026-03-30T09:26:05.4033942Z ##[group]Digest
+2026-03-30T09:26:05.4034466Z sha256:78352216c44a4214626558dd841224fd7aae1aadca8f1caa9eff094895566fa3
+2026-03-30T09:26:05.4035331Z ##[endgroup]
+2026-03-30T09:26:05.4035894Z ##[group]Metadata
+2026-03-30T09:26:05.4036216Z {
+2026-03-30T09:26:05.4036538Z   "buildx.build.provenance": {
+2026-03-30T09:26:05.4036947Z     "builder": {
+2026-03-30T09:26:05.4037663Z       "id": "https://github.com/***/hpoll/actions/runs/23737482936/attempts/1"
+2026-03-30T09:26:05.4038307Z     },
+2026-03-30T09:26:05.4038710Z     "buildType": "https://mobyproject.org/buildkit@v1",
+2026-03-30T09:26:05.4039218Z     "materials": [
+2026-03-30T09:26:05.4039515Z       {
+2026-03-30T09:26:05.4040026Z         "uri": "pkg:docker/mcr.microsoft.com/dotnet/aspnet@8.0?platform=linux%2Famd64",
+2026-03-30T09:26:05.4040688Z         "digest": {
+2026-03-30T09:26:05.4041236Z           "sha256": "d4d80bf500f4c8307e5c44bf61eb58aec027da07c4d1c40816846fe5eef3f34d"
+2026-03-30T09:26:05.4042167Z         }
+2026-03-30T09:26:05.4042451Z       },
+2026-03-30T09:26:05.4042714Z       {
+2026-03-30T09:26:05.4043211Z         "uri": "pkg:docker/mcr.microsoft.com/dotnet/sdk@8.0?platform=linux%2Famd64",
+2026-03-30T09:26:05.4043858Z         "digest": {
+2026-03-30T09:26:05.4044411Z           "sha256": "a9330090b730c2abde8f3f43b3d1e24e4b8cba028de7bab1a7fdcd50cb7a3b7e"
+2026-03-30T09:26:05.4045205Z         }
+2026-03-30T09:26:05.4045469Z       }
+2026-03-30T09:26:05.4046049Z     ],
+2026-03-30T09:26:05.4046599Z     "invocation": {
+2026-03-30T09:26:05.4046995Z       "configSource": {
+2026-03-30T09:26:05.4047412Z         "entryPoint": "Dockerfile.admin"
+2026-03-30T09:26:05.4047868Z       },
+2026-03-30T09:26:05.4048177Z       "parameters": {
+2026-03-30T09:26:05.4048568Z         "frontend": "dockerfile.v0",
+2026-03-30T09:26:05.4048996Z         "args": {
+2026-03-30T09:26:05.4049508Z           "build-arg:BUILD_BRANCH": "claude/improve-test-coverage-AyK3U",
+2026-03-30T09:26:05.4050329Z           "build-arg:BUILD_COMMIT": "1e5569bfb76f1c5dde10eace1c8ffc17bb33c6d4",
+2026-03-30T09:26:05.4050987Z           "build-arg:BUILD_NUMBER": "309",
+2026-03-30T09:26:05.4051457Z           "build-arg:BUILD_RUN_ID": "23737482936",
+2026-03-30T09:26:05.4052184Z           "build-arg:PULL_REQUEST_NUMBER": "77"
+2026-03-30T09:26:05.4052630Z         },
+2026-03-30T09:26:05.4052914Z         "locals": [
+2026-03-30T09:26:05.4053268Z           {
+2026-03-30T09:26:05.4053570Z             "name": "context"
+2026-03-30T09:26:05.4053959Z           },
+2026-03-30T09:26:05.4054240Z           {
+2026-03-30T09:26:05.4054541Z             "name": "dockerfile"
+2026-03-30T09:26:05.4054919Z           }
+2026-03-30T09:26:05.4055196Z         ]
+2026-03-30T09:26:05.4055478Z       },
+2026-03-30T09:26:05.4055782Z       "environment": {
+2026-03-30T09:26:05.4056261Z         "github_actor": "***",
+2026-03-30T09:26:05.4056703Z         "github_actor_id": "169779439",
+2026-03-30T09:26:05.4057169Z         "github_event_name": "pull_request",
+2026-03-30T09:26:05.4057653Z         "github_event_payload": {
+2026-03-30T09:26:05.4058061Z           "action": "synchronize",
+2026-03-30T09:26:05.4058503Z           "after": "17d93eaa929c01f056a5a098b9561d6aca1322b6",
+2026-03-30T09:26:05.4059053Z           "before": "fe5a6ce3fcca1cb1bf9488a5f5b90ac3096469e0",
+2026-03-30T09:26:05.4059655Z           "number": 77,
+2026-03-30T09:26:05.4060055Z           "pull_request": {
+2026-03-30T09:26:05.4060388Z             "_links": {
+2026-03-30T09:26:05.4060755Z               "comments": {
+2026-03-30T09:26:05.4061389Z                 "href": "https://api.github.com/repos/***/hpoll/issues/77/comments"
+2026-03-30T09:26:05.4062699Z               },
+2026-03-30T09:26:05.4063024Z               "commits": {
+2026-03-30T09:26:05.4063679Z                 "href": "https://api.github.com/repos/***/hpoll/pulls/77/commits"
+2026-03-30T09:26:05.4064331Z               },
+2026-03-30T09:26:05.4064659Z               "html": {
+2026-03-30T09:26:05.4065154Z                 "href": "https://github.com/***/hpoll/pull/77"
+2026-03-30T09:26:05.4065665Z               },
+2026-03-30T09:26:05.4065979Z               "issue": {
+2026-03-30T09:26:05.4066536Z                 "href": "https://api.github.com/repos/***/hpoll/issues/77"
+2026-03-30T09:26:05.4067127Z               },
+2026-03-30T09:26:05.4067463Z               "review_comment": {
+2026-03-30T09:26:05.4068138Z                 "href": "https://api.github.com/repos/***/hpoll/pulls/comments{/number}"
+2026-03-30T09:26:05.4068811Z               },
+2026-03-30T09:26:05.4069162Z               "review_comments": {
+2026-03-30T09:26:05.4069936Z                 "href": "https://api.github.com/repos/***/hpoll/pulls/77/comments"
+2026-03-30T09:26:05.4070597Z               },
+2026-03-30T09:26:05.4070916Z               "self": {
+2026-03-30T09:26:05.4071439Z                 "href": "https://api.github.com/repos/***/hpoll/pulls/77"
+2026-03-30T09:26:05.4072169Z               },
+2026-03-30T09:26:05.4072462Z               "statuses": {
+2026-03-30T09:26:05.4073416Z                 "href": "https://api.github.com/repos/***/hpoll/statuses/17d93eaa929c01f056a5a098b9561d6aca1322b6"
+2026-03-30T09:26:05.4074258Z               }
+2026-03-30T09:26:05.4074577Z             },
+2026-03-30T09:26:05.4074888Z             "active_lock_reason": null,
+2026-03-30T09:26:05.4075366Z             "additions": 682,
+2026-03-30T09:26:05.4075768Z             "assignee": null,
+2026-03-30T09:26:05.4076166Z             "assignees": [],
+2026-03-30T09:26:05.4076569Z             "author_association": "OWNER",
+2026-03-30T09:26:05.4077492Z             "auto_merge": null,
+2026-03-30T09:26:05.4077910Z             "base": {
+2026-03-30T09:26:05.4078310Z               "label": "***:main",
+2026-03-30T09:26:05.4078731Z               "ref": "main",
+2026-03-30T09:26:05.4079110Z               "repo": {
+2026-03-30T09:26:05.4079477Z                 "allow_auto_merge": false,
+2026-03-30T09:26:05.4079944Z                 "allow_forking": true,
+2026-03-30T09:26:05.4080414Z                 "allow_merge_commit": true,
+2026-03-30T09:26:05.4080908Z                 "allow_rebase_merge": true,
+2026-03-30T09:26:05.4081375Z                 "allow_squash_merge": true,
+2026-03-30T09:26:05.4082058Z                 "allow_update_branch": false,
+2026-03-30T09:26:05.4082881Z                 "archive_url": "https://api.github.com/repos/***/hpoll/{archive_format}{/ref}",
+2026-03-30T09:26:05.4083622Z                 "archived": false,
+2026-03-30T09:26:05.4084345Z                 "assignees_url": "https://api.github.com/repos/***/hpoll/assignees{/user}",
+2026-03-30T09:26:05.4085354Z                 "blobs_url": "https://api.github.com/repos/***/hpoll/git/blobs{/sha}",
+2026-03-30T09:26:05.4086390Z                 "branches_url": "https://api.github.com/repos/***/hpoll/branches{/branch}",
+2026-03-30T09:26:05.4087317Z                 "clone_url": "https://github.com/***/hpoll.git",
+2026-03-30T09:26:05.4088254Z                 "collaborators_url": "https://api.github.com/repos/***/hpoll/collaborators{/collaborator}",
+2026-03-30T09:26:05.4089326Z                 "comments_url": "https://api.github.com/repos/***/hpoll/comments{/number}",
+2026-03-30T09:26:05.4090219Z                 "commits_url": "https://api.github.com/repos/***/hpoll/commits{/sha}",
+2026-03-30T09:26:05.4091331Z                 "compare_url": "https://api.github.com/repos/***/hpoll/compare/{base}...{head}",
+2026-03-30T09:26:05.4092727Z                 "contents_url": "https://api.github.com/repos/***/hpoll/contents/{+path}",
+2026-03-30T09:26:05.4093737Z                 "contributors_url": "https://api.github.com/repos/***/hpoll/contributors",
+2026-03-30T09:26:05.4094427Z                 "created_at": "2026-02-26T10:01:58Z",
+2026-03-30T09:26:05.4094905Z                 "default_branch": "main",
+2026-03-30T09:26:05.4095383Z                 "delete_branch_on_merge": false,
+2026-03-30T09:26:05.4096013Z                 "deployments_url": "https://api.github.com/repos/***/hpoll/deployments",
+2026-03-30T09:26:05.4096621Z                 "description": null,
+2026-03-30T09:26:05.4097116Z                 "disabled": false,
+2026-03-30T09:26:05.4097970Z                 "downloads_url": "https://api.github.com/repos/***/hpoll/downloads",
+2026-03-30T09:26:05.4098738Z                 "events_url": "https://api.github.com/repos/***/hpoll/events",
+2026-03-30T09:26:05.4099302Z                 "fork": false,
+2026-03-30T09:26:05.4099617Z                 "forks": 0,
+2026-03-30T09:26:05.4099936Z                 "forks_count": 0,
+2026-03-30T09:26:05.4100487Z                 "forks_url": "https://api.github.com/repos/***/hpoll/forks",
+2026-03-30T09:26:05.4101151Z                 "full_name": "***/hpoll",
+2026-03-30T09:26:05.4102258Z                 "git_commits_url": "https://api.github.com/repos/***/hpoll/git/commits{/sha}",
+2026-03-30T09:26:05.4103145Z                 "git_refs_url": "https://api.github.com/repos/***/hpoll/git/refs{/sha}",
+2026-03-30T09:26:05.4103926Z                 "git_tags_url": "https://api.github.com/repos/***/hpoll/git/tags{/sha}",
+2026-03-30T09:26:05.4104648Z                 "git_url": "git://github.com/***/hpoll.git",
+2026-03-30T09:26:05.4105243Z                 "has_discussions": false,
+2026-03-30T09:26:05.4105786Z                 "has_downloads": true,
+2026-03-30T09:26:05.4106180Z                 "has_issues": true,
+2026-03-30T09:26:05.4106567Z                 "has_pages": false,
+2026-03-30T09:26:05.4106793Z                 "has_projects": true,
+2026-03-30T09:26:05.4107038Z                 "has_pull_requests": true,
+2026-03-30T09:26:05.4107282Z                 "has_wiki": true,
+2026-03-30T09:26:05.4107847Z                 "homepage": null,
+2026-03-30T09:26:05.4108226Z                 "hooks_url": "https://api.github.com/repos/***/hpoll/hooks",
+2026-03-30T09:26:05.4108624Z                 "html_url": "https://github.com/***/hpoll",
+2026-03-30T09:26:05.4108919Z                 "id": 1167451352,
+2026-03-30T09:26:05.4109136Z                 "is_template": false,
+2026-03-30T09:26:05.4109559Z                 "issue_comment_url": "https://api.github.com/repos/***/hpoll/issues/comments{/number}",
+2026-03-30T09:26:05.4110148Z                 "issue_events_url": "https://api.github.com/repos/***/hpoll/issues/events{/number}",
+2026-03-30T09:26:05.4110672Z                 "issues_url": "https://api.github.com/repos/***/hpoll/issues{/number}",
+2026-03-30T09:26:05.4111149Z                 "keys_url": "https://api.github.com/repos/***/hpoll/keys{/key_id}",
+2026-03-30T09:26:05.4111622Z                 "labels_url": "https://api.github.com/repos/***/hpoll/labels{/name}",
+2026-03-30T09:26:05.4112328Z                 "language": "C#",
+2026-03-30T09:26:05.4112681Z                 "languages_url": "https://api.github.com/repos/***/hpoll/languages",
+2026-03-30T09:26:05.4113035Z                 "license": null,
+2026-03-30T09:26:05.4113280Z                 "merge_commit_message": "PR_TITLE",
+2026-03-30T09:26:05.4113824Z                 "merge_commit_title": "MERGE_MESSAGE",
+2026-03-30T09:26:05.4114295Z                 "merges_url": "https://api.github.com/repos/***/hpoll/merges",
+2026-03-30T09:26:05.4114944Z                 "milestones_url": "https://api.github.com/repos/***/hpoll/milestones{/number}",
+2026-03-30T09:26:05.4115505Z                 "mirror_url": null,
+2026-03-30T09:26:05.4115801Z                 "name": "hpoll",
+2026-03-30T09:26:05.4116108Z                 "node_id": "R_kgDORZXk2A",
+2026-03-30T09:26:05.4116766Z                 "notifications_url": "https://api.github.com/repos/***/hpoll/notifications{?since,all,participating}",
+2026-03-30T09:26:05.4117332Z                 "open_issues": 1,
+2026-03-30T09:26:05.4117686Z                 "open_issues_count": 1,
+2026-03-30T09:26:05.4118078Z                 "owner": {
+2026-03-30T09:26:05.4118510Z                   "avatar_url": "https://avatars.githubusercontent.com/u/169779439?v=4",
+2026-03-30T09:26:05.4119043Z                   "events_url": "https://api.github.com/users/***/events{/privacy}",
+2026-03-30T09:26:05.4119653Z                   "followers_url": "https://api.github.com/users/***/followers",
+2026-03-30T09:26:05.4133090Z                   "following_url": "https://api.github.com/users/***/following{/other_user}",
+2026-03-30T09:26:05.4133953Z                   "gists_url": "https://api.github.com/users/***/gists{/gist_id}",
+2026-03-30T09:26:05.4134562Z                   "gravatar_id": "",
+2026-03-30T09:26:05.4135067Z                   "html_url": "https://github.com/***",
+2026-03-30T09:26:05.4135556Z                   "id": 169779439,
+2026-03-30T09:26:05.4135829Z                   "login": "***",
+2026-03-30T09:26:05.4136070Z                   "node_id": "U_kgDOCh6g7w",
+2026-03-30T09:26:05.4136461Z                   "organizations_url": "https://api.github.com/users/***/orgs",
+2026-03-30T09:26:05.4136975Z                   "received_events_url": "https://api.github.com/users/***/received_events",
+2026-03-30T09:26:05.4137806Z                   "repos_url": "https://api.github.com/users/***/repos",
+2026-03-30T09:26:05.4138394Z                   "site_admin": false,
+2026-03-30T09:26:05.4139119Z                   "starred_url": "https://api.github.com/users/***/starred{/owner}{/repo}",
+2026-03-30T09:26:05.4140109Z                   "subscriptions_url": "https://api.github.com/users/***/subscriptions",
+2026-03-30T09:26:05.4140839Z                   "type": "User",
+2026-03-30T09:26:05.4141370Z                   "url": "https://api.github.com/users/***",
+2026-03-30T09:26:05.4143589Z                   "user_view_type": "public"
+2026-03-30T09:26:05.4144071Z                 },
+2026-03-30T09:26:05.4144423Z                 "private": false,
+2026-03-30T09:26:05.4145394Z                 "pull_request_creation_policy": "all",
+2026-03-30T09:26:05.4146187Z                 "pulls_url": "https://api.github.com/repos/***/hpoll/pulls{/number}",
+2026-03-30T09:26:05.4146924Z                 "pushed_at": "2026-03-30T09:23:06Z",
+2026-03-30T09:26:05.4147669Z                 "releases_url": "https://api.github.com/repos/***/hpoll/releases{/id}",
+2026-03-30T09:26:05.4148356Z                 "size": 3166,
+2026-03-30T09:26:05.4148848Z                 "squash_merge_commit_message": "COMMIT_MESSAGES",
+2026-03-30T09:26:05.4149449Z                 "squash_merge_commit_title": "COMMIT_OR_PR_TITLE",
+2026-03-30T09:26:05.4150022Z                 "ssh_url": "git@github.com:***/hpoll.git",
+2026-03-30T09:26:05.4150336Z                 "stargazers_count": 0,
+2026-03-30T09:26:05.4150730Z                 "stargazers_url": "https://api.github.com/repos/***/hpoll/stargazers",
+2026-03-30T09:26:05.4151251Z                 "statuses_url": "https://api.github.com/repos/***/hpoll/statuses/{sha}",
+2026-03-30T09:26:05.4151781Z                 "subscribers_url": "https://api.github.com/repos/***/hpoll/subscribers",
+2026-03-30T09:26:05.4152787Z                 "subscription_url": "https://api.github.com/repos/***/hpoll/subscription",
+2026-03-30T09:26:05.4153270Z                 "svn_url": "https://github.com/***/hpoll",
+2026-03-30T09:26:05.4153641Z                 "tags_url": "https://api.github.com/repos/***/hpoll/tags",
+2026-03-30T09:26:05.4154058Z                 "teams_url": "https://api.github.com/repos/***/hpoll/teams",
+2026-03-30T09:26:05.4154385Z                 "topics": [],
+2026-03-30T09:26:05.4154725Z                 "trees_url": "https://api.github.com/repos/***/hpoll/git/trees{/sha}",
+2026-03-30T09:26:05.4155100Z                 "updated_at": "2026-03-29T16:36:18Z",
+2026-03-30T09:26:05.4155431Z                 "url": "https://api.github.com/repos/***/hpoll",
+2026-03-30T09:26:05.4155755Z                 "use_squash_pr_title_as_default": false,
+2026-03-30T09:26:05.4156045Z                 "visibility": "public",
+2026-03-30T09:26:05.4156304Z                 "watchers": 0,
+2026-03-30T09:26:05.4156525Z                 "watchers_count": 0,
+2026-03-30T09:26:05.4156785Z                 "web_commit_signoff_required": false
+2026-03-30T09:26:05.4157032Z               },
+2026-03-30T09:26:05.4157263Z               "sha": "4288f775f0fd3f7b7e0c22cbd9cf0e3ec7cb5b88",
+2026-03-30T09:26:05.4157546Z               "user": {
+2026-03-30T09:26:05.4157853Z                 "avatar_url": "https://avatars.githubusercontent.com/u/169779439?v=4",
+2026-03-30T09:26:05.4158338Z                 "events_url": "https://api.github.com/users/***/events{/privacy}",
+2026-03-30T09:26:05.4158782Z                 "followers_url": "https://api.github.com/users/***/followers",
+2026-03-30T09:26:05.4159256Z                 "following_url": "https://api.github.com/users/***/following{/other_user}",
+2026-03-30T09:26:05.4159727Z                 "gists_url": "https://api.github.com/users/***/gists{/gist_id}",
+2026-03-30T09:26:05.4160061Z                 "gravatar_id": "",
+2026-03-30T09:26:05.4160335Z                 "html_url": "https://github.com/***",
+2026-03-30T09:26:05.4160598Z                 "id": 169779439,
+2026-03-30T09:26:05.4160826Z                 "login": "***",
+2026-03-30T09:26:05.4161056Z                 "node_id": "U_kgDOCh6g7w",
+2026-03-30T09:26:05.4161402Z                 "organizations_url": "https://api.github.com/users/***/orgs",
+2026-03-30T09:26:05.4162107Z                 "received_events_url": "https://api.github.com/users/***/received_events",
+2026-03-30T09:26:05.4162567Z                 "repos_url": "https://api.github.com/users/***/repos",
+2026-03-30T09:26:05.4162873Z                 "site_admin": false,
+2026-03-30T09:26:05.4163233Z                 "starred_url": "https://api.github.com/users/***/starred{/owner}{/repo}",
+2026-03-30T09:26:05.4163727Z                 "subscriptions_url": "https://api.github.com/users/***/subscriptions",
+2026-03-30T09:26:05.4164082Z                 "type": "User",
+2026-03-30T09:26:05.4164559Z                 "url": "https://api.github.com/users/***",
+2026-03-30T09:26:05.4165014Z                 "user_view_type": "public"
+2026-03-30T09:26:05.4165247Z               }
+2026-03-30T09:26:05.4165413Z             },
+2026-03-30T09:26:05.4172726Z             "body": "## Summary\r\n\r\n- Add tests for email preview exception handling in customer Detail page (covers catch block in LoadEmailPreviewAsync)\r\n- Add tests for malformed JSON parsing in activity summary (motion and temperature readings with invalid JSON)\r\n- Add concurrent export lock contention test for sanitized database export (About page)\r\n- Add SendTimeHelper boundary tests: exact-at-now times, DST spring-forward UTC conversion, null/whitespace fallback paths\r\n- Add DatabaseBackupService tests: cancellation handling, InitializeStats error resilience, file timestamp verification\r\n- Add TokenRefreshService tests: retry exhaustion with token unchanged, graceful cancellation during delay\r\n\r\n## Changes\r\n\r\n- `tests/Hpoll.Admin.Tests/Customers/DetailModelTests.cs` — 5 new tests: email preview exception handling, malformed motion/temperature JSON, missing \"changed\" property\r\n- `tests/Hpoll.Admin.Tests/AboutModelTests.cs` — 1 new test: concurrent export returns lock contention error\r\n- `tests/Hpoll.Core.Tests/SendTimeHelperTests.cs` — 7 new tests: boundary conditions, DST spring-forward UTC validation, fallback chains\r\n- `tests/Hpoll.Worker.Tests/DatabaseBackupServiceTests.cs` — 4 new tests: cancellation logging, InitializeStats error path, file timestamp stats\r\n- `tests/Hpoll.Worker.Tests/TokenRefreshServiceTests.cs` — 3 new tests: retry exhaustion, cancellation during delay\r\n\r\n## Test Plan\r\n\r\n- [x] All 585 tests pass locally (247 Admin, 155 Worker, 183 Core)\r\n- [ ] CI build passes on branch\r\n- [ ] Coverage reports confirm improved line/branch rates for Detail.cshtml.cs, About.cshtml.cs, SendTimeHelper.cs, DatabaseBackupService.cs, TokenRefreshService.cs\r\n",
+2026-03-30T09:26:05.4178818Z             "changed_files": 8,
+2026-03-30T09:26:05.4179064Z             "closed_at": null,
+2026-03-30T09:26:05.4179280Z             "comments": 1,
+2026-03-30T09:26:05.4179663Z             "comments_url": "https://api.github.com/repos/***/hpoll/issues/77/comments",
+2026-03-30T09:26:05.4180050Z             "commits": 3,
+2026-03-30T09:26:05.4180391Z             "commits_url": "https://api.github.com/repos/***/hpoll/pulls/77/commits",
+2026-03-30T09:26:05.4180769Z             "created_at": "2026-03-30T07:00:35Z",
+2026-03-30T09:26:05.4181024Z             "deletions": 0,
+2026-03-30T09:26:05.4181316Z             "diff_url": "https://github.com/***/hpoll/pull/77.diff",
+2026-03-30T09:26:05.4181622Z             "draft": false,
+2026-03-30T09:26:05.4182012Z             "head": {
+2026-03-30T09:26:05.4182348Z               "label": "***:claude/improve-test-coverage-AyK3U",
+2026-03-30T09:26:05.4182694Z               "ref": "claude/improve-test-coverage-AyK3U",
+2026-03-30T09:26:05.4182972Z               "repo": {
+2026-03-30T09:26:05.4183173Z                 "allow_auto_merge": false,
+2026-03-30T09:26:05.4183443Z                 "allow_forking": true,
+2026-03-30T09:26:05.4183686Z                 "allow_merge_commit": true,
+2026-03-30T09:26:05.4183930Z                 "allow_rebase_merge": true,
+2026-03-30T09:26:05.4184170Z                 "allow_squash_merge": true,
+2026-03-30T09:26:05.4184420Z                 "allow_update_branch": false,
+2026-03-30T09:26:05.4184829Z                 "archive_url": "https://api.github.com/repos/***/hpoll/{archive_format}{/ref}",
+2026-03-30T09:26:05.4185223Z                 "archived": false,
+2026-03-30T09:26:05.4185595Z                 "assignees_url": "https://api.github.com/repos/***/hpoll/assignees{/user}",
+2026-03-30T09:26:05.4186097Z                 "blobs_url": "https://api.github.com/repos/***/hpoll/git/blobs{/sha}",
+2026-03-30T09:26:05.4186596Z                 "branches_url": "https://api.github.com/repos/***/hpoll/branches{/branch}",
+2026-03-30T09:26:05.4187036Z                 "clone_url": "https://github.com/***/hpoll.git",
+2026-03-30T09:26:05.4187803Z                 "collaborators_url": "https://api.github.com/repos/***/hpoll/collaborators{/collaborator}",
+2026-03-30T09:26:05.4188392Z                 "comments_url": "https://api.github.com/repos/***/hpoll/comments{/number}",
+2026-03-30T09:26:05.4188905Z                 "commits_url": "https://api.github.com/repos/***/hpoll/commits{/sha}",
+2026-03-30T09:26:05.4189421Z                 "compare_url": "https://api.github.com/repos/***/hpoll/compare/{base}...{head}",
+2026-03-30T09:26:05.4189956Z                 "contents_url": "https://api.github.com/repos/***/hpoll/contents/{+path}",
+2026-03-30T09:26:05.4190470Z                 "contributors_url": "https://api.github.com/repos/***/hpoll/contributors",
+2026-03-30T09:26:05.4190870Z                 "created_at": "2026-02-26T10:01:58Z",
+2026-03-30T09:26:05.4191133Z                 "default_branch": "main",
+2026-03-30T09:26:05.4191393Z                 "delete_branch_on_merge": false,
+2026-03-30T09:26:05.4191792Z                 "deployments_url": "https://api.github.com/repos/***/hpoll/deployments",
+2026-03-30T09:26:05.4192547Z                 "description": null,
+2026-03-30T09:26:05.4192784Z                 "disabled": false,
+2026-03-30T09:26:05.4193141Z                 "downloads_url": "https://api.github.com/repos/***/hpoll/downloads",
+2026-03-30T09:26:05.4193593Z                 "events_url": "https://api.github.com/repos/***/hpoll/events",
+2026-03-30T09:26:05.4193924Z                 "fork": false,
+2026-03-30T09:26:05.4194130Z                 "forks": 0,
+2026-03-30T09:26:05.4194336Z                 "forks_count": 0,
+2026-03-30T09:26:05.4194648Z                 "forks_url": "https://api.github.com/repos/***/hpoll/forks",
+2026-03-30T09:26:05.4194993Z                 "full_name": "***/hpoll",
+2026-03-30T09:26:05.4195387Z                 "git_commits_url": "https://api.github.com/repos/***/hpoll/git/commits{/sha}",
+2026-03-30T09:26:05.4195897Z                 "git_refs_url": "https://api.github.com/repos/***/hpoll/git/refs{/sha}",
+2026-03-30T09:26:05.4196384Z                 "git_tags_url": "https://api.github.com/repos/***/hpoll/git/tags{/sha}",
+2026-03-30T09:26:05.4196795Z                 "git_url": "git://github.com/***/hpoll.git",
+2026-03-30T09:26:05.4197083Z                 "has_discussions": false,
+2026-03-30T09:26:05.4197334Z                 "has_downloads": true,
+2026-03-30T09:26:05.4197564Z                 "has_issues": true,
+2026-03-30T09:26:05.4197789Z                 "has_pages": false,
+2026-03-30T09:26:05.4198018Z                 "has_projects": true,
+2026-03-30T09:26:05.4198251Z                 "has_pull_requests": true,
+2026-03-30T09:26:05.4198490Z                 "has_wiki": true,
+2026-03-30T09:26:05.4198704Z                 "homepage": null,
+2026-03-30T09:26:05.4199017Z                 "hooks_url": "https://api.github.com/repos/***/hpoll/hooks",
+2026-03-30T09:26:05.4199403Z                 "html_url": "https://github.com/***/hpoll",
+2026-03-30T09:26:05.4199679Z                 "id": 1167451352,
+2026-03-30T09:26:05.4199907Z                 "is_template": false,
+2026-03-30T09:26:05.4200328Z                 "issue_comment_url": "https://api.github.com/repos/***/hpoll/issues/comments{/number}",
+2026-03-30T09:26:05.4200920Z                 "issue_events_url": "https://api.github.com/repos/***/hpoll/issues/events{/number}",
+2026-03-30T09:26:05.4201446Z                 "issues_url": "https://api.github.com/repos/***/hpoll/issues{/number}",
+2026-03-30T09:26:05.4202242Z                 "keys_url": "https://api.github.com/repos/***/hpoll/keys{/key_id}",
+2026-03-30T09:26:05.4202792Z                 "labels_url": "https://api.github.com/repos/***/hpoll/labels{/name}",
+2026-03-30T09:26:05.4203167Z                 "language": "C#",
+2026-03-30T09:26:05.4203520Z                 "languages_url": "https://api.github.com/repos/***/hpoll/languages",
+2026-03-30T09:26:05.4203871Z                 "license": null,
+2026-03-30T09:26:05.4204118Z                 "merge_commit_message": "PR_TITLE",
+2026-03-30T09:26:05.4204407Z                 "merge_commit_title": "MERGE_MESSAGE",
+2026-03-30T09:26:05.4205046Z                 "merges_url": "https://api.github.com/repos/***/hpoll/merges",
+2026-03-30T09:26:05.4205552Z                 "milestones_url": "https://api.github.com/repos/***/hpoll/milestones{/number}",
+2026-03-30T09:26:05.4205948Z                 "mirror_url": null,
+2026-03-30T09:26:05.4206181Z                 "name": "hpoll",
+2026-03-30T09:26:05.4206408Z                 "node_id": "R_kgDORZXk2A",
+2026-03-30T09:26:05.4206903Z                 "notifications_url": "https://api.github.com/repos/***/hpoll/notifications{?since,all,participating}",
+2026-03-30T09:26:05.4207383Z                 "open_issues": 1,
+2026-03-30T09:26:05.4207614Z                 "open_issues_count": 1,
+2026-03-30T09:26:05.4207852Z                 "owner": {
+2026-03-30T09:26:05.4208174Z                   "avatar_url": "https://avatars.githubusercontent.com/u/169779439?v=4",
+2026-03-30T09:26:05.4208664Z                   "events_url": "https://api.github.com/users/***/events{/privacy}",
+2026-03-30T09:26:05.4209137Z                   "followers_url": "https://api.github.com/users/***/followers",
+2026-03-30T09:26:05.4209620Z                   "following_url": "https://api.github.com/users/***/following{/other_user}",
+2026-03-30T09:26:05.4210102Z                   "gists_url": "https://api.github.com/users/***/gists{/gist_id}",
+2026-03-30T09:26:05.4210437Z                   "gravatar_id": "",
+2026-03-30T09:26:05.4210735Z                   "html_url": "https://github.com/***",
+2026-03-30T09:26:05.4210995Z                   "id": 169779439,
+2026-03-30T09:26:05.4211230Z                   "login": "***",
+2026-03-30T09:26:05.4211465Z                   "node_id": "U_kgDOCh6g7w",
+2026-03-30T09:26:05.4212129Z                   "organizations_url": "https://api.github.com/users/***/orgs",
+2026-03-30T09:26:05.4212627Z                   "received_events_url": "https://api.github.com/users/***/received_events",
+2026-03-30T09:26:05.4213082Z                   "repos_url": "https://api.github.com/users/***/repos",
+2026-03-30T09:26:05.4213408Z                   "site_admin": false,
+2026-03-30T09:26:05.4213785Z                   "starred_url": "https://api.github.com/users/***/starred{/owner}{/repo}",
+2026-03-30T09:26:05.4214294Z                   "subscriptions_url": "https://api.github.com/users/***/subscriptions",
+2026-03-30T09:26:05.4214667Z                   "type": "User",
+2026-03-30T09:26:05.4214932Z                   "url": "https://api.github.com/users/***",
+2026-03-30T09:26:05.4215221Z                   "user_view_type": "public"
+2026-03-30T09:26:05.4215455Z                 },
+2026-03-30T09:26:05.4215631Z                 "private": false,
+2026-03-30T09:26:05.4215879Z                 "pull_request_creation_policy": "all",
+2026-03-30T09:26:05.4216268Z                 "pulls_url": "https://api.github.com/repos/***/hpoll/pulls{/number}",
+2026-03-30T09:26:05.4216644Z                 "pushed_at": "2026-03-30T09:23:06Z",
+2026-03-30T09:26:05.4217028Z                 "releases_url": "https://api.github.com/repos/***/hpoll/releases{/id}",
+2026-03-30T09:26:05.4217394Z                 "size": 3166,
+2026-03-30T09:26:05.4217648Z                 "squash_merge_commit_message": "COMMIT_MESSAGES",
+2026-03-30T09:26:05.4217993Z                 "squash_merge_commit_title": "COMMIT_OR_PR_TITLE",
+2026-03-30T09:26:05.4218327Z                 "ssh_url": "git@github.com:***/hpoll.git",
+2026-03-30T09:26:05.4218603Z                 "stargazers_count": 0,
+2026-03-30T09:26:05.4218963Z                 "stargazers_url": "https://api.github.com/repos/***/hpoll/stargazers",
+2026-03-30T09:26:05.4219458Z                 "statuses_url": "https://api.github.com/repos/***/hpoll/statuses/{sha}",
+2026-03-30T09:26:05.4219953Z                 "subscribers_url": "https://api.github.com/repos/***/hpoll/subscribers",
+2026-03-30T09:26:05.4220463Z                 "subscription_url": "https://api.github.com/repos/***/hpoll/subscription",
+2026-03-30T09:26:05.4220890Z                 "svn_url": "https://github.com/***/hpoll",
+2026-03-30T09:26:05.4221501Z                 "tags_url": "https://api.github.com/repos/***/hpoll/tags",
+2026-03-30T09:26:05.4222069Z                 "teams_url": "https://api.github.com/repos/***/hpoll/teams",
+2026-03-30T09:26:05.4222402Z                 "topics": [],
+2026-03-30T09:26:05.4222737Z                 "trees_url": "https://api.github.com/repos/***/hpoll/git/trees{/sha}",
+2026-03-30T09:26:05.4223111Z                 "updated_at": "2026-03-29T16:36:18Z",
+2026-03-30T09:26:05.4223430Z                 "url": "https://api.github.com/repos/***/hpoll",
+2026-03-30T09:26:05.4223749Z                 "use_squash_pr_title_as_default": false,
+2026-03-30T09:26:05.4224024Z                 "visibility": "public",
+2026-03-30T09:26:05.4224256Z                 "watchers": 0,
+2026-03-30T09:26:05.4224471Z                 "watchers_count": 0,
+2026-03-30T09:26:05.4224722Z                 "web_commit_signoff_required": false
+2026-03-30T09:26:05.4224971Z               },
+2026-03-30T09:26:05.4225199Z               "sha": "17d93eaa929c01f056a5a098b9561d6aca1322b6",
+2026-03-30T09:26:05.4225492Z               "user": {
+2026-03-30T09:26:05.4225801Z                 "avatar_url": "https://avatars.githubusercontent.com/u/169779439?v=4",
+2026-03-30T09:26:05.4226281Z                 "events_url": "https://api.github.com/users/***/events{/privacy}",
+2026-03-30T09:26:05.4226730Z                 "followers_url": "https://api.github.com/users/***/followers",
+2026-03-30T09:26:05.4227211Z                 "following_url": "https://api.github.com/users/***/following{/other_user}",
+2026-03-30T09:26:05.4227695Z                 "gists_url": "https://api.github.com/users/***/gists{/gist_id}",
+2026-03-30T09:26:05.4228036Z                 "gravatar_id": "",
+2026-03-30T09:26:05.4228307Z                 "html_url": "https://github.com/***",
+2026-03-30T09:26:05.4228564Z                 "id": 169779439,
+2026-03-30T09:26:05.4228788Z                 "login": "***",
+2026-03-30T09:26:05.4229014Z                 "node_id": "U_kgDOCh6g7w",
+2026-03-30T09:26:05.4229374Z                 "organizations_url": "https://api.github.com/users/***/orgs",
+2026-03-30T09:26:05.4229850Z                 "received_events_url": "https://api.github.com/users/***/received_events",
+2026-03-30T09:26:05.4230301Z                 "repos_url": "https://api.github.com/users/***/repos",
+2026-03-30T09:26:05.4230615Z                 "site_admin": false,
+2026-03-30T09:26:05.4230980Z                 "starred_url": "https://api.github.com/users/***/starred{/owner}{/repo}",
+2026-03-30T09:26:05.4231475Z                 "subscriptions_url": "https://api.github.com/users/***/subscriptions",
+2026-03-30T09:26:05.4231974Z                 "type": "User",
+2026-03-30T09:26:05.4232250Z                 "url": "https://api.github.com/users/***",
+2026-03-30T09:26:05.4232533Z                 "user_view_type": "public"
+2026-03-30T09:26:05.4232762Z               }
+2026-03-30T09:26:05.4232923Z             },
+2026-03-30T09:26:05.4233166Z             "html_url": "https://github.com/***/hpoll/pull/77",
+2026-03-30T09:26:05.4233454Z             "id": 3464673062,
+2026-03-30T09:26:05.4233779Z             "issue_url": "https://api.github.com/repos/***/hpoll/issues/77",
+2026-03-30T09:26:05.4234104Z             "labels": [],
+2026-03-30T09:26:05.4234303Z             "locked": false,
+2026-03-30T09:26:05.4234524Z             "maintainer_can_modify": false,
+2026-03-30T09:26:05.4234842Z             "merge_commit_sha": "64f5d12eb5a37c995799a47434dfc08f3ea98646",
+2026-03-30T09:26:05.4235168Z             "mergeable": null,
+2026-03-30T09:26:05.4235389Z             "mergeable_state": "unknown",
+2026-03-30T09:26:05.4235621Z             "merged": false,
+2026-03-30T09:26:05.4235823Z             "merged_at": null,
+2026-03-30T09:26:05.4236028Z             "merged_by": null,
+2026-03-30T09:26:05.4236226Z             "milestone": null,
+2026-03-30T09:26:05.4236451Z             "node_id": "PR_kwDORZXk2M7Ogrcm",
+2026-03-30T09:26:05.4236699Z             "number": 77,
+2026-03-30T09:26:05.4236983Z             "patch_url": "https://github.com/***/hpoll/pull/77.patch",
+2026-03-30T09:26:05.4237537Z             "rebaseable": null,
+2026-03-30T09:26:05.4237765Z             "requested_reviewers": [],
+2026-03-30T09:26:05.4238008Z             "requested_teams": [],
+2026-03-30T09:26:05.4238413Z             "review_comment_url": "https://api.github.com/repos/***/hpoll/pulls/comments{/number}",
+2026-03-30T09:26:05.4238832Z             "review_comments": 0,
+2026-03-30T09:26:05.4239219Z             "review_comments_url": "https://api.github.com/repos/***/hpoll/pulls/77/comments",
+2026-03-30T09:26:05.4239615Z             "state": "open",
+2026-03-30T09:26:05.4240083Z             "statuses_url": "https://api.github.com/repos/***/hpoll/statuses/17d93eaa929c01f056a5a098b9561d6aca1322b6",
+2026-03-30T09:26:05.4240648Z             "title": "Add unit tests for uncovered code paths in recent changes",
+2026-03-30T09:26:05.4241012Z             "updated_at": "2026-03-30T09:23:07Z",
+2026-03-30T09:26:05.4241348Z             "url": "https://api.github.com/repos/***/hpoll/pulls/77",
+2026-03-30T09:26:05.4241654Z             "user": {
+2026-03-30T09:26:05.4242335Z               "avatar_url": "https://avatars.githubusercontent.com/u/169779439?v=4",
+2026-03-30T09:26:05.4242846Z               "events_url": "https://api.github.com/users/***/events{/privacy}",
+2026-03-30T09:26:05.4243293Z               "followers_url": "https://api.github.com/users/***/followers",
+2026-03-30T09:26:05.4243769Z               "following_url": "https://api.github.com/users/***/following{/other_user}",
+2026-03-30T09:26:05.4244242Z               "gists_url": "https://api.github.com/users/***/gists{/gist_id}",
+2026-03-30T09:26:05.4244574Z               "gravatar_id": "",
+2026-03-30T09:26:05.4244835Z               "html_url": "https://github.com/***",
+2026-03-30T09:26:05.4245102Z               "id": 169779439,
+2026-03-30T09:26:05.4245316Z               "login": "***",
+2026-03-30T09:26:05.4245529Z               "node_id": "U_kgDOCh6g7w",
+2026-03-30T09:26:05.4245872Z               "organizations_url": "https://api.github.com/users/***/orgs",
+2026-03-30T09:26:05.4246355Z               "received_events_url": "https://api.github.com/users/***/received_events",
+2026-03-30T09:26:05.4246800Z               "repos_url": "https://api.github.com/users/***/repos",
+2026-03-30T09:26:05.4247109Z               "site_admin": false,
+2026-03-30T09:26:05.4247465Z               "starred_url": "https://api.github.com/users/***/starred{/owner}{/repo}",
+2026-03-30T09:26:05.4247949Z               "subscriptions_url": "https://api.github.com/users/***/subscriptions",
+2026-03-30T09:26:05.4248308Z               "type": "User",
+2026-03-30T09:26:05.4248569Z               "url": "https://api.github.com/users/***",
+2026-03-30T09:26:05.4248852Z               "user_view_type": "public"
+2026-03-30T09:26:05.4249079Z             }
+2026-03-30T09:26:05.4249296Z           },
+2026-03-30T09:26:05.4249472Z           "repository": {
+2026-03-30T09:26:05.4249675Z             "allow_forking": true,
+2026-03-30T09:26:05.4250054Z             "archive_url": "https://api.github.com/repos/***/hpoll/{archive_format}{/ref}",
+2026-03-30T09:26:05.4250450Z             "archived": false,
+2026-03-30T09:26:05.4250798Z             "assignees_url": "https://api.github.com/repos/***/hpoll/assignees{/user}",
+2026-03-30T09:26:05.4251285Z             "blobs_url": "https://api.github.com/repos/***/hpoll/git/blobs{/sha}",
+2026-03-30T09:26:05.4251768Z             "branches_url": "https://api.github.com/repos/***/hpoll/branches{/branch}",
+2026-03-30T09:26:05.4252357Z             "clone_url": "https://github.com/***/hpoll.git",
+2026-03-30T09:26:05.4252846Z             "collaborators_url": "https://api.github.com/repos/***/hpoll/collaborators{/collaborator}",
+2026-03-30T09:26:05.4253446Z             "comments_url": "https://api.github.com/repos/***/hpoll/comments{/number}",
+2026-03-30T09:26:05.4253931Z             "commits_url": "https://api.github.com/repos/***/hpoll/commits{/sha}",
+2026-03-30T09:26:05.4254431Z             "compare_url": "https://api.github.com/repos/***/hpoll/compare/{base}...{head}",
+2026-03-30T09:26:05.4255208Z             "contents_url": "https://api.github.com/repos/***/hpoll/contents/{+path}",
+2026-03-30T09:26:05.4255716Z             "contributors_url": "https://api.github.com/repos/***/hpoll/contributors",
+2026-03-30T09:26:05.4256095Z             "created_at": "2026-02-26T10:01:58Z",
+2026-03-30T09:26:05.4256359Z             "default_branch": "main",
+2026-03-30T09:26:05.4256728Z             "deployments_url": "https://api.github.com/repos/***/hpoll/deployments",
+2026-03-30T09:26:05.4257092Z             "description": null,
+2026-03-30T09:26:05.4257312Z             "disabled": false,
+2026-03-30T09:26:05.4257641Z             "downloads_url": "https://api.github.com/repos/***/hpoll/downloads",
+2026-03-30T09:26:05.4258085Z             "events_url": "https://api.github.com/repos/***/hpoll/events",
+2026-03-30T09:26:05.4258411Z             "fork": false,
+2026-03-30T09:26:05.4258605Z             "forks": 0,
+2026-03-30T09:26:05.4258804Z             "forks_count": 0,
+2026-03-30T09:26:05.4259114Z             "forks_url": "https://api.github.com/repos/***/hpoll/forks",
+2026-03-30T09:26:05.4259461Z             "full_name": "***/hpoll",
+2026-03-30T09:26:05.4259841Z             "git_commits_url": "https://api.github.com/repos/***/hpoll/git/commits{/sha}",
+2026-03-30T09:26:05.4260334Z             "git_refs_url": "https://api.github.com/repos/***/hpoll/git/refs{/sha}",
+2026-03-30T09:26:05.4260807Z             "git_tags_url": "https://api.github.com/repos/***/hpoll/git/tags{/sha}",
+2026-03-30T09:26:05.4261208Z             "git_url": "git://github.com/***/hpoll.git",
+2026-03-30T09:26:05.4261485Z             "has_discussions": false,
+2026-03-30T09:26:05.4261721Z             "has_downloads": true,
+2026-03-30T09:26:05.4262077Z             "has_issues": true,
+2026-03-30T09:26:05.4262298Z             "has_pages": false,
+2026-03-30T09:26:05.4262515Z             "has_projects": true,
+2026-03-30T09:26:05.4262744Z             "has_pull_requests": true,
+2026-03-30T09:26:05.4262978Z             "has_wiki": true,
+2026-03-30T09:26:05.4263191Z             "homepage": null,
+2026-03-30T09:26:05.4263510Z             "hooks_url": "https://api.github.com/repos/***/hpoll/hooks",
+2026-03-30T09:26:05.4263892Z             "html_url": "https://github.com/***/hpoll",
+2026-03-30T09:26:05.4264161Z             "id": 1167451352,
+2026-03-30T09:26:05.4264367Z             "is_template": false,
+2026-03-30T09:26:05.4264766Z             "issue_comment_url": "https://api.github.com/repos/***/hpoll/issues/comments{/number}",
+2026-03-30T09:26:05.4265350Z             "issue_events_url": "https://api.github.com/repos/***/hpoll/issues/events{/number}",
+2026-03-30T09:26:05.4265866Z             "issues_url": "https://api.github.com/repos/***/hpoll/issues{/number}",
+2026-03-30T09:26:05.4266329Z             "keys_url": "https://api.github.com/repos/***/hpoll/keys{/key_id}",
+2026-03-30T09:26:05.4266781Z             "labels_url": "https://api.github.com/repos/***/hpoll/labels{/name}",
+2026-03-30T09:26:05.4267131Z             "language": "C#",
+2026-03-30T09:26:05.4267465Z             "languages_url": "https://api.github.com/repos/***/hpoll/languages",
+2026-03-30T09:26:05.4267813Z             "license": null,
+2026-03-30T09:26:05.4268115Z             "merges_url": "https://api.github.com/repos/***/hpoll/merges",
+2026-03-30T09:26:05.4268601Z             "milestones_url": "https://api.github.com/repos/***/hpoll/milestones{/number}",
+2026-03-30T09:26:05.4268991Z             "mirror_url": null,
+2026-03-30T09:26:05.4269197Z             "name": "hpoll",
+2026-03-30T09:26:05.4269414Z             "node_id": "R_kgDORZXk2A",
+2026-03-30T09:26:05.4269905Z             "notifications_url": "https://api.github.com/repos/***/hpoll/notifications{?since,all,participating}",
+2026-03-30T09:26:05.4270377Z             "open_issues": 1,
+2026-03-30T09:26:05.4270592Z             "open_issues_count": 1,
+2026-03-30T09:26:05.4270815Z             "owner": {
+2026-03-30T09:26:05.4271123Z               "avatar_url": "https://avatars.githubusercontent.com/u/169779439?v=4",
+2026-03-30T09:26:05.4271723Z               "events_url": "https://api.github.com/users/***/events{/privacy}",
+2026-03-30T09:26:05.4272456Z               "followers_url": "https://api.github.com/users/***/followers",
+2026-03-30T09:26:05.4272939Z               "following_url": "https://api.github.com/users/***/following{/other_user}",
+2026-03-30T09:26:05.4273415Z               "gists_url": "https://api.github.com/users/***/gists{/gist_id}",
+2026-03-30T09:26:05.4273754Z               "gravatar_id": "",
+2026-03-30T09:26:05.4274022Z               "html_url": "https://github.com/***",
+2026-03-30T09:26:05.4274282Z               "id": 169779439,
+2026-03-30T09:26:05.4274502Z               "login": "***",
+2026-03-30T09:26:05.4274722Z               "node_id": "U_kgDOCh6g7w",
+2026-03-30T09:26:05.4275069Z               "organizations_url": "https://api.github.com/users/***/orgs",
+2026-03-30T09:26:05.4275537Z               "received_events_url": "https://api.github.com/users/***/received_events",
+2026-03-30T09:26:05.4275994Z               "repos_url": "https://api.github.com/users/***/repos",
+2026-03-30T09:26:05.4276315Z               "site_admin": false,
+2026-03-30T09:26:05.4276683Z               "starred_url": "https://api.github.com/users/***/starred{/owner}{/repo}",
+2026-03-30T09:26:05.4277179Z               "subscriptions_url": "https://api.github.com/users/***/subscriptions",
+2026-03-30T09:26:05.4277539Z               "type": "User",
+2026-03-30T09:26:05.4277801Z               "url": "https://api.github.com/users/***",
+2026-03-30T09:26:05.4278090Z               "user_view_type": "public"
+2026-03-30T09:26:05.4278325Z             },
+2026-03-30T09:26:05.4278497Z             "private": false,
+2026-03-30T09:26:05.4278738Z             "pull_request_creation_policy": "all",
+2026-03-30T09:26:05.4279120Z             "pulls_url": "https://api.github.com/repos/***/hpoll/pulls{/number}",
+2026-03-30T09:26:05.4279485Z             "pushed_at": "2026-03-30T09:23:06Z",
+2026-03-30T09:26:05.4279855Z             "releases_url": "https://api.github.com/repos/***/hpoll/releases{/id}",
+2026-03-30T09:26:05.4280215Z             "size": 3166,
+2026-03-30T09:26:05.4280465Z             "ssh_url": "git@github.com:***/hpoll.git",
+2026-03-30T09:26:05.4280736Z             "stargazers_count": 0,
+2026-03-30T09:26:05.4281076Z             "stargazers_url": "https://api.github.com/repos/***/hpoll/stargazers",
+2026-03-30T09:26:05.4281558Z             "statuses_url": "https://api.github.com/repos/***/hpoll/statuses/{sha}",
+2026-03-30T09:26:05.4282390Z             "subscribers_url": "https://api.github.com/repos/***/hpoll/subscribers",
+2026-03-30T09:26:05.4282896Z             "subscription_url": "https://api.github.com/repos/***/hpoll/subscription",
+2026-03-30T09:26:05.4283316Z             "svn_url": "https://github.com/***/hpoll",
+2026-03-30T09:26:05.4283671Z             "tags_url": "https://api.github.com/repos/***/hpoll/tags",
+2026-03-30T09:26:05.4284073Z             "teams_url": "https://api.github.com/repos/***/hpoll/teams",
+2026-03-30T09:26:05.4284386Z             "topics": [],
+2026-03-30T09:26:05.4284709Z             "trees_url": "https://api.github.com/repos/***/hpoll/git/trees{/sha}",
+2026-03-30T09:26:05.4285082Z             "updated_at": "2026-03-29T16:36:18Z",
+2026-03-30T09:26:05.4285397Z             "url": "https://api.github.com/repos/***/hpoll",
+2026-03-30T09:26:05.4285685Z             "visibility": "public",
+2026-03-30T09:26:05.4285916Z             "watchers": 0,
+2026-03-30T09:26:05.4286121Z             "watchers_count": 0,
+2026-03-30T09:26:05.4286354Z             "web_commit_signoff_required": false
+2026-03-30T09:26:05.4286604Z           },
+2026-03-30T09:26:05.4286774Z           "sender": {
+2026-03-30T09:26:05.4287071Z             "avatar_url": "https://avatars.githubusercontent.com/u/169779439?v=4",
+2026-03-30T09:26:05.4287540Z             "events_url": "https://api.github.com/users/***/events{/privacy}",
+2026-03-30T09:26:05.4287981Z             "followers_url": "https://api.github.com/users/***/followers",
+2026-03-30T09:26:05.4288453Z             "following_url": "https://api.github.com/users/***/following{/other_user}",
+2026-03-30T09:26:05.4289214Z             "gists_url": "https://api.github.com/users/***/gists{/gist_id}",
+2026-03-30T09:26:05.4289559Z             "gravatar_id": "",
+2026-03-30T09:26:05.4289813Z             "html_url": "https://github.com/***",
+2026-03-30T09:26:05.4290083Z             "id": 169779439,
+2026-03-30T09:26:05.4290301Z             "login": "***",
+2026-03-30T09:26:05.4290515Z             "node_id": "U_kgDOCh6g7w",
+2026-03-30T09:26:05.4290849Z             "organizations_url": "https://api.github.com/users/***/orgs",
+2026-03-30T09:26:05.4291310Z             "received_events_url": "https://api.github.com/users/***/received_events",
+2026-03-30T09:26:05.4291749Z             "repos_url": "https://api.github.com/users/***/repos",
+2026-03-30T09:26:05.4292202Z             "site_admin": false,
+2026-03-30T09:26:05.4292558Z             "starred_url": "https://api.github.com/users/***/starred{/owner}{/repo}",
+2026-03-30T09:26:05.4293050Z             "subscriptions_url": "https://api.github.com/users/***/subscriptions",
+2026-03-30T09:26:05.4293413Z             "type": "User",
+2026-03-30T09:26:05.4293667Z             "url": "https://api.github.com/users/***",
+2026-03-30T09:26:05.4293954Z             "user_view_type": "public"
+2026-03-30T09:26:05.4294173Z           }
+2026-03-30T09:26:05.4294341Z         },
+2026-03-30T09:26:05.4294520Z         "github_job": "docker-admin",
+2026-03-30T09:26:05.4294762Z         "github_ref": "refs/pull/77/merge",
+2026-03-30T09:26:05.4295012Z         "github_ref_name": "77/merge",
+2026-03-30T09:26:05.4295253Z         "github_ref_protected": "false",
+2026-03-30T09:26:05.4295497Z         "github_ref_type": "branch",
+2026-03-30T09:26:05.4295758Z         "github_repository": "***/hpoll",
+2026-03-30T09:26:05.4296012Z         "github_repository_id": "1167451352",
+2026-03-30T09:26:05.4296280Z         "github_repository_owner": "***",
+2026-03-30T09:26:05.4296538Z         "github_repository_owner_id": "169779439",
+2026-03-30T09:26:05.4296807Z         "github_run_attempt": "1",
+2026-03-30T09:26:05.4297047Z         "github_run_id": "23737482936",
+2026-03-30T09:26:05.4297283Z         "github_run_number": "309",
+2026-03-30T09:26:05.4297508Z         "github_runner_arch": "X64",
+2026-03-30T09:26:05.4297776Z         "github_runner_environment": "github-hosted",
+2026-03-30T09:26:05.4298062Z         "github_runner_image_os": "ubuntu24",
+2026-03-30T09:26:05.4298339Z         "github_runner_image_version": "20260323.65.1",
+2026-03-30T09:26:05.4298648Z         "github_runner_name": "GitHub Actions 1000001610",
+2026-03-30T09:26:05.4298927Z         "github_runner_os": "Linux",
+2026-03-30T09:26:05.4299268Z         "github_runner_tracking_id": "github_8948dc5c-fd38-482b-b0cd-d80a87ef733d",
+2026-03-30T09:26:05.4299668Z         "github_server_url": "https://github.com",
+2026-03-30T09:26:05.4299972Z         "github_triggering_actor": "***",
+2026-03-30T09:26:05.4300224Z         "github_workflow": "Build & Test",
+2026-03-30T09:26:05.4300674Z         "github_workflow_ref": "***/hpoll/.github/workflows/build-and-test.yml@refs/pull/77/merge",
+2026-03-30T09:26:05.4301188Z         "github_workflow_sha": "1e5569bfb76f1c5dde10eace1c8ffc17bb33c6d4",
+2026-03-30T09:26:05.4301533Z         "platform": "linux/amd64"
+2026-03-30T09:26:05.4301745Z       }
+2026-03-30T09:26:05.4302029Z     }
+2026-03-30T09:26:05.4302181Z   },
+2026-03-30T09:26:05.4302705Z   "buildx.build.ref": "builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc/builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc0/yz4nffo1x4mtuf1ytlip6jpk6",
+2026-03-30T09:26:05.4303334Z   "containerimage.descriptor": {
+2026-03-30T09:26:05.4303636Z     "mediaType": "application/vnd.oci.image.index.v1+json",
+2026-03-30T09:26:05.4304086Z     "digest": "sha256:78352216c44a4214626558dd841224fd7aae1aadca8f1caa9eff094895566fa3",
+2026-03-30T09:26:05.4304465Z     "size": 856
+2026-03-30T09:26:05.4304631Z   },
+2026-03-30T09:26:05.4304987Z   "containerimage.digest": "sha256:78352216c44a4214626558dd841224fd7aae1aadca8f1caa9eff094895566fa3",
+2026-03-30T09:26:05.4305897Z   "image.name": "***/hpoll-admin:1e5569b,***/hpoll-admin:latest-any,***/hpoll-admin:dev,***/hpoll-admin:pr-77"
+2026-03-30T09:26:05.4306451Z }
+2026-03-30T09:26:05.4306850Z ##[endgroup]
+2026-03-30T09:26:05.4307170Z ##[group]Reference
+2026-03-30T09:26:05.4307678Z builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc/builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc0/yz4nffo1x4mtuf1ytlip6jpk6
+2026-03-30T09:26:05.4308326Z ##[endgroup]
+2026-03-30T09:26:05.4308637Z ##[group]Check build summary support
+2026-03-30T09:26:05.4309015Z Build summary supported!
+2026-03-30T09:26:05.4309337Z ##[endgroup]
+2026-03-30T09:26:05.4384391Z Post job cleanup.
+2026-03-30T09:26:05.6707783Z ##[group]Generating build summary
+2026-03-30T09:26:05.7627463Z exporting build record to /home/runner/work/_temp/docker-actions-toolkit-qLynNJ/export
+2026-03-30T09:26:08.7693469Z [command]/usr/bin/mkfifo /home/runner/work/_temp/docker-actions-toolkit-qLynNJ/buildx-in-50ap6A.fifo
+2026-03-30T09:26:08.7804068Z [command]/usr/bin/mkfifo /home/runner/work/_temp/docker-actions-toolkit-qLynNJ/buildx-out-deIycU.fifo
+2026-03-30T09:26:08.7844269Z [command]docker buildx --builder builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc dial-stdio
+2026-03-30T09:26:08.7878300Z [command]docker run --rm -i -v /home/runner/.docker/buildx/refs:/buildx-refs -v /home/runner/work/_temp/docker-actions-toolkit-qLynNJ/export:/out docker.io/dockereng/export-build:latest --ref-state-dir=/buildx-refs --node=builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc/builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc0 --ref=yz4nffo1x4mtuf1ytlip6jpk6 --uid=1001 --gid=1001
+2026-03-30T09:26:08.8025975Z Unable to find image 'dockereng/export-build:latest' locally
+2026-03-30T09:26:09.6420729Z latest: Pulling from dockereng/export-build
+2026-03-30T09:26:09.9171076Z 5f398fcfd265: Pulling fs layer
+2026-03-30T09:26:09.9171408Z 152e015ae384: Pulling fs layer
+2026-03-30T09:26:10.1688273Z 152e015ae384: Verifying Checksum
+2026-03-30T09:26:10.1688808Z 152e015ae384: Download complete
+2026-03-30T09:26:10.2253043Z 5f398fcfd265: Verifying Checksum
+2026-03-30T09:26:10.2253473Z 5f398fcfd265: Download complete
+2026-03-30T09:26:10.3242039Z 5f398fcfd265: Pull complete
+2026-03-30T09:26:10.3457362Z 152e015ae384: Pull complete
+2026-03-30T09:26:10.3506766Z Digest: sha256:8a8d92fc2d7cc8a8855400970bb971436fc117bd39366595f55f7e1283a1e961
+2026-03-30T09:26:10.3518714Z Status: Downloaded newer image for dockereng/export-build:latest
+2026-03-30T09:26:11.0333001Z Process "docker run" exited with code 0
+2026-03-30T09:26:11.0337526Z Parsing /home/runner/work/_temp/docker-actions-toolkit-qLynNJ/export/summary.json
+2026-03-30T09:26:11.0340094Z Build record written to /home/runner/work/_temp/docker-actions-toolkit-qLynNJ/export/***~hpoll~YZ4NFF.dockerbuild (72.93 KB)
+2026-03-30T09:26:11.0351820Z Uploading ***~hpoll~YZ4NFF.dockerbuild to blob storage
+2026-03-30T09:26:11.0731334Z ERROR: read unix @->/run/docker.sock: use of closed network connection
+2026-03-30T09:26:11.0754267Z Process "buildx dial-stdio" was killed with signal SIGKILL
+2026-03-30T09:26:11.3363007Z Beginning upload of artifact content to blob storage
+2026-03-30T09:26:11.3454792Z Uploaded bytes 65536
+2026-03-30T09:26:11.3456427Z Uploaded bytes 74681
+2026-03-30T09:26:11.7717802Z Finished uploading artifact content to blob storage!
+2026-03-30T09:26:11.7724278Z SHA256 hash of uploaded artifact is e43768a4f500988f211578efa6a88152817a9cda485e6691cad0cae688f00016
+2026-03-30T09:26:11.7726095Z Finalizing artifact upload
+2026-03-30T09:26:12.0875904Z Artifact successfully finalized (6174859548)
+2026-03-30T09:26:12.0878053Z Artifact download URL: https://github.com/***/hpoll/actions/runs/23737482936/artifacts/6174859548
+2026-03-30T09:26:12.0905592Z Writing summary
+2026-03-30T09:26:12.0920226Z ##[endgroup]
+2026-03-30T09:26:12.0921120Z ##[group]Removing temp folder /home/runner/work/_temp/docker-actions-toolkit-J1x5lY
+2026-03-30T09:26:12.0930768Z ##[endgroup]
+2026-03-30T09:26:12.0931376Z ##[group]Post cache
+2026-03-30T09:26:12.0932858Z State not set
+2026-03-30T09:26:12.0933553Z ##[endgroup]
+2026-03-30T09:26:12.1100011Z Post job cleanup.
+2026-03-30T09:26:12.4118910Z [command]/usr/bin/docker logout 
+2026-03-30T09:26:12.4263535Z Removing login credentials for https://index.docker.io/v1/
+2026-03-30T09:26:12.4299686Z ##[group]Post cache
+2026-03-30T09:26:12.4301331Z State not set
+2026-03-30T09:26:12.4303055Z ##[endgroup]
+2026-03-30T09:26:12.4441586Z Post job cleanup.
+2026-03-30T09:26:12.6915820Z ##[group]Removing builder
+2026-03-30T09:26:12.7969999Z [command]/usr/bin/docker buildx rm builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc
+2026-03-30T09:26:13.6719461Z builder-3505a859-d5f5-4c11-95ad-73ba69ff11fc removed
+2026-03-30T09:26:13.6758923Z ##[endgroup]
+2026-03-30T09:26:13.6760424Z ##[group]Cleaning up certificates
+2026-03-30T09:26:13.6775368Z ##[endgroup]
+2026-03-30T09:26:13.6775901Z ##[group]Post cache
+2026-03-30T09:26:13.6776205Z State not set
+2026-03-30T09:26:13.6776667Z ##[endgroup]
+2026-03-30T09:26:13.6914481Z Post job cleanup.
+2026-03-30T09:26:13.7894395Z [command]/usr/bin/git version
+2026-03-30T09:26:13.7939464Z git version 2.53.0
+2026-03-30T09:26:13.7982897Z Temporarily overriding HOME='/home/runner/work/_temp/cc831c76-a392-4e28-b260-eaf2ccdd7f0b' before making global git config changes
+2026-03-30T09:26:13.7984226Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-30T09:26:13.7988250Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hpoll/hpoll
+2026-03-30T09:26:13.8023562Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-30T09:26:13.8057140Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-30T09:26:13.8288369Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-30T09:26:13.8310525Z http.https://github.com/.extraheader
+2026-03-30T09:26:13.8323057Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-03-30T09:26:13.8354027Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-30T09:26:13.8690521Z Cleaning up orphan processes
+2026-03-30T09:26:13.9081174Z ##[warning]Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332, docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1, docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772, docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
