@@ -248,4 +248,79 @@ public class SendTimeHelperTests
         Assert.NotNull(result);
         Assert.Equal(new DateTime(2026, 3, 2, 8, 0, 0), result.Value);
     }
+
+    [Fact]
+    public void ComputeNextSendTimeUtc_TimeExactlyAtNow_WrapsToTomorrow()
+    {
+        // When the send time equals "now" exactly, it should NOT be picked (strict >)
+        var now = new DateTime(2026, 3, 1, 8, 0, 0, DateTimeKind.Utc);
+        var result = SendTimeHelper.ComputeNextSendTimeUtc("08:00", "UTC", now);
+
+        Assert.NotNull(result);
+        // Should wrap to tomorrow since 08:00 is not > 08:00
+        Assert.Equal(new DateTime(2026, 3, 2, 8, 0, 0), result.Value);
+    }
+
+    [Fact]
+    public void ComputeNextSendTimeUtc_TimeExactlyAtNow_WithMultiple_PicksNext()
+    {
+        var now = new DateTime(2026, 3, 1, 12, 0, 0, DateTimeKind.Utc);
+        var result = SendTimeHelper.ComputeNextSendTimeUtc("08:00, 12:00, 18:00", "UTC", now);
+
+        Assert.NotNull(result);
+        // 12:00 is not > 12:00, so picks 18:00
+        Assert.Equal(new DateTime(2026, 3, 1, 18, 0, 0), result.Value);
+    }
+
+    [Fact]
+    public void ComputeNextSendTimeUtc_DstSpringForward_ProducesCorrectUtc()
+    {
+        // US Eastern: Spring forward on March 8, 2026 at 2:00 AM → 3:00 AM
+        // 2:30 AM is in the gap — should be adjusted forward by DST delta
+        var now = new DateTime(2026, 3, 8, 6, 0, 0, DateTimeKind.Utc); // 1:00 AM EST
+        var result = SendTimeHelper.ComputeNextSendTimeUtc("02:30", "America/New_York", now);
+
+        Assert.NotNull(result);
+        // 2:30 AM doesn't exist; adjusted to 3:30 AM EDT = 07:30 UTC
+        Assert.Equal(new DateTime(2026, 3, 8, 7, 30, 0), result.Value);
+    }
+
+    [Fact]
+    public void ComputeNextSendTimeUtc_DefaultUtcTimes_ExactlyAtNow_PicksNext()
+    {
+        var now = new DateTime(2026, 3, 1, 12, 0, 0, DateTimeKind.Utc);
+        var defaults = new List<string> { "08:00", "12:00", "18:00" };
+        var result = SendTimeHelper.ComputeNextSendTimeUtc("", "UTC", now, defaults);
+
+        Assert.NotNull(result);
+        Assert.Equal(new DateTime(2026, 3, 1, 18, 0, 0), result.Value);
+    }
+
+    [Fact]
+    public void ComputeNextSendTimeUtc_NullDefaultList_FallsBackToLastResort()
+    {
+        var now = new DateTime(2026, 3, 1, 3, 0, 0, DateTimeKind.Utc);
+        var result = SendTimeHelper.ComputeNextSendTimeUtc("", "UTC", now, null);
+
+        Assert.NotNull(result);
+        Assert.Equal(new DateTime(2026, 3, 1, 8, 0, 0), result.Value);
+    }
+
+    [Fact]
+    public void ParseTimeSpans_AllInvalidEntries_ReturnsEmpty()
+    {
+        var result = SendTimeHelper.ParseTimeSpans("abc, xyz, 99:99");
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void ComputeNextSendTimeUtc_WhitespaceOnlyLocalTimes_FallsBackToDefaults()
+    {
+        var now = new DateTime(2026, 3, 1, 3, 0, 0, DateTimeKind.Utc);
+        var defaults = new List<string> { "10:00" };
+        var result = SendTimeHelper.ComputeNextSendTimeUtc("   ", "UTC", now, defaults);
+
+        Assert.NotNull(result);
+        Assert.Equal(new DateTime(2026, 3, 1, 10, 0, 0), result.Value);
+    }
 }

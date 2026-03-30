@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Moq;
 using Hpoll.Admin.Pages.Customers;
 using Hpoll.Admin.Services;
 using Hpoll.Core.Configuration;
@@ -1141,5 +1143,137 @@ public class DetailModelTests : IDisposable
             value = Array.Empty<byte>();
             return false;
         }
+    }
+
+    private DetailModel CreatePageModelWithMockRenderer(Mock<IEmailRenderer> mockRenderer, EmailSettings? emailSettingsOverride = null)
+    {
+        var hueApp = Options.Create(new HueAppSettings());
+        var emailSettings = Options.Create(emailSettingsOverride ?? new EmailSettings());
+        var sendTimeService = new SendTimeDisplayService(_db, emailSettings);
+        var model = new DetailModel(_db, hueApp, emailSettings, sendTimeService, mockRenderer.Object, NullLogger<DetailModel>.Instance);
+        var httpContext = new DefaultHttpContext();
+        httpContext.Session = new TestSession();
+        model.PageContext = new PageContext
+        {
+            ActionDescriptor = new CompiledPageActionDescriptor(),
+            HttpContext = httpContext,
+            RouteData = new RouteData()
+        };
+        return model;
+    }
+
+    [Fact]
+    public async Task OnGetAsync_EmailPreviewException_SetsEmptyHtml()
+    {
+        var customer = await SeedCustomerAsync();
+        await SeedHubAsync(customer.Id);
+
+        var mockRenderer = new Mock<IEmailRenderer>();
+        mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Render failure"));
+
+        var model = CreatePageModelWithMockRenderer(mockRenderer);
+        await model.OnGetAsync(customer.Id);
+
+        Assert.Equal(string.Empty, model.EmailPreviewHtml);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_EmailPreviewException_StillLoadsCustomer()
+    {
+        var customer = await SeedCustomerAsync(name: "Exception Test");
+        await SeedHubAsync(customer.Id);
+
+        var mockRenderer = new Mock<IEmailRenderer>();
+        mockRenderer.Setup(r => r.RenderDailySummaryAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Unexpected error"));
+
+        var model = CreatePageModelWithMockRenderer(mockRenderer);
+        var result = await model.OnGetAsync(customer.Id);
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal("Exception Test", model.Customer.Name);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_MalformedMotionJson_SkipsInvalidReadings()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+        var device = new Device
+        {
+            HubId = hub.Id, HueDeviceId = "sensor-1", Name = "Sensor 1",
+            DeviceType = DeviceTypes.MotionSensor
+        };
+        _db.Devices.Add(device);
+        await _db.SaveChangesAsync();
+
+        var now = DateTime.UtcNow;
+        _db.DeviceReadings.AddRange(
+            new DeviceReading { DeviceId = device.Id, ReadingType = ReadingTypes.Motion, Value = "not valid json", Timestamp = now.AddHours(-1) },
+            new DeviceReading { DeviceId = device.Id, ReadingType = ReadingTypes.Motion, Value = "{\"motion\": true}", Timestamp = now.AddHours(-1) }
+        );
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        // Should not throw — malformed JSON is skipped gracefully
+        Assert.NotNull(model.ActivityWindows);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_MalformedTemperatureJson_SkipsInvalidReadings()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+        var device = new Device
+        {
+            HubId = hub.Id, HueDeviceId = "temp-1", Name = "Temp 1",
+            DeviceType = DeviceTypes.TemperatureSensor
+        };
+        _db.Devices.Add(device);
+        await _db.SaveChangesAsync();
+
+        var now = DateTime.UtcNow;
+        _db.DeviceReadings.AddRange(
+            new DeviceReading { DeviceId = device.Id, ReadingType = ReadingTypes.Temperature, Value = "{invalid}", Timestamp = now.AddHours(-1) },
+            new DeviceReading { DeviceId = device.Id, ReadingType = ReadingTypes.Temperature, Value = "{\"temperature\": 22.5}", Timestamp = now.AddHours(-1) }
+        );
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        Assert.NotNull(model.ActivityWindows);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_MotionJsonMissingChangedProperty_HandlesGracefully()
+    {
+        var customer = await SeedCustomerAsync();
+        var hub = await SeedHubAsync(customer.Id);
+        var device = new Device
+        {
+            HubId = hub.Id, HueDeviceId = "sensor-2", Name = "Sensor 2",
+            DeviceType = DeviceTypes.MotionSensor
+        };
+        _db.Devices.Add(device);
+        await _db.SaveChangesAsync();
+
+        var now = DateTime.UtcNow;
+        // Valid motion=true but no "changed" property
+        _db.DeviceReadings.Add(new DeviceReading
+        {
+            DeviceId = device.Id, ReadingType = ReadingTypes.Motion,
+            Value = "{\"motion\": true}", Timestamp = now.AddHours(-1)
+        });
+        await _db.SaveChangesAsync();
+
+        var model = CreatePageModel();
+        await model.OnGetAsync(customer.Id);
+
+        // Should complete without error - the "changed" property is optional
+        Assert.NotNull(model.ActivityWindows);
     }
 }

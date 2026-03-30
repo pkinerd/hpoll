@@ -347,6 +347,41 @@ public class AboutModelExportTests : IDisposable
     }
 
     [Fact]
+    public async Task ExportSanitizedDb_ConcurrentExport_ReturnsError()
+    {
+        // Seed minimal data so first export can proceed
+        _db.Customers.Add(new Customer { Name = "Test", Email = "t@t.com", TimeZoneId = "UTC" });
+        await _db.SaveChangesAsync();
+
+        var model = CreateModel();
+
+        // Start first export (holds the lock)
+        var result1 = await model.OnPostExportSanitizedDbAsync();
+        Assert.IsType<FileContentResult>(result1);
+
+        // The lock has been released by now (finally block). To test lock contention,
+        // we need to acquire it externally first.
+        // Access the static lock via reflection
+        var lockField = typeof(AboutModel).GetField("_exportLock",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var exportLock = (SemaphoreSlim)lockField!.GetValue(null)!;
+
+        // Hold the lock
+        await exportLock.WaitAsync();
+        try
+        {
+            var result2 = await model.OnPostExportSanitizedDbAsync();
+            var redirect = Assert.IsType<RedirectToPageResult>(result2);
+            Assert.Equal("An export is already in progress. Please try again shortly.",
+                model.TempData["Error"]);
+        }
+        finally
+        {
+            exportLock.Release();
+        }
+    }
+
+    [Fact]
     public async Task ExportSanitizedDb_PreservesNonSensitiveData()
     {
         var customer = new Customer { Name = "Keep This", Email = "remove@example.com", TimeZoneId = "Australia/Sydney" };
