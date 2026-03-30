@@ -159,3 +159,7 @@
 | [0184](issues/0184-hueapiclient-malformed-json-200.md) | HueApiClient logs unclear error on malformed JSON 200 response | open | low | enhancement, code-quality |
 | [0187](issues/0187-systeminfoextensions-trysetbatch-exception-uncovered.md) | SystemInfoServiceExtensions.TrySetBatchAsync OperationCanceledException path uncovered | open | low | testing |
 | [0189](issues/0189-stale-motion-temperature-devices-not-cleaned-up.md) | Stale motion and temperature devices not cleaned up when removed from hub | closed | medium | bug |
+| [0190](issues/0190-dst-crash-activity-summary-email-renderer.md) | DST spring-forward gap crash in activity summary and email renderer | open | high | bug |
+| [0191](issues/0191-devicereading-value-comment-zigbee-motion.md) | DeviceReading.Value comment missing zigbee_connectivity and misleading motion semantics | open | low | documentation |
+| [0192](issues/0192-zigbee-status-enum-values-incorrect.md) | HueZigbeeConnectivityResource.Status enum values incorrect per API spec | open | medium | bug, documentation |
+| [0193](issues/0193-mac-addresses-cleartext-sanitized-export.md) | MAC addresses stored cleartext in DeviceReadings and included in sanitized export | open | low | security |
